@@ -1,6 +1,7 @@
 import BottomNav from "@/components/BottomNav";
-import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut } from "lucide-react";
+import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Info, FileText, Shield } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { format, differenceInDays } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { getProfile } from "@/lib/supabase/profiles";
@@ -15,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 const Profile = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
@@ -71,6 +73,9 @@ const Profile = () => {
     { icon: Target, label: "Study Goals", description: "Set daily targets", onClick: () => setGoalsOpen(true) },
     { icon: Calendar, label: "Schedule", description: "Plan your study time", onClick: () => setScheduleOpen(true) },
     { icon: HelpCircle, label: "Help & Support", description: "Get assistance", onClick: () => setSupportOpen(true) },
+    { icon: Info, label: "About", description: "About this app", onClick: () => navigate('/about') },
+    { icon: FileText, label: "Terms of Service", description: "Read our terms", onClick: () => navigate('/terms-of-service') },
+    { icon: Shield, label: "Privacy Policy", description: "Your data protection", onClick: () => navigate('/privacy-policy') },
   ];
 
   return (
