@@ -49,6 +49,7 @@ export type Database = {
           created_at: string
           exam_date: string | null
           full_name: string | null
+          gender: string | null
           id: string
           updated_at: string
         }
@@ -56,6 +57,7 @@ export type Database = {
           created_at?: string
           exam_date?: string | null
           full_name?: string | null
+          gender?: string | null
           id: string
           updated_at?: string
         }
@@ -63,6 +65,7 @@ export type Database = {
           created_at?: string
           exam_date?: string | null
           full_name?: string | null
+          gender?: string | null
           id?: string
           updated_at?: string
         }

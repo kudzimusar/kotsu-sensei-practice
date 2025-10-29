@@ -4,6 +4,7 @@ export interface Profile {
   id: string;
   full_name: string | null;
   exam_date: string | null;
+  gender: string | null;
   created_at: string;
   updated_at: string;
 }

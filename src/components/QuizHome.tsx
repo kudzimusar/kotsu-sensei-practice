@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getEvents } from "@/lib/supabase/events";
 import { getAllPerformance } from "@/lib/supabase/performance";
 import { getTestHistory } from "@/lib/supabase/tests";
+import { getProfile } from "@/lib/supabase/profiles";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +49,12 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
   const { data: testHistory = [] } = useQuery({
     queryKey: ["testHistory", user?.id],
     queryFn: () => getTestHistory(user!.id),
+    enabled: !!user,
+  });
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: () => getProfile(user!.id),
     enabled: !!user,
   });
 
@@ -248,10 +255,12 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="flex justify-between items-center px-6 py-4">
           <div>
-            <h1 className="text-base font-bold">Welcome back, Akira!</h1>
+            <h1 className="text-base font-bold">
+              Welcome back, {profile?.gender === 'male' ? 'Mr.' : profile?.gender === 'female' ? 'Mrs.' : ''} {profile?.full_name || 'User'}!
+            </h1>
           </div>
           <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-            <span className="text-blue-600 font-semibold">A</span>
+            <span className="text-blue-600 font-semibold">{profile?.full_name?.charAt(0) || 'U'}</span>
           </div>
         </div>
       </header>
