@@ -32,11 +32,11 @@ const Profile = () => {
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        .eq('user_id', user.id);
       
       console.log('Admin check:', { data, error, userId: user.id });
-      setIsAdmin(data?.role === 'admin' || data?.role === 'moderator');
+      const hasAdminRole = data?.some(role => role.role === 'admin' || role.role === 'moderator');
+      setIsAdmin(hasAdminRole);
     };
     checkAdminStatus();
   }, [user]);
