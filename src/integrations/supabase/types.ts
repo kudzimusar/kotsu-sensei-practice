@@ -91,28 +91,66 @@ export type Database = {
           category: string
           correct: number
           created_at: string
+          guest_session_id: string | null
           id: string
           total: number
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           category: string
           correct?: number
           created_at?: string
+          guest_session_id?: string | null
           id?: string
           total?: number
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           category?: string
           correct?: number
           created_at?: string
+          guest_session_id?: string | null
           id?: string
           total?: number
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_performance_guest_session_id_fkey"
+            columns: ["guest_session_id"]
+            isOneToOne: false
+            referencedRelation: "guest_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_sessions: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          expires_at: string
+          id: string
+          last_active: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          expires_at?: string
+          id?: string
+          last_active?: string
+          session_id?: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          expires_at?: string
+          id?: string
+          last_active?: string
+          session_id?: string
         }
         Relationships: []
       }
@@ -198,37 +236,48 @@ export type Database = {
         Row: {
           created_at: string
           current_question_index: number
+          guest_session_id: string | null
           id: string
           quiz_mode: string
           score: number
           selected_questions: Json
           time_limit: number | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           current_question_index?: number
+          guest_session_id?: string | null
           id?: string
           quiz_mode: string
           score?: number
           selected_questions: Json
           time_limit?: number | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           current_question_index?: number
+          guest_session_id?: string | null
           id?: string
           quiz_mode?: string
           score?: number
           selected_questions?: Json
           time_limit?: number | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "quiz_progress_guest_session_id_fkey"
+            columns: ["guest_session_id"]
+            isOneToOne: false
+            referencedRelation: "guest_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       study_events: {
         Row: {
@@ -336,37 +385,48 @@ export type Database = {
         Row: {
           created_at: string
           date: string
+          guest_session_id: string | null
           id: string
           passed: boolean
           score: number
           test_type: string
           time_taken: number
           total_questions: number
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           date: string
+          guest_session_id?: string | null
           id?: string
           passed: boolean
           score: number
           test_type: string
           time_taken: number
           total_questions: number
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           date?: string
+          guest_session_id?: string | null
           id?: string
           passed?: boolean
           score?: number
           test_type?: string
           time_taken?: number
           total_questions?: number
-          user_id?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "test_history_guest_session_id_fkey"
+            columns: ["guest_session_id"]
+            isOneToOne: false
+            referencedRelation: "guest_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_question_feedback: {
         Row: {
@@ -471,6 +531,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      migrate_guest_to_user: {
+        Args: { p_guest_session_id: string; p_user_id: string }
+        Returns: Json
       }
     }
     Enums: {

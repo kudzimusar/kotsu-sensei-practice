@@ -2,7 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface TestHistory {
   id?: string;
-  user_id: string;
+  user_id: string | null;
+  guest_session_id?: string | null;
   test_type: string;
   date: string;
   passed: boolean;
@@ -22,19 +23,24 @@ export const saveTestHistory = async (test: Omit<TestHistory, 'id'>) => {
   return data;
 };
 
-export const getTestHistory = async (userId: string) => {
-  const { data, error } = await supabase
-    .from("test_history")
-    .select("*")
-    .eq("user_id", userId)
-    .order("date", { ascending: false });
+export const getTestHistory = async (userId: string | null, guestSessionId?: string | null) => {
+  let query = supabase.from("test_history").select("*").order("date", { ascending: false });
+  
+  if (userId) {
+    query = query.eq("user_id", userId);
+  } else if (guestSessionId) {
+    query = query.eq("guest_session_id", guestSessionId);
+  } else {
+    return [];
+  }
 
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 };
 
-export const getTestStats = async (userId: string) => {
-  const history = await getTestHistory(userId);
+export const getTestStats = async (userId: string | null, guestSessionId?: string | null) => {
+  const history = await getTestHistory(userId, guestSessionId);
   
   if (history.length === 0) {
     return {

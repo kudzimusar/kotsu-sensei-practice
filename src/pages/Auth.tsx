@@ -146,6 +146,20 @@ const Auth = () => {
           </Button>
         </form>
 
+        <div className="mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => navigate("/")}
+          >
+            Continue as Guest
+          </Button>
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Limited features • Data expires in 7 days
+          </p>
+        </div>
+
         <div className="mt-6 text-center">
           <button
             type="button"

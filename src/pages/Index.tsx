@@ -16,7 +16,7 @@ type QuizMode = 'quick' | 'focused' | 'permit' | 'license';
 type Screen = 'home' | 'quiz' | 'results';
 
 const Index = () => {
-  const { user } = useAuth();
+  const { user, guestId } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [screen, setScreen] = useState<Screen>('home');
   const [quizMode, setQuizMode] = useState<QuizMode>('quick');
@@ -31,21 +31,21 @@ const Index = () => {
     const category = searchParams.get('category');
     const test = searchParams.get('test');
     
-    if (category && user && screen === 'home') {
+    if (category && (user || guestId) && screen === 'home') {
       handleStartQuiz('focused', category);
       setSearchParams({});
-    } else if (test && user && screen === 'home') {
+    } else if (test && (user || guestId) && screen === 'home') {
       const testMode = test as QuizMode;
       if (testMode === 'permit' || testMode === 'license') {
         handleStartQuiz(testMode);
         setSearchParams({});
       }
     }
-  }, [searchParams, user, screen]);
+  }, [searchParams, user, guestId, screen]);
 
   const handleContinueLearning = async () => {
-    if (!user) return;
-    const progress = await loadQuizProgress(user.id);
+    if (!user && !guestId) return;
+    const progress = await loadQuizProgress(user?.id || null, guestId);
     if (progress) {
       setQuizMode(progress.quiz_mode as QuizMode);
       setSelectedQuestions(progress.selected_questions);
@@ -58,9 +58,10 @@ const Index = () => {
 
   // Save progress whenever quiz state changes
   useEffect(() => {
-    if (screen === 'quiz' && selectedQuestions.length > 0 && user) {
+    if (screen === 'quiz' && selectedQuestions.length > 0 && (user || guestId)) {
       saveQuizProgress({
-        user_id: user.id,
+        user_id: user?.id || null,
+        guest_session_id: guestId || null,
         quiz_mode: quizMode,
         selected_questions: selectedQuestions,
         current_question_index: currentQuestionIndex,
@@ -68,7 +69,7 @@ const Index = () => {
         time_limit: timeLimit,
       });
     }
-  }, [screen, quizMode, selectedQuestions, currentQuestionIndex, score, timeLimit, user]);
+  }, [screen, quizMode, selectedQuestions, currentQuestionIndex, score, timeLimit, user, guestId]);
 
   const getQuestionCount = (mode: QuizMode): number => {
     switch (mode) {
@@ -88,7 +89,7 @@ const Index = () => {
   };
 
   const handleStartQuiz = async (mode: QuizMode, category?: string, weakAreas?: boolean) => {
-    if (!user) return;
+    if (!user && !guestId) return;
     
     setQuizMode(mode);
     const count = getQuestionCount(mode);
@@ -100,8 +101,8 @@ const Index = () => {
     const allQuestions = await getAllQuestionsWithAI(questions, 'en');
     let filteredQuestions = allQuestions;
     
-    // Filter by weak areas if requested
-    if (weakAreas) {
+    // Filter by weak areas if requested (only for authenticated users)
+    if (weakAreas && user) {
       const weakCategories = await getWeakCategories(user.id);
       if (weakCategories.length > 0) {
         const weakCategoryNames = weakCategories.map(wc => wc.category);
@@ -123,16 +124,16 @@ const Index = () => {
   };
 
   const handleAnswer = async (correct: boolean) => {
-    if (!user) return;
-    
     if (correct) {
       setScore(score + 1);
     }
     
-    // Track answer for performance analytics
-    const currentQuestion = selectedQuestions[currentQuestionIndex];
-    if (currentQuestion) {
-      await trackAnswer(user.id, currentQuestion.test, correct);
+    // Track answer for performance analytics (only for authenticated users)
+    if (user) {
+      const currentQuestion = selectedQuestions[currentQuestionIndex];
+      if (currentQuestion) {
+        await trackAnswer(user.id, currentQuestion.test, correct);
+      }
     }
   };
 
@@ -146,11 +147,12 @@ const Index = () => {
 
   const handleQuizComplete = async () => {
     // Save test history before showing results
-    if (user) {
+    if (user || guestId) {
       const timeTaken = Math.floor((Date.now() - startTime) / 1000);
       const percentage = (score / selectedQuestions.length) * 100;
       await saveTestHistory({
-        user_id: user.id,
+        user_id: user?.id || null,
+        guest_session_id: guestId || null,
         test_type: quizMode,
         date: new Date().toISOString(),
         passed: percentage >= 90, // 90% pass rate
@@ -167,8 +169,8 @@ const Index = () => {
   };
 
   const handleHome = async () => {
-    if (user) {
-      await clearQuizProgress(user.id);
+    if (user || guestId) {
+      await clearQuizProgress(user?.id || null, guestId);
     }
     setScreen('home');
     setCurrentQuestionIndex(0);

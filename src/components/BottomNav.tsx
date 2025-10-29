@@ -1,15 +1,17 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, BookOpen, ClipboardList, User, Sparkles } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const BottomNav = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isGuest } = useAuth();
   
   const navItems = [
     { path: "/", icon: Home, label: "Home" },
     { path: "/study", icon: BookOpen, label: "Study" },
-    { path: "/generate", icon: Sparkles, label: "Generate" },
     { path: "/tests", icon: ClipboardList, label: "Tests" },
-    { path: "/profile", icon: User, label: "Profile" },
+    { path: "/profile", icon: User, label: isGuest ? "Sign Up" : "Profile" },
   ];
 
   return (
@@ -17,10 +19,18 @@ const BottomNav = () => {
       <div className="flex justify-around py-3">
         {navItems.map(({ path, icon: Icon, label }) => {
           const isActive = location.pathname === path;
+          const handleClick = (e: React.MouseEvent) => {
+            if (path === "/profile" && isGuest) {
+              e.preventDefault();
+              navigate("/auth");
+            }
+          };
+          
           return (
             <Link
               key={path}
               to={path}
+              onClick={handleClick}
               className={`flex flex-col items-center ${
                 isActive ? "text-blue-600" : "text-gray-400"
               }`}

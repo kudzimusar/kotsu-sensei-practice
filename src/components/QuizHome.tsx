@@ -25,7 +25,7 @@ interface QuizHomeProps {
 }
 
 const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
-  const { user } = useAuth();
+  const { user, guestId, isGuest } = useAuth();
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showModes, setShowModes] = useState(false);
@@ -47,9 +47,9 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
   });
 
   const { data: testHistory = [] } = useQuery({
-    queryKey: ["testHistory", user?.id],
-    queryFn: () => getTestHistory(user!.id),
-    enabled: !!user,
+    queryKey: ["testHistory", user?.id, guestId],
+    queryFn: () => getTestHistory(user?.id || null, guestId),
+    enabled: !!user || !!guestId,
   });
 
   const { data: profile } = useQuery({
@@ -256,16 +256,48 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
         <div className="flex justify-between items-center px-6 py-4">
           <div>
             <h1 className="text-base font-bold">
-              Welcome back, {profile?.gender === 'male' ? 'Mr' : profile?.gender === 'female' ? 'Miss' : ''} {profile?.full_name?.split(' ').pop() || 'User'}!
+              {isGuest 
+                ? "Welcome, Guest!" 
+                : `Welcome back, ${profile?.gender === 'male' ? 'Mr' : profile?.gender === 'female' ? 'Miss' : ''} ${profile?.full_name?.split(' ').pop() || 'User'}!`
+              }
             </h1>
           </div>
           <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-            <span className="text-blue-600 font-semibold">{profile?.full_name?.charAt(0) || 'U'}</span>
+            <span className="text-blue-600 font-semibold">
+              {isGuest ? '👤' : (profile?.full_name?.charAt(0) || 'U')}
+            </span>
           </div>
         </div>
       </header>
 
       <main className="px-5 py-6 pb-24">
+        {/* Guest Banner */}
+        {isGuest && (
+          <section className="mb-6">
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <User className="text-blue-600" size={20} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-sm text-blue-900 mb-1">
+                    Try Before You Sign Up!
+                  </h3>
+                  <p className="text-xs text-blue-700 mb-3">
+                    You're using guest mode. Sign up to save your progress, track results, and access premium features. Guest data expires in 7 days.
+                  </p>
+                  <Button
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs"
+                    onClick={() => window.location.href = '/auth'}
+                  >
+                    Create Free Account
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </section>
+        )}
         {/* Main Action Cards */}
         <section className="mb-8">
           <div className="space-y-4">

@@ -10,19 +10,19 @@ import { useQuery } from "@tanstack/react-query";
 
 const Tests = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, guestId } = useAuth();
   const [showTestDialog, setShowTestDialog] = useState(false);
 
   const { data: testHistory = [] } = useQuery({
-    queryKey: ["testHistory", user?.id],
-    queryFn: () => getTestHistory(user!.id),
-    enabled: !!user,
+    queryKey: ["testHistory", user?.id, guestId],
+    queryFn: () => getTestHistory(user?.id || null, guestId),
+    enabled: !!user || !!guestId,
   });
 
   const { data: stats } = useQuery({
-    queryKey: ["testStats", user?.id],
-    queryFn: () => getTestStats(user!.id),
-    enabled: !!user,
+    queryKey: ["testStats", user?.id, guestId],
+    queryFn: () => getTestStats(user?.id || null, guestId),
+    enabled: !!user || !!guestId,
   });
 
   const formatTime = (seconds: number) => {

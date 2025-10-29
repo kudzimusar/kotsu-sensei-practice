@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trophy, RotateCcw, Home, ChevronRight } from "lucide-react";
+import { Trophy, RotateCcw, Home, ChevronRight, UserPlus } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import { useAuth } from "@/hooks/useAuth";
 
 interface QuizResultsProps {
   score: number;
@@ -18,6 +19,7 @@ const QuizResults = ({
   onHome,
 }: QuizResultsProps) => {
   const navigate = useNavigate();
+  const { isGuest } = useAuth();
   const percentage = Math.round((score / totalQuestions) * 100);
   const passed = percentage >= 90;
 
@@ -63,6 +65,29 @@ const QuizResults = ({
               : "Review the questions you missed and practice more to improve your score."}
           </p>
         </div>
+
+        {isGuest && (
+          <div className="p-4 rounded-lg mb-6 bg-blue-50 border-2 border-blue-200">
+            <div className="flex items-start gap-3">
+              <UserPlus className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div className="flex-1 text-left">
+                <p className="text-sm font-semibold text-blue-900 mb-1">
+                  Save Your Progress!
+                </p>
+                <p className="text-xs text-blue-700 mb-3">
+                  Sign up to track your results, view history, and access advanced features. Your guest data expires in 7 days.
+                </p>
+                <Button
+                  onClick={() => navigate("/auth")}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Create Free Account
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
           <Button

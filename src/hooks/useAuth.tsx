@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
+import { useGuestSession } from "./useGuestSession";
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { guestId, loading: guestLoading, clearGuestSession } = useGuestSession();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -15,6 +17,12 @@ export const useAuth = () => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Clear guest session when user logs in
+        if (session?.user && guestId) {
+          clearGuestSession();
+        }
+        
         setLoading(false);
       }
     );
@@ -27,12 +35,22 @@ export const useAuth = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [guestId, clearGuestSession]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
 
-  return { user, session, loading, signOut };
+  const isGuest = !user && !!guestId;
+  const isLoading = loading || guestLoading;
+
+  return { 
+    user, 
+    session, 
+    loading: isLoading, 
+    signOut,
+    isGuest,
+    guestId,
+  };
 };

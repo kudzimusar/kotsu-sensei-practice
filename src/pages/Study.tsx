@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 
 const Study = () => {
   const today = new Date();
-  const { user } = useAuth();
+  const { user, guestId, isGuest } = useAuth();
 
   const { data: performance = [] } = useQuery({
     queryKey: ["performance", user?.id],
@@ -22,9 +22,9 @@ const Study = () => {
   });
 
   const { data: testHistory = [] } = useQuery({
-    queryKey: ["testHistory", user?.id],
-    queryFn: () => getTestHistory(user!.id),
-    enabled: !!user,
+    queryKey: ["testHistory", user?.id, guestId],
+    queryFn: () => getTestHistory(user?.id || null, guestId),
+    enabled: !!user || !!guestId,
   });
 
   const totalQuestions = performance.reduce((sum, p) => sum + p.total, 0);

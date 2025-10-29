@@ -3,7 +3,8 @@ import type { Question } from "@/data/questions";
 
 export interface QuizProgress {
   id?: string;
-  user_id: string;
+  user_id: string | null;
+  guest_session_id?: string | null;
   quiz_mode: 'quick' | 'focused' | 'permit' | 'license';
   current_question_index: number;
   score: number;
@@ -13,10 +14,17 @@ export interface QuizProgress {
 
 export const saveQuizProgress = async (progress: Omit<QuizProgress, 'id'>) => {
   // Delete existing progress first
-  await supabase
-    .from("quiz_progress")
-    .delete()
-    .eq("user_id", progress.user_id);
+  if (progress.user_id) {
+    await supabase
+      .from("quiz_progress")
+      .delete()
+      .eq("user_id", progress.user_id);
+  } else if (progress.guest_session_id) {
+    await supabase
+      .from("quiz_progress")
+      .delete()
+      .eq("guest_session_id", progress.guest_session_id);
+  }
 
   // Insert new progress
   const { data, error } = await supabase
@@ -32,12 +40,18 @@ export const saveQuizProgress = async (progress: Omit<QuizProgress, 'id'>) => {
   return data;
 };
 
-export const loadQuizProgress = async (userId: string) => {
-  const { data, error } = await supabase
-    .from("quiz_progress")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
+export const loadQuizProgress = async (userId: string | null, guestSessionId?: string | null) => {
+  let query = supabase.from("quiz_progress").select("*");
+  
+  if (userId) {
+    query = query.eq("user_id", userId);
+  } else if (guestSessionId) {
+    query = query.eq("guest_session_id", guestSessionId);
+  } else {
+    return null;
+  }
+  
+  const { data, error } = await query.maybeSingle();
 
   if (error) throw error;
   return data ? {
@@ -46,11 +60,17 @@ export const loadQuizProgress = async (userId: string) => {
   } : null;
 };
 
-export const clearQuizProgress = async (userId: string) => {
-  const { error } = await supabase
-    .from("quiz_progress")
-    .delete()
-    .eq("user_id", userId);
-
+export const clearQuizProgress = async (userId: string | null, guestSessionId?: string | null) => {
+  let query = supabase.from("quiz_progress").delete();
+  
+  if (userId) {
+    query = query.eq("user_id", userId);
+  } else if (guestSessionId) {
+    query = query.eq("guest_session_id", guestSessionId);
+  } else {
+    return;
+  }
+  
+  const { error } = await query;
   if (error) throw error;
 };
