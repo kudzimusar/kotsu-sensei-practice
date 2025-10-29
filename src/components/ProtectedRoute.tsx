@@ -4,14 +4,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isGuest, guestId } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !guestId) {
       navigate("/auth");
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, guestId, navigate]);
 
   if (loading) {
     return (
@@ -21,7 +21,8 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user) {
+  // Allow access if user is logged in OR has a guest session
+  if (!user && !guestId) {
     return null;
   }
 
