@@ -1,6 +1,8 @@
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trophy, RotateCcw, Home } from "lucide-react";
+import { Trophy, RotateCcw, Home, ChevronRight } from "lucide-react";
+import BottomNav from "@/components/BottomNav";
 
 interface QuizResultsProps {
   score: number;
@@ -15,12 +17,13 @@ const QuizResults = ({
   onRestart,
   onHome,
 }: QuizResultsProps) => {
+  const navigate = useNavigate();
   const percentage = Math.round((score / totalQuestions) * 100);
   const passed = percentage >= 90;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-3 md:p-4">
-      <Card className="w-full max-w-2xl p-6 md:p-10 shadow-card bg-card text-center">
+    <div className="min-h-screen bg-background p-3 md:p-4 pb-24">
+      <Card className="w-full max-w-2xl mx-auto p-6 md:p-10 shadow-card bg-card text-center">
         <div className="mb-6 md:mb-8">
           {passed ? (
             <div className="inline-flex p-4 md:p-5 rounded-full bg-gradient-success mb-3 md:mb-4">
@@ -84,7 +87,18 @@ const QuizResults = ({
         <div className="mt-6 md:mt-8 text-xs md:text-sm text-muted-foreground">
           <p>💡 The real Japan driving test requires 90% or higher to pass</p>
         </div>
+
+        <Button
+          onClick={() => navigate("/tests")}
+          variant="ghost"
+          className="mt-4 text-xs text-muted-foreground hover:text-foreground"
+        >
+          View All Results
+          <ChevronRight className="ml-1 w-3 h-3" />
+        </Button>
       </Card>
+
+      <BottomNav />
     </div>
   );
 };

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, XCircle, ChevronRight } from "lucide-react";
+import { CheckCircle2, XCircle, ChevronRight, X } from "lucide-react";
 import type { Question } from "@/data/questions";
 
 interface QuizQuestionProps {
@@ -11,6 +11,7 @@ interface QuizQuestionProps {
   totalQuestions: number;
   onAnswer: (correct: boolean) => void;
   onNext: () => void;
+  onQuit: () => void;
 }
 
 const QuizQuestion = ({
@@ -19,6 +20,7 @@ const QuizQuestion = ({
   totalQuestions,
   onAnswer,
   onNext,
+  onQuit,
 }: QuizQuestionProps) => {
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -40,10 +42,17 @@ const QuizQuestion = ({
   const isCorrect = selectedAnswer === question.answer;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-3 md:p-4">
-      <Card className="w-full max-w-3xl p-4 md:p-6 shadow-card bg-card">
+    <div className="min-h-screen bg-background p-3 md:p-4 pb-24">
+      <Card className="w-full max-w-3xl mx-auto p-4 md:p-6 shadow-card bg-card">
         <div className="mb-4 md:mb-5">
           <div className="flex justify-between items-center mb-1.5 md:mb-2">
+            <button
+              onClick={onQuit}
+              className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-xs md:text-sm"
+            >
+              <X className="w-4 h-4" />
+              Quit
+            </button>
             <span className="text-xs md:text-sm font-medium text-muted-foreground">
               Question {questionNumber} of {totalQuestions}
             </span>

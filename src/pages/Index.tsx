@@ -76,6 +76,7 @@ const Index = () => {
           totalQuestions={selectedQuestions.length}
           onAnswer={handleAnswer}
           onNext={handleNext}
+          onQuit={handleHome}
         />
       )}
       

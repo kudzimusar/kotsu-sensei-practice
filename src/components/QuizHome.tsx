@@ -1,6 +1,8 @@
 import { Zap, Target, FileText, Calendar, Flame, ChevronRight } from "lucide-react";
 import { testCategories } from "@/data/questions";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import BottomNav from "@/components/BottomNav";
 
 type QuizMode = 'quick' | 'focused' | 'full';
 
@@ -9,8 +11,17 @@ interface QuizHomeProps {
 }
 
 const QuizHome = ({ onStartQuiz }: QuizHomeProps) => {
+  const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showModes, setShowModes] = useState(false);
+
+  useEffect(() => {
+    const category = searchParams.get('category');
+    if (category) {
+      setSelectedCategory(category);
+      setShowModes(true);
+    }
+  }, [searchParams]);
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
@@ -260,6 +271,8 @@ const QuizHome = ({ onStartQuiz }: QuizHomeProps) => {
           </div>
         </div>
       </nav>
+
+      <BottomNav />
     </div>
   );
 };
