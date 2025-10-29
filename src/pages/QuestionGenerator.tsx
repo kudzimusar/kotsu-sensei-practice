@@ -7,9 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import BottomNav from "@/components/BottomNav";
 
 export default function AdminQuestionGenerator() {
+  const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
   const [category, setCategory] = useState("traffic-rules");
   const [difficulty, setDifficulty] = useState("medium");
@@ -48,14 +51,26 @@ export default function AdminQuestionGenerator() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-2xl mx-auto space-y-6 py-8">
-        <div>
-          <h1 className="text-3xl font-bold">AI Question Generator</h1>
-          <p className="text-muted-foreground mt-2">
-            Generate unlimited practice questions using AI to enhance your learning
-          </p>
+    <div className="min-h-screen bg-background pb-24">
+      {/* Header with back button */}
+      <header className="bg-white shadow-sm sticky top-0 z-10">
+        <div className="px-6 py-4 flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="shrink-0"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-base font-bold">AI Question Generator</h1>
+            <p className="text-xs text-muted-foreground">Generate unlimited practice questions</p>
+          </div>
         </div>
+      </header>
+
+      <div className="max-w-2xl mx-auto space-y-6 p-4 pt-6">
 
         <Card>
           <CardHeader>
@@ -166,6 +181,8 @@ export default function AdminQuestionGenerator() {
           </CardContent>
         </Card>
       </div>
+
+      <BottomNav />
     </div>
   );
 }
