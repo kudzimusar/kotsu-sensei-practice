@@ -1,6 +1,6 @@
 import BottomNav from "@/components/BottomNav";
 import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Sparkles } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { format, differenceInDays } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { getProfile } from "@/lib/supabase/profiles";
@@ -13,7 +13,6 @@ import { SupportDialog } from "@/components/SupportDialog";
 import StudyCalendar from "@/components/StudyCalendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -23,23 +22,6 @@ const Profile = () => {
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  // Check if user is admin
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user) return;
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id);
-      
-      console.log('Admin check:', { data, error, userId: user.id });
-      const hasAdminRole = data?.some(role => role.role === 'admin' || role.role === 'moderator');
-      setIsAdmin(hasAdminRole);
-    };
-    checkAdminStatus();
-  }, [user]);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -91,13 +73,13 @@ const Profile = () => {
     { icon: Target, label: "Study Goals", description: "Set daily targets", onClick: () => setGoalsOpen(true) },
     { icon: Calendar, label: "Schedule", description: "Plan your study time", onClick: () => setScheduleOpen(true) },
     { icon: HelpCircle, label: "Help & Support", description: "Get assistance", onClick: () => setSupportOpen(true) },
-    ...(isAdmin ? [{ 
+    { 
       icon: Sparkles, 
       label: "AI Question Generator", 
       description: "Generate new questions with AI", 
       onClick: () => navigate('/admin/generate'),
-      isAdmin: true 
-    }] : []),
+      highlight: true 
+    },
   ];
 
   return (
@@ -206,18 +188,18 @@ const Profile = () => {
                 key={item.label}
                 onClick={item.onClick}
                 className={`w-full bg-white rounded-xl shadow-sm p-4 flex items-center gap-3 text-left transform transition hover:scale-[1.01] ${
-                  (item as any).isAdmin ? 'border-2 border-purple-200 bg-purple-50' : ''
+                  (item as any).highlight ? 'border-2 border-purple-200 bg-purple-50' : ''
                 }`}
               >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  (item as any).isAdmin ? 'bg-purple-100' : 'bg-gray-50'
+                  (item as any).highlight ? 'bg-purple-100' : 'bg-gray-50'
                 }`}>
                   <item.icon className={`w-5 h-5 ${
-                    (item as any).isAdmin ? 'text-purple-600' : 'text-gray-600'
+                    (item as any).highlight ? 'text-purple-600' : 'text-gray-600'
                   }`} />
                 </div>
                 <div className="flex-1">
-                  <p className={`font-medium text-sm ${(item as any).isAdmin ? 'text-purple-700' : ''}`}>
+                  <p className={`font-medium text-sm ${(item as any).highlight ? 'text-purple-700' : ''}`}>
                     {item.label}
                   </p>
                   <p className="text-xs text-muted-foreground">{item.description}</p>

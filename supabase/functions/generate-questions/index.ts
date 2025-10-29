@@ -131,7 +131,7 @@ Make sure to return valid JSON only, no additional text.`
       difficulty_level: q.difficulty_level || difficulty || 'medium',
       source_concept: q.source_concept || concept,
       language: language || 'en',
-      status: 'pending'
+      status: 'approved' // Auto-approve for immediate use
     }));
 
     const { data: insertedQuestions, error: insertError } = await supabase

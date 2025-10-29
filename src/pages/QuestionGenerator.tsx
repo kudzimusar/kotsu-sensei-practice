@@ -53,7 +53,7 @@ export default function AdminQuestionGenerator() {
         <div>
           <h1 className="text-3xl font-bold">AI Question Generator</h1>
           <p className="text-muted-foreground mt-2">
-            Generate new practice questions using AI
+            Generate unlimited practice questions using AI to enhance your learning
           </p>
         </div>
 
@@ -158,11 +158,11 @@ export default function AdminQuestionGenerator() {
             <CardTitle>How it works</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>1. Enter a specific driving concept or rule</p>
-            <p>2. Select category, difficulty, and language</p>
-            <p>3. AI generates questions based on official Japanese driving rules</p>
-            <p>4. Generated questions are saved with "pending" status</p>
-            <p>5. Review and approve questions before they appear to users</p>
+            <p>1. Enter a specific driving concept or rule you want to practice</p>
+            <p>2. Select category, difficulty level, and language</p>
+            <p>3. AI generates unique questions based on official Japanese driving rules</p>
+            <p>4. Generated questions are instantly available for your practice sessions</p>
+            <p>5. Keep generating more questions to expand your study materials endlessly!</p>
           </CardContent>
         </Card>
       </div>

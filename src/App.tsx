@@ -13,7 +13,7 @@ import About from "./pages/About";
 import Support from "./pages/Support";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
-import AdminQuestionGenerator from "./pages/AdminQuestionGenerator";
+import QuestionGenerator from "./pages/QuestionGenerator";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,7 +34,7 @@ const App = () => (
           <Route path="/support" element={<Support />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
-          <Route path="/admin/generate" element={<ProtectedRoute><AdminQuestionGenerator /></ProtectedRoute>} />
+          <Route path="/admin/generate" element={<ProtectedRoute><QuestionGenerator /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
