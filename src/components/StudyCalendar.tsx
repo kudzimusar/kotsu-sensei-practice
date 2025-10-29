@@ -96,18 +96,7 @@ const StudyCalendar = () => {
           mode="single"
           selected={selectedDate}
           onSelect={setSelectedDate}
-          className="rounded-md border w-full"
-          modifiers={{
-            hasEvent: getDatesWithEvents()
-          }}
-          modifiersStyles={{
-            hasEvent: {
-              fontWeight: 'bold',
-              textDecoration: 'underline',
-              textDecorationColor: 'hsl(var(--primary))',
-              textDecorationThickness: '2px'
-            }
-          }}
+          className="rounded-md border w-full pointer-events-auto"
         />
       </Card>
 
