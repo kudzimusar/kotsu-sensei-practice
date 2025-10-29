@@ -1,8 +1,12 @@
-import { Zap, Target, FileText, Calendar, Flame, ChevronRight } from "lucide-react";
+import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight } from "lucide-react";
 import { testCategories } from "@/data/questions";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format, differenceInDays } from "date-fns";
 
 type QuizMode = 'quick' | 'focused' | 'full';
 
@@ -14,6 +18,10 @@ const QuizHome = ({ onStartQuiz }: QuizHomeProps) => {
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showModes, setShowModes] = useState(false);
+  const [examDate, setExamDate] = useState<Date | undefined>(() => {
+    const saved = localStorage.getItem('examDate');
+    return saved ? new Date(saved) : undefined;
+  });
 
   useEffect(() => {
     const category = searchParams.get('category');
@@ -22,6 +30,12 @@ const QuizHome = ({ onStartQuiz }: QuizHomeProps) => {
       setShowModes(true);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (examDate) {
+      localStorage.setItem('examDate', examDate.toISOString());
+    }
+  }, [examDate]);
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
@@ -32,10 +46,18 @@ const QuizHome = ({ onStartQuiz }: QuizHomeProps) => {
     onStartQuiz(mode, selectedCategory || undefined);
   };
 
+  const handleQuickStart = (mode: QuizMode) => {
+    // Start quiz immediately with random category
+    const randomCategory = testCategories[Math.floor(Math.random() * testCategories.length)];
+    onStartQuiz(mode, randomCategory);
+  };
+
   const handleBack = () => {
     setShowModes(false);
     setSelectedCategory(null);
   };
+
+  const daysRemaining = examDate ? differenceInDays(examDate, new Date()) : null;
 
   if (showModes) {
     return (
@@ -127,13 +149,13 @@ const QuizHome = ({ onStartQuiz }: QuizHomeProps) => {
         <section className="mb-8">
           <div className="space-y-4">
             <button
-              onClick={() => handleCategorySelect(testCategories[0])}
+              onClick={() => handleQuickStart('quick')}
               style={{ background: 'var(--gradient-blue)' }}
               className="w-full rounded-2xl shadow-lg p-5 text-white flex justify-between items-center transform transition hover:scale-[1.02]"
             >
               <div className="text-left">
                 <h3 className="font-bold text-lg mb-1">Quick Practice</h3>
-                <p className="text-white/90 text-sm">10 Questions</p>
+                <p className="text-white/90 text-sm">10 Questions • Random topics</p>
               </div>
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                 <Zap className="text-white" size={24} />
@@ -141,55 +163,92 @@ const QuizHome = ({ onStartQuiz }: QuizHomeProps) => {
             </button>
 
             <button
-              onClick={() => handleCategorySelect(testCategories[1] || testCategories[0])}
+              onClick={() => handleQuickStart('focused')}
               style={{ background: 'var(--gradient-purple)' }}
               className="w-full rounded-2xl shadow-lg p-5 text-white flex justify-between items-center transform transition hover:scale-[1.02]"
             >
               <div className="text-left">
                 <h3 className="font-bold text-lg mb-1">Focused Study</h3>
-                <p className="text-white/90 text-sm">20 Questions on specific category</p>
+                <p className="text-white/90 text-sm">20 Questions • Mixed difficulty</p>
               </div>
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                 <Target className="text-white" size={24} />
               </div>
             </button>
 
-            <button
-              onClick={() => handleCategorySelect(testCategories[0])}
+            <div
               style={{ background: 'var(--gradient-green)' }}
-              className="w-full rounded-2xl shadow-lg p-5 text-white transform transition hover:scale-[1.02]"
+              className="w-full rounded-2xl shadow-lg p-5 text-white"
             >
               <div className="flex justify-between items-center mb-4">
                 <div className="text-left">
                   <h3 className="font-bold text-lg">Full Exam Simulation</h3>
+                  <p className="text-white/90 text-xs">Timed practice tests</p>
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                   <FileText className="text-white" size={24} />
                 </div>
               </div>
               <div className="flex gap-2">
-                <div className="bg-white/20 backdrop-blur-sm rounded-lg py-2 px-3 text-sm text-white font-medium flex-1 text-center">
+                <button
+                  onClick={() => handleQuickStart('full')}
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg py-2.5 px-3 text-sm text-white font-medium flex-1 text-center transition"
+                >
                   50 Qs (30 min)
-                </div>
-                <div className="bg-white/20 backdrop-blur-sm rounded-lg py-2 px-3 text-sm text-white font-medium flex-1 text-center">
+                </button>
+                <button
+                  onClick={() => handleQuickStart('full')}
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg py-2.5 px-3 text-sm text-white font-medium flex-1 text-center transition"
+                >
                   100 Qs (1 hr)
-                </div>
+                </button>
               </div>
-            </button>
+            </div>
           </div>
         </section>
 
         {/* Exam Date Reminder */}
         <section className="mb-8">
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl shadow-md p-4 flex items-center">
-            <div className="mr-4 w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <Calendar className="text-amber-600" size={24} />
-            </div>
-            <div>
-              <h3 className="font-bold text-amber-800 text-sm">Exam Date: June 15, 2023</h3>
-              <p className="text-amber-700 text-xs">21 days remaining</p>
-            </div>
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="w-full bg-amber-50 border border-amber-200 rounded-2xl shadow-md p-4 flex items-center text-left hover:bg-amber-100 transition">
+                <div className="mr-4 w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <CalendarIcon className="text-amber-600" size={24} />
+                </div>
+                <div className="flex-1">
+                  {examDate ? (
+                    <>
+                      <h3 className="font-bold text-amber-800 text-sm">
+                        Exam Date: {format(examDate, 'MMMM d, yyyy')}
+                      </h3>
+                      <p className="text-amber-700 text-xs">
+                        {daysRemaining !== null && daysRemaining >= 0 
+                          ? `${daysRemaining} days remaining` 
+                          : daysRemaining !== null && daysRemaining < 0
+                          ? `${Math.abs(daysRemaining)} days overdue`
+                          : ''}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="font-bold text-amber-800 text-sm">Set Your Exam Date</h3>
+                      <p className="text-amber-700 text-xs">Click to choose a date</p>
+                    </>
+                  )}
+                </div>
+                <ChevronRight className="text-amber-600" size={20} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <Calendar
+                mode="single"
+                selected={examDate}
+                onSelect={setExamDate}
+                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </section>
 
         {/* Progress */}

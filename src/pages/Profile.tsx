@@ -1,11 +1,18 @@
 import BottomNav from "@/components/BottomNav";
 import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut } from "lucide-react";
+import { useState, useEffect } from "react";
+import { format, differenceInDays } from "date-fns";
 
 const Profile = () => {
+  const [examDate, setExamDate] = useState<Date | undefined>(() => {
+    const saved = localStorage.getItem('examDate');
+    return saved ? new Date(saved) : undefined;
+  });
+
+  const daysRemaining = examDate ? differenceInDays(examDate, new Date()) : null;
+
   const userStats = {
     name: "Akira",
-    examDate: "June 15, 2023",
-    daysRemaining: 21,
     totalQuestions: 387,
     questionsCompleted: 245,
     testsPassed: 18,
@@ -48,8 +55,25 @@ const Profile = () => {
               <div className="flex items-center gap-3">
                 <Calendar className="w-6 h-6 text-amber-600" />
                 <div>
-                  <p className="font-bold text-amber-800 text-sm">Exam: {userStats.examDate}</p>
-                  <p className="text-amber-700 text-xs">{userStats.daysRemaining} days remaining</p>
+                  {examDate ? (
+                    <>
+                      <p className="font-bold text-amber-800 text-sm">
+                        Exam: {format(examDate, 'MMMM d, yyyy')}
+                      </p>
+                      <p className="text-amber-700 text-xs">
+                        {daysRemaining !== null && daysRemaining >= 0 
+                          ? `${daysRemaining} days remaining` 
+                          : daysRemaining !== null && daysRemaining < 0
+                          ? `${Math.abs(daysRemaining)} days overdue`
+                          : ''}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-bold text-amber-800 text-sm">No exam date set</p>
+                      <p className="text-amber-700 text-xs">Set your exam date on the home screen</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

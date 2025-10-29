@@ -2,13 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import { Clock, CheckCircle, XCircle, Trophy } from "lucide-react";
+import { format, subDays } from "date-fns";
 
 const Tests = () => {
   const navigate = useNavigate();
 
   const testHistory = [
     { 
-      date: "2023-06-01", 
+      date: subDays(new Date(), 1), 
       type: "Full Exam", 
       score: 45, 
       total: 50, 
@@ -16,7 +17,7 @@ const Tests = () => {
       time: "28 min"
     },
     { 
-      date: "2023-05-28", 
+      date: subDays(new Date(), 4), 
       type: "Quick Practice", 
       score: 7, 
       total: 10, 
@@ -24,7 +25,7 @@ const Tests = () => {
       time: "5 min"
     },
     { 
-      date: "2023-05-25", 
+      date: subDays(new Date(), 7), 
       type: "Focused Study", 
       score: 18, 
       total: 20, 
@@ -32,7 +33,7 @@ const Tests = () => {
       time: "12 min"
     },
     { 
-      date: "2023-05-22", 
+      date: subDays(new Date(), 10), 
       type: "Full Exam", 
       score: 42, 
       total: 50, 
@@ -115,10 +116,10 @@ const Tests = () => {
                 className="bg-white rounded-xl shadow-md p-4"
               >
                 <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-bold text-sm">{test.type}</h3>
-                    <p className="text-xs text-muted-foreground">{test.date}</p>
-                  </div>
+                <div>
+                  <h3 className="font-bold text-sm">{test.type}</h3>
+                  <p className="text-xs text-muted-foreground">{format(test.date, 'MMM d, yyyy')}</p>
+                </div>
                   {test.passed ? (
                     <div className="flex items-center gap-1 bg-green-50 text-green-700 px-2 py-1 rounded-full">
                       <CheckCircle className="w-3 h-3" />
