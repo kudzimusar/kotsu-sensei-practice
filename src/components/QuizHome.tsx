@@ -105,13 +105,13 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
         <div className="max-w-2xl mx-auto">
           <button
             onClick={handleBack}
-            className="mb-6 text-sm text-muted-foreground hover:text-foreground flex items-center gap-2"
+            className="mb-6 text-xs text-muted-foreground hover:text-foreground flex items-center gap-2"
           >
             ← Back to Categories
           </button>
 
-          <h2 className="text-xl font-bold mb-2">{selectedCategory}</h2>
-          <p className="text-sm text-muted-foreground mb-6">Choose Practice Mode</p>
+          <h2 className="text-base font-bold mb-2">{selectedCategory}</h2>
+          <p className="text-xs text-muted-foreground mb-6">Choose Practice Mode</p>
 
           <div className="space-y-4">
             <button
@@ -120,8 +120,8 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
               className="w-full rounded-2xl shadow-lg p-5 text-white flex justify-between items-center transform transition hover:scale-[1.02]"
             >
               <div className="text-left">
-                <h3 className="font-bold text-lg mb-1">Quick Practice</h3>
-                <p className="text-white/90 text-sm">10 Questions</p>
+                <h3 className="font-bold text-sm mb-1">Quick Practice</h3>
+                <p className="text-white/90 text-xs">10 Questions</p>
               </div>
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                 <Zap className="text-white" size={24} />
@@ -134,8 +134,8 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
               className="w-full rounded-2xl shadow-lg p-5 text-white flex justify-between items-center transform transition hover:scale-[1.02]"
             >
               <div className="text-left">
-                <h3 className="font-bold text-lg mb-1">Focused Study</h3>
-                <p className="text-white/90 text-sm">20 Questions on specific category</p>
+                <h3 className="font-bold text-sm mb-1">Focused Study</h3>
+                <p className="text-white/90 text-xs">20 Questions on specific category</p>
               </div>
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                 <Target className="text-white" size={24} />
@@ -148,8 +148,8 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
             >
               <div className="flex justify-between items-center mb-4">
                 <div className="text-left">
-                  <h3 className="font-bold text-lg">Full Exam Simulation</h3>
-                  <p className="text-white/90 text-xs">Timed practice tests</p>
+                  <h3 className="font-bold text-sm">Full Exam Simulation</h3>
+                  <p className="text-white/90 text-[10px]">Timed practice tests</p>
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                   <FileText className="text-white" size={24} />
@@ -184,7 +184,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="flex justify-between items-center px-6 py-4">
           <div>
-            <h1 className="text-xl font-bold">Welcome back, Akira!</h1>
+            <h1 className="text-base font-bold">Welcome back, Akira!</h1>
           </div>
           <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
             <span className="text-blue-600 font-semibold">A</span>
@@ -202,8 +202,8 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
               className="w-full rounded-2xl shadow-lg p-5 text-white flex justify-between items-center transform transition hover:scale-[1.02]"
             >
               <div className="text-left">
-                <h3 className="font-bold text-lg mb-1">Quick Practice</h3>
-                <p className="text-white/90 text-sm">10 Questions • Random topics</p>
+                <h3 className="font-bold text-sm mb-1">Quick Practice</h3>
+                <p className="text-white/90 text-xs">10 Questions • Random topics</p>
               </div>
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                 <Zap className="text-white" size={24} />
@@ -216,8 +216,8 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
               className="w-full rounded-2xl shadow-lg p-5 text-white flex justify-between items-center transform transition hover:scale-[1.02]"
             >
               <div className="text-left">
-                <h3 className="font-bold text-lg mb-1">Focused Study</h3>
-                <p className="text-white/90 text-sm">20 Questions • Mixed difficulty</p>
+                <h3 className="font-bold text-sm mb-1">Focused Study</h3>
+                <p className="text-white/90 text-xs">20 Questions • Mixed difficulty</p>
               </div>
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                 <Target className="text-white" size={24} />
@@ -230,8 +230,8 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
             >
               <div className="flex justify-between items-center mb-4">
                 <div className="text-left">
-                  <h3 className="font-bold text-lg">Full Exam Simulation</h3>
-                  <p className="text-white/90 text-xs">Timed practice tests</p>
+                  <h3 className="font-bold text-sm">Full Exam Simulation</h3>
+                  <p className="text-white/90 text-[10px]">Timed practice tests</p>
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                   <FileText className="text-white" size={24} />
@@ -267,17 +267,17 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <Badge className="bg-indigo-600 text-white text-xs">
+                  <Badge className="bg-indigo-600 text-white text-[10px]">
                       {format(parseISO(upcomingEvent.date), 'MMM d, yyyy')}
                     </Badge>
                     {isToday(parseISO(upcomingEvent.date)) && (
-                      <Badge className="bg-green-600 text-white text-xs">Today</Badge>
+                      <Badge className="bg-green-600 text-white text-[10px]">Today</Badge>
                     )}
                   </div>
-                  <h3 className="font-bold text-indigo-900 text-base mb-1">
+                  <h3 className="font-bold text-indigo-900 text-sm mb-1">
                     {upcomingEvent.title}
                   </h3>
-                  <div className="space-y-1 text-sm text-indigo-700">
+                  <div className="space-y-1 text-xs text-indigo-700">
                     {upcomingEvent.time && (
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4" />
@@ -297,7 +297,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
                       </div>
                     )}
                     {upcomingEvent.description && (
-                      <p className="mt-2 text-xs opacity-80">{upcomingEvent.description}</p>
+                      <p className="mt-2 text-[10px] opacity-80">{upcomingEvent.description}</p>
                     )}
                   </div>
                 </div>
@@ -317,10 +317,10 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
                 <div className="flex-1">
                   {examDate ? (
                     <>
-                      <h3 className="font-bold text-amber-800 text-sm">
+                      <h3 className="font-bold text-amber-800 text-xs">
                         Exam Date: {format(examDate, 'MMMM d, yyyy')}
                       </h3>
-                      <p className="text-amber-700 text-xs">
+                      <p className="text-amber-700 text-[10px]">
                         {daysRemaining !== null && daysRemaining >= 0 
                           ? `${daysRemaining} days remaining` 
                           : daysRemaining !== null && daysRemaining < 0
@@ -330,8 +330,8 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
                     </>
                   ) : (
                     <>
-                      <h3 className="font-bold text-amber-800 text-sm">Set Your Exam Date</h3>
-                      <p className="text-amber-700 text-xs">Click to choose a date</p>
+                      <h3 className="font-bold text-amber-800 text-xs">Set Your Exam Date</h3>
+                      <p className="text-amber-700 text-[10px]">Click to choose a date</p>
                     </>
                   )}
                 </div>
@@ -354,10 +354,10 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
         <section className="mb-8">
           <div className="bg-white rounded-2xl shadow-md p-5">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="font-bold text-lg">Test Ready: 75%</h2>
+              <h2 className="font-bold text-sm">Test Ready: 75%</h2>
               <div className="flex items-center bg-amber-100 px-3 py-1.5 rounded-full">
-                <Flame className="text-amber-500 mr-1.5" size={16} />
-                <p className="font-medium text-amber-700 text-xs">7-Day Streak 🔥</p>
+                <Flame className="text-amber-500 mr-1.5" size={14} />
+                <p className="font-medium text-amber-700 text-[10px]">7-Day Streak 🔥</p>
               </div>
             </div>
             <div className="h-2 bg-indigo-100 rounded-full overflow-hidden">
@@ -368,7 +368,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
 
         {/* Continue Learning & Weak Areas */}
         <section>
-          <h2 className="font-bold text-xl mb-4">Continue Learning</h2>
+          <h2 className="font-bold text-base mb-4">Continue Learning</h2>
           <div className="space-y-4">
             <button
               onClick={handleContinueLearning}

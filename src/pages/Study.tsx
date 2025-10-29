@@ -84,8 +84,8 @@ const Study = () => {
     <div className="min-h-screen bg-[#F5F7FA] pb-20">
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="px-6 py-4">
-          <h1 className="text-xl font-bold">Study Materials</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <h1 className="text-base font-bold">Study Materials</h1>
+          <p className="text-[10px] text-muted-foreground mt-0.5">
             {format(today, 'EEEE, MMMM d, yyyy')}
           </p>
         </div>
@@ -113,22 +113,22 @@ const Study = () => {
                     <TrendingUp className="text-blue-600" size={24} />
                   </div>
                   <div>
-                    <h2 className="font-bold text-lg">Your Progress</h2>
-                    <p className="text-sm text-muted-foreground">Keep up the great work!</p>
+                    <h2 className="font-bold text-sm">Your Progress</h2>
+                    <p className="text-xs text-muted-foreground">Keep up the great work!</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
-                    <p className="text-2xl font-bold text-blue-600">{totalQuestions}</p>
-                    <p className="text-xs text-muted-foreground">Questions Studied</p>
+                    <p className="text-lg font-bold text-blue-600">{totalQuestions}</p>
+                    <p className="text-[10px] text-muted-foreground">Questions Studied</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-green-600">{avgScore}%</p>
-                    <p className="text-xs text-muted-foreground">Average Score</p>
+                    <p className="text-lg font-bold text-green-600">{avgScore}%</p>
+                    <p className="text-[10px] text-muted-foreground">Average Score</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-purple-600">{calculateStreak()}</p>
-                    <p className="text-xs text-muted-foreground">Day Streak</p>
+                    <p className="text-lg font-bold text-purple-600">{calculateStreak()}</p>
+                    <p className="text-[10px] text-muted-foreground">Day Streak</p>
                   </div>
                 </div>
               </Card>
@@ -136,7 +136,7 @@ const Study = () => {
 
             {/* Study by Category */}
             <section>
-              <h2 className="font-bold text-xl mb-4">Study by Category</h2>
+              <h2 className="font-bold text-base mb-4">Study by Category</h2>
               <div className="space-y-3">
                 {testCategories.map((category, idx) => (
                   <Link
