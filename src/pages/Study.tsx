@@ -5,13 +5,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { testCategories } from "@/data/questions";
 import { BookOpen, Target, TrendingUp, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
+import { format } from "date-fns";
 
 const Study = () => {
+  const today = new Date();
+  
   return (
     <div className="min-h-screen bg-[#F5F7FA] pb-20">
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="px-6 py-4">
           <h1 className="text-xl font-bold">Study Materials</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {format(today, 'EEEE, MMMM d, yyyy')}
+          </p>
         </div>
       </header>
 
