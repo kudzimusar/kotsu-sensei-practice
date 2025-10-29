@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, XCircle, ChevronRight, X } from "lucide-react";
+import { CheckCircle2, XCircle, ChevronRight, X, Clock } from "lucide-react";
 import type { Question } from "@/data/questions";
 
 interface QuizQuestionProps {
@@ -12,6 +12,8 @@ interface QuizQuestionProps {
   onAnswer: (correct: boolean) => void;
   onNext: () => void;
   onQuit: () => void;
+  timeLimit: number | null; // in seconds
+  onTimeUp: () => void;
 }
 
 const QuizQuestion = ({
@@ -21,9 +23,42 @@ const QuizQuestion = ({
   onAnswer,
   onNext,
   onQuit,
+  timeLimit,
+  onTimeUp,
 }: QuizQuestionProps) => {
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(timeLimit);
+
+  useEffect(() => {
+    setTimeRemaining(timeLimit);
+  }, [timeLimit]);
+
+  useEffect(() => {
+    if (timeRemaining === null || timeRemaining <= 0) {
+      if (timeRemaining === 0) {
+        onTimeUp();
+      }
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev === null || prev <= 1) {
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeRemaining, onTimeUp]);
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleAnswer = (answer: boolean) => {
     setSelectedAnswer(answer);
@@ -41,6 +76,8 @@ const QuizQuestion = ({
   const progress = (questionNumber / totalQuestions) * 100;
   const isCorrect = selectedAnswer === question.answer;
 
+  const isTimeCritical = timeRemaining !== null && timeRemaining < 300; // Less than 5 minutes
+
   return (
     <div className="min-h-screen bg-background p-3 md:p-4 pb-24">
       <Card className="w-full max-w-3xl mx-auto p-4 md:p-6 shadow-card bg-card">
@@ -53,11 +90,18 @@ const QuizQuestion = ({
               <X className="w-4 h-4" />
               Quit
             </button>
+            {timeRemaining !== null && (
+              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${
+                isTimeCritical ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'
+              }`}>
+                <Clock className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                <span className="text-xs md:text-sm font-bold">
+                  {formatTime(timeRemaining)}
+                </span>
+              </div>
+            )}
             <span className="text-xs md:text-sm font-medium text-muted-foreground">
-              Question {questionNumber} of {totalQuestions}
-            </span>
-            <span className="text-xs md:text-sm font-medium text-primary">
-              {Math.round(progress)}%
+              {questionNumber}/{totalQuestions}
             </span>
           </div>
           <Progress value={progress} className="h-1.5 md:h-2" />

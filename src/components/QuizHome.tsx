@@ -8,7 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format, differenceInDays } from "date-fns";
 
-type QuizMode = 'quick' | 'focused' | 'full';
+type QuizMode = 'quick' | 'focused' | 'permit' | 'license';
 
 interface QuizHomeProps {
   onStartQuiz: (mode: QuizMode, category?: string) => void;
@@ -102,28 +102,36 @@ const QuizHome = ({ onStartQuiz }: QuizHomeProps) => {
               </div>
             </button>
 
-            <button
-              onClick={() => handleModeSelect('full')}
+            <div
               style={{ background: 'var(--gradient-green)' }}
-              className="w-full rounded-2xl shadow-lg p-5 text-white transform transition hover:scale-[1.02]"
+              className="w-full rounded-2xl shadow-lg p-5 text-white"
             >
               <div className="flex justify-between items-center mb-4">
                 <div className="text-left">
                   <h3 className="font-bold text-lg">Full Exam Simulation</h3>
+                  <p className="text-white/90 text-xs">Timed practice tests</p>
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                   <FileText className="text-white" size={24} />
                 </div>
               </div>
               <div className="flex gap-2">
-                <div className="bg-white/20 backdrop-blur-sm rounded-lg py-2 px-3 text-sm text-white font-medium flex-1 text-center">
-                  50 Qs (30 min)
-                </div>
-                <div className="bg-white/20 backdrop-blur-sm rounded-lg py-2 px-3 text-sm text-white font-medium flex-1 text-center">
-                  100 Qs (1 hr)
-                </div>
+                <button
+                  onClick={() => handleModeSelect('permit')}
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg py-2.5 px-3 text-xs text-white font-medium flex-1 text-center transition"
+                >
+                  <div className="font-bold mb-0.5">Learner's Permit</div>
+                  <div className="text-white/80">50 Qs (30 min)</div>
+                </button>
+                <button
+                  onClick={() => handleModeSelect('license')}
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg py-2.5 px-3 text-xs text-white font-medium flex-1 text-center transition"
+                >
+                  <div className="font-bold mb-0.5">Driver's License</div>
+                  <div className="text-white/80">100 Qs (1 hr)</div>
+                </button>
               </div>
-            </button>
+            </div>
           </div>
         </div>
       </div>
@@ -191,16 +199,18 @@ const QuizHome = ({ onStartQuiz }: QuizHomeProps) => {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => handleQuickStart('full')}
-                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg py-2.5 px-3 text-sm text-white font-medium flex-1 text-center transition"
+                  onClick={() => handleQuickStart('permit')}
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg py-2.5 px-3 text-xs text-white font-medium flex-1 text-center transition"
                 >
-                  50 Qs (30 min)
+                  <div className="font-bold mb-0.5">Learner's Permit</div>
+                  <div className="text-white/80">50 Qs (30 min)</div>
                 </button>
                 <button
-                  onClick={() => handleQuickStart('full')}
-                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg py-2.5 px-3 text-sm text-white font-medium flex-1 text-center transition"
+                  onClick={() => handleQuickStart('license')}
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg py-2.5 px-3 text-xs text-white font-medium flex-1 text-center transition"
                 >
-                  100 Qs (1 hr)
+                  <div className="font-bold mb-0.5">Driver's License</div>
+                  <div className="text-white/80">100 Qs (1 hr)</div>
                 </button>
               </div>
             </div>
