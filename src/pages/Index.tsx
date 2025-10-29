@@ -1,13 +1,87 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import QuizHome from "@/components/QuizHome";
+import QuizQuestion from "@/components/QuizQuestion";
+import QuizResults from "@/components/QuizResults";
+import { questions } from "@/data/questions";
+import type { Question } from "@/data/questions";
+
+type QuizMode = 'quick' | 'focused' | 'full';
+type Screen = 'home' | 'quiz' | 'results';
 
 const Index = () => {
+  const [screen, setScreen] = useState<Screen>('home');
+  const [quizMode, setQuizMode] = useState<QuizMode>('quick');
+  const [selectedQuestions, setSelectedQuestions] = useState<Question[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [score, setScore] = useState(0);
+
+  const getQuestionCount = (mode: QuizMode): number => {
+    switch (mode) {
+      case 'quick': return 10;
+      case 'focused': return 20;
+      case 'full': return 50;
+    }
+  };
+
+  const handleStartQuiz = (mode: QuizMode) => {
+    setQuizMode(mode);
+    const count = getQuestionCount(mode);
+    // Shuffle and select questions
+    const shuffled = [...questions].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, Math.min(count, questions.length));
+    setSelectedQuestions(selected);
+    setCurrentQuestionIndex(0);
+    setScore(0);
+    setScreen('quiz');
+  };
+
+  const handleAnswer = (correct: boolean) => {
+    if (correct) {
+      setScore(score + 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentQuestionIndex + 1 < selectedQuestions.length) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      setScreen('results');
+    }
+  };
+
+  const handleRestart = () => {
+    handleStartQuiz(quizMode);
+  };
+
+  const handleHome = () => {
+    setScreen('home');
+    setCurrentQuestionIndex(0);
+    setScore(0);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <>
+      {screen === 'home' && <QuizHome onStartQuiz={handleStartQuiz} />}
+      
+      {screen === 'quiz' && selectedQuestions.length > 0 && (
+        <QuizQuestion
+          question={selectedQuestions[currentQuestionIndex]}
+          questionNumber={currentQuestionIndex + 1}
+          totalQuestions={selectedQuestions.length}
+          onAnswer={handleAnswer}
+          onNext={handleNext}
+        />
+      )}
+      
+      {screen === 'results' && (
+        <QuizResults
+          score={score}
+          totalQuestions={selectedQuestions.length}
+          onRestart={handleRestart}
+          onHome={handleHome}
+        />
+      )}
+    </>
   );
 };
 
