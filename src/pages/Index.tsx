@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import QuizHome from "@/components/QuizHome";
 import QuizQuestion from "@/components/QuizQuestion";
 import QuizResults from "@/components/QuizResults";
@@ -15,6 +16,7 @@ type Screen = 'home' | 'quiz' | 'results';
 
 const Index = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [screen, setScreen] = useState<Screen>('home');
   const [quizMode, setQuizMode] = useState<QuizMode>('quick');
   const [selectedQuestions, setSelectedQuestions] = useState<Question[]>([]);
@@ -22,6 +24,16 @@ const Index = () => {
   const [score, setScore] = useState(0);
   const [timeLimit, setTimeLimit] = useState<number | null>(null);
   const [startTime, setStartTime] = useState<number>(Date.now());
+
+  // Check for category query parameter and auto-start quiz
+  useEffect(() => {
+    const category = searchParams.get('category');
+    if (category && user && screen === 'home') {
+      handleStartQuiz('focused', category);
+      // Clear the query parameter after starting
+      setSearchParams({});
+    }
+  }, [searchParams, user]);
 
   const handleContinueLearning = async () => {
     if (!user) return;
