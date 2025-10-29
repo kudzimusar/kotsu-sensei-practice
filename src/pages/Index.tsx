@@ -23,12 +23,18 @@ const Index = () => {
     }
   };
 
-  const handleStartQuiz = (mode: QuizMode) => {
+  const handleStartQuiz = (mode: QuizMode, category?: string) => {
     setQuizMode(mode);
     const count = getQuestionCount(mode);
+    
+    // Filter by category if selected
+    const filteredQuestions = category 
+      ? questions.filter(q => q.test === category)
+      : questions;
+    
     // Shuffle and select questions
-    const shuffled = [...questions].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, Math.min(count, questions.length));
+    const shuffled = [...filteredQuestions].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, Math.min(count, filteredQuestions.length));
     setSelectedQuestions(selected);
     setCurrentQuestionIndex(0);
     setScore(0);

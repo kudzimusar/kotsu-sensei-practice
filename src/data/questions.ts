@@ -7,6 +7,14 @@ export interface Question {
   figure?: string;
 }
 
+export const testCategories = [
+  "Learner's Permit Preliminary Written Test 2",
+  "Learner's Permit Preliminary Written Test 3",
+  "Driver's License Preliminary Final Written Test 1",
+  "Driver's License Preliminary Final Written Test 2",
+  "Driver's License Preliminary Final Written Test 3"
+] as const;
+
 export const questions: Question[] = [
   // Learner's Permit Preliminary Written Test 2
   {
@@ -358,6 +366,293 @@ export const questions: Question[] = [
     question: "When I pass near a senior citizen who is using a cane, I stopped and let person go safely.",
     answer: true,
     explanation: "True. Must slow down or stop to ensure safety of elderly pedestrians with mobility aids."
+  },
+  {
+    id: 51,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You cannot drive a special light equipment with regular vehicle license but can drive a regular motorcycle with less than 125cc or general motorized bicycle.",
+    answer: false,
+    explanation: "False. A regular vehicle license allows driving a regular motorcycle (≤125cc) and general motorized bicycle, but special light equipment requires its own class."
+  },
+  {
+    id: 52,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "In principle, vehicles except for designated vehicles, special light equipment and light vehicles cannot drive on the exclusive lane for buses.",
+    answer: true,
+    explanation: "True. Bus-priority lanes are reserved for buses and other designated vehicles only."
+  },
+  {
+    id: 53,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "Even if the width of the lane on the left is 6m or more, drivers can cross over the centerline to overtake another vehicle ahead if you don't obstruct other drivers.",
+    answer: false,
+    explanation: "False. Crossing the centerline for overtaking is prohibited unless the road is clearly marked for it."
+  },
+  {
+    id: 54,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When overtaking, you should signal and then check safety of the traffic around.",
+    answer: true,
+    explanation: "True. Signal → mirror → blind-spot check → overtake."
+  },
+  {
+    id: 55,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When stopping or parking on a wide side strip, at least 0.75 meters must be left open on the left hand side of the road.",
+    answer: true,
+    explanation: "True. Minimum clearance for pedestrians and emergency access."
+  },
+  {
+    id: 56,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "I drove a truck with the minimum number of people required to load/unload on the load-carrying platform.",
+    answer: false,
+    explanation: "False. Passengers are not allowed on the load platform while moving."
+  },
+  {
+    id: 57,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When a traffic accident occurs, stop and help the injured, and take measures to prevent farther accident.",
+    answer: true,
+    explanation: "True. Article 72 – render aid and secure the scene."
+  },
+  {
+    id: 58,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "Some degree of \"play\" is essential in the brake and clutch pedals.",
+    answer: true,
+    explanation: "True. A small amount of free play is normal and required for proper operation."
+  },
+  {
+    id: 59,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When parking or stopping on a road without a sidewalk or side strip, at least 0.75 meters must be left open on the left hand side of the car to allow pedestrians to proceed.",
+    answer: true,
+    explanation: "True. Same clearance rule applies."
+  },
+  {
+    id: 60,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "The maximum legal speed of regular motorcycles on a national expressway is 80km/h, and 100km/h for large motorcycles.",
+    answer: true,
+    explanation: "True. Expressway limits: 80 km/h (regular), 100 km/h (large)."
+  },
+  {
+    id: 61,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "As two-wheeled vehicles with modified handlebars are dangerous to drive, such remodeling must not be conducted.",
+    answer: true,
+    explanation: "True. Illegal modification affecting safety."
+  },
+  {
+    id: 62,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When driving regular or large motorcycle, you can overtake another vehicle on either the left or right.",
+    answer: false,
+    explanation: "False. Overtaking is only allowed on the right in Japan (except in specific cases)."
+  },
+  {
+    id: 63,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "Special light equipment and general motorized bicycle can be driven with a regular motorcycle license.",
+    answer: false,
+    explanation: "False. Special light equipment requires its own license."
+  },
+  {
+    id: 64,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "The load weight restriction of a moped is 30kg or less, and 60kg or less for a large and regular motorcycle.",
+    answer: true,
+    explanation: "True. Legal load limits by vehicle class."
+  },
+  {
+    id: 65,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "If a driver purchases an optional insurance, the driver does not need to purchase a third party liability automobile insurance.",
+    answer: false,
+    explanation: "False. Third-party liability insurance is mandatory."
+  },
+  {
+    id: 66,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When pushing a large or regular motorcycle with the engine off, you are considered to be a pedestrian and you can proceed on the sidewalk or side strip.",
+    answer: true,
+    explanation: "True. Engine off = pedestrian status."
+  },
+  {
+    id: 67,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When driving around senior citizen who has difficulty in walking such as walking with cane, a driver must stop or slow down to allow him/her to pass safely.",
+    answer: true,
+    explanation: "True. Article 38 – priority to vulnerable road users."
+  },
+  {
+    id: 68,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When making a right turn at an intersection, drivers must move over close to the centerline even on one way road, slow down and pass immediately outside the center of the intersection.",
+    answer: true,
+    explanation: "True. Standard right-turn procedure."
+  },
+  {
+    id: 69,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "Regardless of the other traffic or road conditions, it is better to driver at the designated maximum speed for smooth traffic flow.",
+    answer: false,
+    explanation: "False. Speed must be adjusted to conditions (weather, visibility, etc.)."
+  },
+  {
+    id: 70,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "Drivers must slow down to pass through any intersection where it is hard to see on the right or left.",
+    answer: true,
+    explanation: "True. Article 36 – caution at blind intersections."
+  },
+  {
+    id: 71,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "Stopping for less than 5 minutes for loading/unloading or picking up/dropping off passengers are allowed even on No parking area.",
+    answer: true,
+    explanation: "True. Temporary stop (≤5 min) is permitted for passenger/loading."
+  },
+  {
+    id: 72,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "Yellow centerline indicates \"overtaking is prohibited\".",
+    answer: true,
+    explanation: "True. Solid yellow = no overtaking."
+  },
+  {
+    id: 73,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "The centerline is not always located in the center of the road.",
+    answer: true,
+    explanation: "True. It may be offset for safety or lane width."
+  },
+  {
+    id: 74,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "The level of engine oil should be inspected by using the oil level gauge. Below L is not enough but above F is appropriate.",
+    answer: false,
+    explanation: "False. Oil level must be between L and F."
+  },
+  {
+    id: 75,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When stopping a vehicle on the side strip on expressway at night because of break down, you must turn on the hazard light and put emergency reflector behind the vehicle.",
+    answer: true,
+    explanation: "True. Required safety equipment on expressways."
+  },
+  {
+    id: 76,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "In principle, vehicles must not drive on the streetcar tracks.",
+    answer: true,
+    explanation: "True. Only in marked exceptions."
+  },
+  {
+    id: 77,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "Though I had drunk a small amount of alcohol, I continued to drive carefully because I was not intoxicated.",
+    answer: false,
+    explanation: "False. Any alcohol = driving under influence prohibited."
+  },
+  {
+    id: 78,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When driving on an expressway, air pressure of tires should be set slightly higher to prevent the standing wave phenomenon.",
+    answer: true,
+    explanation: "True. Higher pressure reduces heat and wave formation at high speed."
+  },
+  {
+    id: 79,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "On a road with vehicle lanes, vehicles must not straddle two lanes except for unavoidable situations.",
+    answer: true,
+    explanation: "True. Stay within your lane."
+  },
+  {
+    id: 80,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When towing a broken down vehicle by rope, a red square cloth 0.3m×0.3m or larger must be attached to the rope.",
+    answer: true,
+    explanation: "True. Visibility marker required."
+  },
+  {
+    id: 81,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When driving a vehicle and your visibility is less than 50m (200m on expressway), even during the daytime such as in tunnel, headlights must be turned on.",
+    answer: true,
+    explanation: "True. Low visibility = headlights on."
+  },
+  {
+    id: 82,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "As the number of traffics (vehicles) is less at night, you should drive faster than usual.",
+    answer: false,
+    explanation: "False. Speed must match conditions, not traffic volume."
+  },
+  {
+    id: 83,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When driving on one-way road and an emergency vehicle approached, I pulled over to the right to give way to it because there was a possibility that I obstruct it if I pull over to the left.",
+    answer: false,
+    explanation: "False. On one-way roads, pull to the right only if safe; otherwise, stop and let it pass."
+  },
+  {
+    id: 84,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "Even if the traffic light ahead is green, you must not enter the intersection if there is a possibility that you may be stuck at intersection because of the traffic jam.",
+    answer: true,
+    explanation: "True. Article 36 – do not block the box."
+  },
+  {
+    id: 85,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When making a left turn at intersection, you have to move over to the left and check for bicycles or general motorized bicycles by looking directly at the blind spot behind on your left.",
+    answer: true,
+    explanation: "True. Mirror + shoulder check required."
+  },
+  {
+    id: 86,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "On national expressways, you must not tow a broken down vehicle by rope or crane.",
+    answer: true,
+    explanation: "True. Towing prohibited on expressways."
+  },
+  {
+    id: 87,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When your vehicle has stalled on a railway crossing, shift the gear into low and move it using the cell motor as the emergency means.",
+    answer: false,
+    explanation: "False. Evacuate and call authorities. Starter motor not for pushing."
+  },
+  {
+    id: 88,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When you change the gearshift from D to R or from R to D in Automatic car, the vehicle must be stopped completely and the brake must be pressed securely.",
+    answer: true,
+    explanation: "True. Prevents transmission damage."
+  },
+  {
+    id: 89,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "The regular vehicle with a seating capacity of 5 can accommodate up to 6 children below 12 years old.",
+    answer: false,
+    explanation: "False. Child seat rules apply; capacity is by seats, not age."
+  },
+  {
+    id: 90,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "Drivers don't need to slow down if there is no sign \"slow down\" near the top of hill.",
+    answer: false,
+    explanation: "False. Crest of hill = reduced visibility → slow down."
+  },
+  {
+    id: 91,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "U-turn is prohibited inside an intersection.",
+    answer: true,
+    explanation: "True. U-turns only in designated areas."
   },
 
   // Learner's Permit Preliminary Written Test 3

@@ -1,96 +1,114 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { BookOpen, Zap, GraduationCap } from "lucide-react";
+import { testCategories } from "@/data/questions";
+import { useState } from "react";
+
+type QuizMode = 'quick' | 'focused' | 'full';
 
 interface QuizHomeProps {
-  onStartQuiz: (mode: 'quick' | 'focused' | 'full') => void;
+  onStartQuiz: (mode: QuizMode, category?: string) => void;
 }
 
 const QuizHome = ({ onStartQuiz }: QuizHomeProps) => {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showModes, setShowModes] = useState(false);
+
+  const handleCategorySelect = (category: string) => {
+    setSelectedCategory(category);
+    setShowModes(true);
+  };
+
+  const handleModeSelect = (mode: QuizMode) => {
+    onStartQuiz(mode, selectedCategory || undefined);
+  };
+
+  const handleBack = () => {
+    setShowModes(false);
+    setSelectedCategory(null);
+  };
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        <div className="text-center mb-8 md:mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-3 tracking-tight">
+    <div className="min-h-screen bg-background flex items-center justify-center p-3 md:p-4">
+      <div className="w-full max-w-2xl space-y-3 md:space-y-4">
+        <div className="text-center mb-4 md:mb-6">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2 tracking-tight">
             🚗 Kōtsū Sensei
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground">
+          <p className="text-base md:text-lg text-muted-foreground">
             Master Japan's Driving Test
           </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Practice with real test questions and road signs
+          <p className="text-xs md:text-sm text-muted-foreground mt-1">
+            Practice with real test questions
           </p>
         </div>
 
-        <div className="grid gap-4 md:gap-6">
-          <Card className="p-6 shadow-card hover:shadow-button transition-all duration-300 hover:-translate-y-1 border-2 border-border bg-card">
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-lg bg-gradient-primary shrink-0">
-                <Zap className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold mb-2 text-card-foreground">Quick Quiz</h3>
-                <p className="text-muted-foreground mb-4">
-                  10 random questions to test your knowledge in just 5 minutes
-                </p>
-                <Button 
-                  onClick={() => onStartQuiz('quick')}
-                  className="w-full bg-gradient-primary hover:opacity-90 transition-opacity shadow-button"
-                  size="lg"
-                >
-                  Start Quick Quiz
-                </Button>
-              </div>
-            </div>
-          </Card>
+        {!showModes ? (
+          <div className="space-y-2 md:space-y-3">
+            <h2 className="text-lg md:text-xl font-semibold text-foreground mb-2 md:mb-3 text-center">
+              Choose Test Category
+            </h2>
 
-          <Card className="p-6 shadow-card hover:shadow-button transition-all duration-300 hover:-translate-y-1 border-2 border-border bg-card">
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-lg bg-accent shrink-0">
-                <BookOpen className="w-6 h-6 text-accent-foreground" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold mb-2 text-card-foreground">Focused Practice</h3>
-                <p className="text-muted-foreground mb-4">
-                  20 questions to build confidence and identify weak areas
-                </p>
-                <Button 
-                  onClick={() => onStartQuiz('focused')}
-                  variant="secondary"
-                  className="w-full shadow-button"
-                  size="lg"
-                >
-                  Start Practice
-                </Button>
-              </div>
-            </div>
-          </Card>
+            {testCategories.map((category) => (
+              <Card
+                key={category}
+                onClick={() => handleCategorySelect(category)}
+                className="p-3 md:p-4 cursor-pointer hover:bg-primary/5 transition-all transform hover:scale-[1.01] border-2 hover:border-primary"
+              >
+                <h3 className="font-medium text-xs md:text-sm text-left">
+                  {category}
+                </h3>
+              </Card>
+            ))}
 
-          <Card className="p-6 shadow-card hover:shadow-button transition-all duration-300 hover:-translate-y-1 border-2 border-primary bg-card">
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-lg bg-gradient-success shrink-0">
-                <GraduationCap className="w-6 h-6 text-success-foreground" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold mb-2 text-card-foreground">Full Exam Mode</h3>
-                <p className="text-muted-foreground mb-4">
-                  50 questions simulating the real test experience (90% to pass)
-                </p>
-                <Button 
-                  onClick={() => onStartQuiz('full')}
-                  className="w-full bg-success hover:bg-success/90 text-success-foreground shadow-button"
-                  size="lg"
-                >
-                  Take Full Exam
-                </Button>
-              </div>
+            <div className="mt-3 md:mt-4 pt-2 md:pt-3 border-t border-border text-center">
+              <p className="text-xs text-muted-foreground">
+                ✨ Real exam questions • Instant feedback • Pass with 90%+
+              </p>
             </div>
-          </Card>
-        </div>
+          </div>
+        ) : (
+          <div className="space-y-3 md:space-y-4">
+            <Button
+              onClick={handleBack}
+              variant="ghost"
+              className="mb-1 md:mb-2 text-xs md:text-sm"
+            >
+              ← Back to Categories
+            </Button>
 
-        <div className="mt-8 text-center text-sm text-muted-foreground">
-          <p>💡 Tip: Start with Quick Quiz to get familiar, then try the Full Exam</p>
-        </div>
+            <h2 className="text-base md:text-lg font-semibold text-foreground mb-1 md:mb-2">
+              {selectedCategory}
+            </h2>
+            <p className="text-xs text-muted-foreground mb-2 md:mb-3">
+              Choose Practice Mode
+            </p>
+
+            <div className="space-y-2 md:space-y-3">
+              <Button
+                onClick={() => handleModeSelect('quick')}
+                className="w-full text-sm md:text-base py-4 md:py-5 bg-primary hover:bg-primary/90 transition-all transform hover:scale-[1.01]"
+              >
+                Quick Quiz (10 Questions)
+              </Button>
+
+              <Button
+                onClick={() => handleModeSelect('focused')}
+                className="w-full text-sm md:text-base py-4 md:py-5 bg-accent hover:bg-accent/90 transition-all transform hover:scale-[1.01]"
+                variant="secondary"
+              >
+                Focused Drill (20 Questions)
+              </Button>
+
+              <Button
+                onClick={() => handleModeSelect('full')}
+                className="w-full text-sm md:text-base py-4 md:py-5 bg-secondary hover:bg-secondary/90 transition-all transform hover:scale-[1.01]"
+                variant="secondary"
+              >
+                Full Exam (50 Questions)
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
