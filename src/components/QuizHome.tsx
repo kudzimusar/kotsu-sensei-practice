@@ -1,4 +1,4 @@
-import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight } from "lucide-react";
+import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User } from "lucide-react";
 import { testCategories } from "@/data/questions";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -6,8 +6,13 @@ import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format, differenceInDays } from "date-fns";
+import { format, differenceInDays, parseISO, isPast, isToday } from "date-fns";
 import { loadProgress, getWeakCategories } from "@/lib/progressTracking";
+import { useAuth } from "@/hooks/useAuth";
+import { getEvents } from "@/lib/supabase/events";
+import { useQuery } from "@tanstack/react-query";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 type QuizMode = 'quick' | 'focused' | 'permit' | 'license';
 
@@ -17,6 +22,7 @@ interface QuizHomeProps {
 }
 
 const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showModes, setShowModes] = useState(false);
@@ -24,6 +30,17 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
     const saved = localStorage.getItem('examDate');
     return saved ? new Date(saved) : undefined;
   });
+
+  const { data: events = [] } = useQuery({
+    queryKey: ["events", user?.id],
+    queryFn: () => getEvents(user!.id),
+    enabled: !!user,
+  });
+
+  // Get next upcoming event
+  const upcomingEvent = events
+    .filter(e => !isPast(parseISO(e.date)) || isToday(parseISO(e.date)))
+    .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())[0];
 
   useEffect(() => {
     const category = searchParams.get('category');
@@ -239,6 +256,55 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
             </div>
           </div>
         </section>
+
+        {/* Upcoming Event */}
+        {upcomingEvent && (
+          <section className="mb-8">
+            <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200 p-5">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <CalendarIcon className="text-indigo-600" size={24} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge className="bg-indigo-600 text-white text-xs">
+                      {format(parseISO(upcomingEvent.date), 'MMM d, yyyy')}
+                    </Badge>
+                    {isToday(parseISO(upcomingEvent.date)) && (
+                      <Badge className="bg-green-600 text-white text-xs">Today</Badge>
+                    )}
+                  </div>
+                  <h3 className="font-bold text-indigo-900 text-base mb-1">
+                    {upcomingEvent.title}
+                  </h3>
+                  <div className="space-y-1 text-sm text-indigo-700">
+                    {upcomingEvent.time && (
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        <span>{upcomingEvent.time}</span>
+                      </div>
+                    )}
+                    {upcomingEvent.location && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        <span>{upcomingEvent.location}</span>
+                      </div>
+                    )}
+                    {upcomingEvent.instructor && (
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        <span>{upcomingEvent.instructor}</span>
+                      </div>
+                    )}
+                    {upcomingEvent.description && (
+                      <p className="mt-2 text-xs opacity-80">{upcomingEvent.description}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </section>
+        )}
 
         {/* Exam Date Reminder */}
         <section className="mb-8">
