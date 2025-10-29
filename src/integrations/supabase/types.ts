@@ -146,6 +146,66 @@ export type Database = {
         }
         Relationships: []
       }
+      study_goals: {
+        Row: {
+          created_at: string
+          daily_questions_target: number
+          exam_prep_days: number
+          id: string
+          updated_at: string
+          user_id: string
+          weekly_study_hours_target: number
+        }
+        Insert: {
+          created_at?: string
+          daily_questions_target?: number
+          exam_prep_days?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+          weekly_study_hours_target?: number
+        }
+        Update: {
+          created_at?: string
+          daily_questions_target?: number
+          exam_prep_days?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+          weekly_study_hours_target?: number
+        }
+        Relationships: []
+      }
+      support_tickets: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       test_history: {
         Row: {
           created_at: string
@@ -196,6 +256,39 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          email_notifications: boolean
+          id: string
+          push_notifications: boolean
+          study_reminders: boolean
+          test_reminders: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_notifications?: boolean
+          id?: string
+          push_notifications?: boolean
+          study_reminders?: boolean
+          test_reminders?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_notifications?: boolean
+          id?: string
+          push_notifications?: boolean
+          study_reminders?: boolean
+          test_reminders?: boolean
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

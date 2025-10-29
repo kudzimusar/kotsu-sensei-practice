@@ -7,9 +7,19 @@ import { getProfile } from "@/lib/supabase/profiles";
 import { getAllPerformance } from "@/lib/supabase/performance";
 import { getTestHistory } from "@/lib/supabase/tests";
 import { useQuery } from "@tanstack/react-query";
+import { SettingsDialog } from "@/components/SettingsDialog";
+import { GoalsDialog } from "@/components/GoalsDialog";
+import { SupportDialog } from "@/components/SupportDialog";
+import StudyCalendar from "@/components/StudyCalendar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [goalsOpen, setGoalsOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -56,11 +66,11 @@ const Profile = () => {
   };
 
   const menuItems = [
-    { icon: Settings, label: "Settings", description: "App preferences" },
-    { icon: Bell, label: "Notifications", description: "Manage alerts" },
-    { icon: Target, label: "Study Goals", description: "Set daily targets" },
-    { icon: Calendar, label: "Schedule", description: "Plan your study time" },
-    { icon: HelpCircle, label: "Help & Support", description: "Get assistance" },
+    { icon: Settings, label: "Settings", description: "App preferences", onClick: () => setSettingsOpen(true) },
+    { icon: Bell, label: "Notifications", description: "Manage alerts", onClick: () => setNotificationsOpen(true) },
+    { icon: Target, label: "Study Goals", description: "Set daily targets", onClick: () => setGoalsOpen(true) },
+    { icon: Calendar, label: "Schedule", description: "Plan your study time", onClick: () => setScheduleOpen(true) },
+    { icon: HelpCircle, label: "Help & Support", description: "Get assistance", onClick: () => setSupportOpen(true) },
   ];
 
   return (
@@ -167,6 +177,7 @@ const Profile = () => {
             {menuItems.map((item) => (
               <button
                 key={item.label}
+                onClick={item.onClick}
                 className="w-full bg-white rounded-xl shadow-sm p-4 flex items-center gap-3 text-left transform transition hover:scale-[1.01]"
               >
                 <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center">
@@ -199,6 +210,20 @@ const Profile = () => {
       </main>
 
       <BottomNav />
+      
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <SettingsDialog open={notificationsOpen} onOpenChange={setNotificationsOpen} />
+      <GoalsDialog open={goalsOpen} onOpenChange={setGoalsOpen} />
+      <SupportDialog open={supportOpen} onOpenChange={setSupportOpen} />
+      
+      <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Study Schedule</DialogTitle>
+          </DialogHeader>
+          <StudyCalendar />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
