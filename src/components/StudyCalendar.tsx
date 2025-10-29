@@ -8,8 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2, Plus, Edit2, Car, BookOpen, FileCheck, MapPin } from "lucide-react";
-import { format, isSameDay } from "date-fns";
+import { format, isSameDay, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+import { getEvents, createEvent, updateEvent, deleteEvent } from "@/lib/supabase/events";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export type EventType = 'lesson' | 'test' | 'class' | 'practice';
 
@@ -59,13 +62,12 @@ const getEventTypeConfig = (type: EventType) => {
   return eventTypes.find(t => t.value === type) || eventTypes[0];
 };
 
-const STORAGE_KEY = 'driving_calendar_events';
-
 const StudyCalendar = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [events, setEvents] = useState<StudyEvent[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<StudyEvent | null>(null);
+  const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [newEvent, setNewEvent] = useState({
     title: '',
     type: 'lesson' as EventType,
@@ -75,84 +77,82 @@ const StudyCalendar = () => {
     instructor: ''
   });
 
-  // Load events from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const eventsWithDates = parsed.map((e: any) => ({
-          ...e,
-          date: new Date(e.date)
-        }));
-        setEvents(eventsWithDates);
-      } catch (error) {
-        console.error('Failed to load events:', error);
-      }
-    }
-  }, []);
+  const { data: events = [] } = useQuery({
+    queryKey: ["events", user?.id],
+    queryFn: () => getEvents(user!.id),
+    enabled: !!user,
+  });
 
-  // Save events to localStorage whenever they change
-  useEffect(() => {
-    if (events.length >= 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-    }
-  }, [events]);
+  const createMutation = useMutation({
+    mutationFn: createEvent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+    },
+  });
 
-  const handleSaveEvent = () => {
-    if (!selectedDate || !newEvent.title) return;
+  const updateMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: any }) => updateEvent(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteEvent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+    },
+  });
+
+  const handleSaveEvent = async () => {
+    if (!selectedDate || !newEvent.title || !user) return;
 
     if (editingEvent) {
-      // Update existing event
-      setEvents(events.map(e => 
-        e.id === editingEvent.id 
-          ? {
-              ...e,
-              title: newEvent.title,
-              type: newEvent.type,
-              time: newEvent.time || undefined,
-              description: newEvent.description || undefined,
-              location: newEvent.location || undefined,
-              instructor: newEvent.instructor || undefined
-            }
-          : e
-      ));
+      await updateMutation.mutateAsync({
+        id: editingEvent.id,
+        updates: {
+          title: newEvent.title,
+          type: newEvent.type,
+          time: newEvent.time || null,
+          description: newEvent.description || null,
+          location: newEvent.location || null,
+          instructor: newEvent.instructor || null,
+        },
+      });
       setEditingEvent(null);
     } else {
-      // Add new event
-      const event: StudyEvent = {
-        id: Date.now().toString(),
-        date: selectedDate,
+      await createMutation.mutateAsync({
+        user_id: user.id,
+        date: format(selectedDate, 'yyyy-MM-dd'),
         title: newEvent.title,
         type: newEvent.type,
-        time: newEvent.time || undefined,
-        description: newEvent.description || undefined,
-        location: newEvent.location || undefined,
-        instructor: newEvent.instructor || undefined
-      };
-      setEvents([...events, event]);
+        time: newEvent.time || null,
+        description: newEvent.description || null,
+        location: newEvent.location || null,
+        instructor: newEvent.instructor || null,
+      });
     }
 
     setNewEvent({ title: '', type: 'lesson', time: '', description: '', location: '', instructor: '' });
     setIsDialogOpen(false);
   };
 
-  const handleEditEvent = (event: StudyEvent) => {
+  const handleEditEvent = (event: any) => {
     setEditingEvent(event);
     setNewEvent({
       title: event.title,
-      type: event.type,
+      type: event.type as EventType,
       time: event.time || '',
       description: event.description || '',
       location: event.location || '',
       instructor: event.instructor || ''
     });
-    setSelectedDate(event.date);
+    setSelectedDate(parseISO(event.date));
     setIsDialogOpen(true);
   };
 
-  const handleDeleteEvent = (id: string) => {
-    setEvents(events.filter(e => e.id !== id));
+  const handleDeleteEvent = async (id: string) => {
+    await deleteMutation.mutateAsync(id);
   };
 
   const handleCloseDialog = () => {
@@ -162,7 +162,7 @@ const StudyCalendar = () => {
   };
 
   const eventsOnSelectedDate = events.filter(
-    e => selectedDate && isSameDay(e.date, selectedDate)
+    e => selectedDate && isSameDay(parseISO(e.date), selectedDate)
   ).sort((a, b) => {
     if (!a.time && !b.time) return 0;
     if (!a.time) return 1;
@@ -171,8 +171,8 @@ const StudyCalendar = () => {
   });
 
   const upcomingEvents = events
-    .filter(e => e.date >= new Date())
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .filter(e => parseISO(e.date) >= new Date())
+    .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())
     .slice(0, 3);
 
   return (
@@ -186,12 +186,12 @@ const StudyCalendar = () => {
           </h3>
           <div className="space-y-2">
             {upcomingEvents.map(event => {
-              const config = getEventTypeConfig(event.type);
+              const config = getEventTypeConfig(event.type as EventType);
               const Icon = config.icon;
               return (
                 <div key={event.id} className="flex items-center gap-3 text-sm">
                   <Badge className={`${config.badgeColor} text-white`}>
-                    {format(event.date, 'MMM d')}
+                    {format(parseISO(event.date), 'MMM d')}
                   </Badge>
                   <Icon className="w-4 h-4 text-muted-foreground" />
                   <span className="flex-1">{event.title}</span>
@@ -330,7 +330,7 @@ const StudyCalendar = () => {
               </p>
             ) : (
               eventsOnSelectedDate.map(event => {
-                const config = getEventTypeConfig(event.type);
+                const config = getEventTypeConfig(event.type as EventType);
                 const Icon = config.icon;
                 return (
                   <div

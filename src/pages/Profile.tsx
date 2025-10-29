@@ -2,21 +2,57 @@ import BottomNav from "@/components/BottomNav";
 import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { format, differenceInDays } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
+import { getProfile } from "@/lib/supabase/profiles";
+import { getAllPerformance } from "@/lib/supabase/performance";
+import { getTestHistory } from "@/lib/supabase/tests";
+import { useQuery } from "@tanstack/react-query";
 
 const Profile = () => {
-  const [examDate, setExamDate] = useState<Date | undefined>(() => {
-    const saved = localStorage.getItem('examDate');
-    return saved ? new Date(saved) : undefined;
+  const { user, signOut } = useAuth();
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: () => getProfile(user!.id),
+    enabled: !!user,
   });
 
+  const { data: performance = [] } = useQuery({
+    queryKey: ["performance", user?.id],
+    queryFn: () => getAllPerformance(user!.id),
+    enabled: !!user,
+  });
+
+  const { data: testHistory = [] } = useQuery({
+    queryKey: ["testHistory", user?.id],
+    queryFn: () => getTestHistory(user!.id),
+    enabled: !!user,
+  });
+
+  const examDate = profile?.exam_date ? new Date(profile.exam_date) : undefined;
   const daysRemaining = examDate ? differenceInDays(examDate, new Date()) : null;
 
+  const totalQuestions = performance.reduce((sum, p) => sum + p.total, 0);
+  const questionsCompleted = totalQuestions;
+  const testsPassed = testHistory.filter(t => t.passed).length;
+  
+  // Calculate current streak
+  const calculateStreak = () => {
+    if (testHistory.length === 0) return 0;
+    let streak = 0;
+    for (const test of testHistory) {
+      if (test.passed) streak++;
+      else break;
+    }
+    return streak;
+  };
+
   const userStats = {
-    name: "Akira",
-    totalQuestions: 387,
-    questionsCompleted: 245,
-    testsPassed: 18,
-    currentStreak: 7,
+    name: profile?.full_name || user?.email?.split('@')[0] || "User",
+    totalQuestions: 387, // Total available questions
+    questionsCompleted,
+    testsPassed,
+    currentStreak: calculateStreak(),
   };
 
   const menuItems = [
@@ -146,7 +182,10 @@ const Profile = () => {
               </button>
             ))}
 
-            <button className="w-full bg-white rounded-xl shadow-sm p-4 flex items-center gap-3 text-left border border-red-200 transform transition hover:scale-[1.01]">
+            <button 
+              onClick={signOut}
+              className="w-full bg-white rounded-xl shadow-sm p-4 flex items-center gap-3 text-left border border-red-200 transform transition hover:scale-[1.01]"
+            >
               <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center">
                 <LogOut className="w-5 h-5 text-red-600" />
               </div>

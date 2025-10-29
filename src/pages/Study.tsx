@@ -6,9 +6,41 @@ import { testCategories } from "@/data/questions";
 import { BookOpen, Target, TrendingUp, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
+import { getAllPerformance } from "@/lib/supabase/performance";
+import { getTestHistory } from "@/lib/supabase/tests";
+import { useQuery } from "@tanstack/react-query";
 
 const Study = () => {
   const today = new Date();
+  const { user } = useAuth();
+
+  const { data: performance = [] } = useQuery({
+    queryKey: ["performance", user?.id],
+    queryFn: () => getAllPerformance(user!.id),
+    enabled: !!user,
+  });
+
+  const { data: testHistory = [] } = useQuery({
+    queryKey: ["testHistory", user?.id],
+    queryFn: () => getTestHistory(user!.id),
+    enabled: !!user,
+  });
+
+  const totalQuestions = performance.reduce((sum, p) => sum + p.total, 0);
+  const avgScore = performance.length > 0
+    ? Math.round(performance.reduce((sum, p) => sum + (p.percentage || 0), 0) / performance.length)
+    : 0;
+  
+  const calculateStreak = () => {
+    if (testHistory.length === 0) return 0;
+    let streak = 0;
+    for (const test of testHistory) {
+      if (test.passed) streak++;
+      else break;
+    }
+    return streak;
+  };
   
   return (
     <div className="min-h-screen bg-[#F5F7FA] pb-20">
@@ -49,15 +81,15 @@ const Study = () => {
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
-                    <p className="text-2xl font-bold text-blue-600">127</p>
+                    <p className="text-2xl font-bold text-blue-600">{totalQuestions}</p>
                     <p className="text-xs text-muted-foreground">Questions Studied</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-green-600">78%</p>
+                    <p className="text-2xl font-bold text-green-600">{avgScore}%</p>
                     <p className="text-xs text-muted-foreground">Average Score</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-purple-600">7</p>
+                    <p className="text-2xl font-bold text-purple-600">{calculateStreak()}</p>
                     <p className="text-xs text-muted-foreground">Day Streak</p>
                   </div>
                 </div>

@@ -1,0 +1,68 @@
+import { supabase } from "@/integrations/supabase/client";
+
+export interface TestHistory {
+  id?: string;
+  user_id: string;
+  test_type: string;
+  date: string;
+  passed: boolean;
+  score: number;
+  time_taken: number;
+  total_questions: number;
+}
+
+export const saveTestHistory = async (test: Omit<TestHistory, 'id'>) => {
+  const { data, error } = await supabase
+    .from("test_history")
+    .insert(test)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getTestHistory = async (userId: string) => {
+  const { data, error } = await supabase
+    .from("test_history")
+    .select("*")
+    .eq("user_id", userId)
+    .order("date", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+};
+
+export const getTestStats = async (userId: string) => {
+  const history = await getTestHistory(userId);
+  
+  if (history.length === 0) {
+    return {
+      totalTests: 0,
+      passRate: 0,
+      avgScore: 0,
+      bestStreak: 0,
+    };
+  }
+
+  const totalTests = history.length;
+  const passed = history.filter(t => t.passed).length;
+  const passRate = Math.round((passed / totalTests) * 100);
+  const avgScore = Math.round(
+    history.reduce((sum, t) => sum + (t.score / t.total_questions) * 100, 0) / totalTests
+  );
+
+  // Calculate best streak
+  let currentStreak = 0;
+  let bestStreak = 0;
+  for (const test of history.reverse()) {
+    if (test.passed) {
+      currentStreak++;
+      bestStreak = Math.max(bestStreak, currentStreak);
+    } else {
+      currentStreak = 0;
+    }
+  }
+
+  return { totalTests, passRate, avgScore, bestStreak };
+};
