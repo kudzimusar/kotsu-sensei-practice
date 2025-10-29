@@ -29,11 +29,13 @@ const Profile = () => {
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!user) return;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+      
+      console.log('Admin check:', { data, error, userId: user.id });
       setIsAdmin(data?.role === 'admin' || data?.role === 'moderator');
     };
     checkAdminStatus();
