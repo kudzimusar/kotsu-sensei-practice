@@ -85,7 +85,7 @@ const Tests = () => {
                 <Trophy className="w-5 h-5 text-purple-500" />
                 <p className="text-xs text-muted-foreground">Best Streak</p>
               </div>
-              <p className="text-2xl font-bold">{stats?.bestStreak || 0} days</p>
+              <p className="text-2xl font-bold">{stats?.bestStreak || 0}</p>
             </div>
           </div>
         </section>

@@ -137,21 +137,26 @@ const Index = () => {
     if (currentQuestionIndex + 1 < selectedQuestions.length) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
-      // Save test history before showing results
-      if (user) {
-        const timeTaken = Math.floor((Date.now() - startTime) / 1000);
-        await saveTestHistory({
-          user_id: user.id,
-          test_type: quizMode,
-          date: new Date().toISOString(),
-          passed: score >= Math.ceil(selectedQuestions.length * 0.7), // 70% pass rate
-          score,
-          time_taken: timeTaken,
-          total_questions: selectedQuestions.length,
-        });
-      }
-      setScreen('results');
+      await handleQuizComplete();
     }
+  };
+
+  const handleQuizComplete = async () => {
+    // Save test history before showing results
+    if (user) {
+      const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+      const percentage = (score / selectedQuestions.length) * 100;
+      await saveTestHistory({
+        user_id: user.id,
+        test_type: quizMode,
+        date: new Date().toISOString(),
+        passed: percentage >= 90, // 90% pass rate
+        score,
+        time_taken: timeTaken,
+        total_questions: selectedQuestions.length,
+      });
+    }
+    setScreen('results');
   };
 
   const handleRestart = () => {
@@ -185,7 +190,7 @@ const Index = () => {
           onNext={handleNext}
           onQuit={handleHome}
           timeLimit={timeLimit}
-          onTimeUp={() => setScreen('results')}
+          onTimeUp={handleQuizComplete}
         />
       )}
       
