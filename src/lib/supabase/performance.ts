@@ -7,6 +7,8 @@ export interface CategoryPerformance {
   correct: number;
   total: number;
   percentage?: number;
+  updated_at?: string;
+  created_at?: string;
 }
 
 export const trackAnswer = async (userId: string, category: string, correct: boolean) => {

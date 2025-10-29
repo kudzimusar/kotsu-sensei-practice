@@ -33,12 +33,50 @@ const Study = () => {
     : 0;
   
   const calculateStreak = () => {
-    if (testHistory.length === 0) return 0;
+    if (testHistory.length === 0 && performance.length === 0) return 0;
+    
+    // Get all unique activity dates from test history and performance
+    const activityDates = new Set<string>();
+    
+    // Add test dates
+    testHistory.forEach(test => {
+      const date = format(new Date(test.date), 'yyyy-MM-dd');
+      activityDates.add(date);
+    });
+    
+    // Add performance update dates (category_performance has updated_at)
+    performance.forEach(perf => {
+      if (perf.updated_at) {
+        const date = format(new Date(perf.updated_at), 'yyyy-MM-dd');
+        activityDates.add(date);
+      }
+    });
+    
+    if (activityDates.size === 0) return 0;
+    
+    // Sort dates in descending order
+    const sortedDates = Array.from(activityDates).sort((a, b) => 
+      new Date(b).getTime() - new Date(a).getTime()
+    );
+    
+    // Calculate consecutive days from today
     let streak = 0;
-    for (const test of testHistory) {
-      if (test.passed) streak++;
-      else break;
+    const todayStr = format(today, 'yyyy-MM-dd');
+    let checkDate = new Date(todayStr);
+    
+    for (const dateStr of sortedDates) {
+      const activityDate = new Date(dateStr);
+      const checkDateStr = format(checkDate, 'yyyy-MM-dd');
+      
+      if (dateStr === checkDateStr) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else if (activityDate < checkDate) {
+        // Gap found, break the streak
+        break;
+      }
     }
+    
     return streak;
   };
   
