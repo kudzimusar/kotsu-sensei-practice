@@ -103,7 +103,7 @@ const Study = () => {
                 {testCategories.map((category, idx) => (
                   <Link
                     key={category}
-                    to={`/?category=${encodeURIComponent(category)}`}
+                    to={`/study?category=${encodeURIComponent(category)}`}
                     className="block"
                   >
                     <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer">
