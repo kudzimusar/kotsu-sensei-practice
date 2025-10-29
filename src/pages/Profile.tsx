@@ -1,5 +1,5 @@
 import BottomNav from "@/components/BottomNav";
-import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Sparkles } from "lucide-react";
+import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut } from "lucide-react";
 import { useState } from "react";
 import { format, differenceInDays } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,11 +12,9 @@ import { GoalsDialog } from "@/components/GoalsDialog";
 import { SupportDialog } from "@/components/SupportDialog";
 import StudyCalendar from "@/components/StudyCalendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
@@ -73,13 +71,6 @@ const Profile = () => {
     { icon: Target, label: "Study Goals", description: "Set daily targets", onClick: () => setGoalsOpen(true) },
     { icon: Calendar, label: "Schedule", description: "Plan your study time", onClick: () => setScheduleOpen(true) },
     { icon: HelpCircle, label: "Help & Support", description: "Get assistance", onClick: () => setSupportOpen(true) },
-    { 
-      icon: Sparkles, 
-      label: "AI Question Generator", 
-      description: "Generate new questions with AI", 
-      onClick: () => navigate('/admin/generate'),
-      highlight: true 
-    },
   ];
 
   return (

@@ -30,11 +30,11 @@ const App = () => (
           <Route path="/study" element={<ProtectedRoute><Study /></ProtectedRoute>} />
           <Route path="/tests" element={<ProtectedRoute><Tests /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/generate" element={<ProtectedRoute><QuestionGenerator /></ProtectedRoute>} />
           <Route path="/about" element={<About />} />
           <Route path="/support" element={<Support />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
-          <Route path="/admin/generate" element={<ProtectedRoute><QuestionGenerator /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

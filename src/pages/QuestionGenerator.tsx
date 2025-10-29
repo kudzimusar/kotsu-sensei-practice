@@ -7,18 +7,46 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import BottomNav from "@/components/BottomNav";
 
+interface AIQuestion {
+  id: string;
+  question: string;
+  answer: boolean;
+  explanation: string;
+  test_category: string;
+  difficulty_level: string;
+  language: string;
+  created_at: string;
+}
+
 export default function AdminQuestionGenerator() {
-  const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
   const [category, setCategory] = useState("traffic-rules");
   const [difficulty, setDifficulty] = useState("medium");
   const [count, setCount] = useState("5");
   const [language, setLanguage] = useState("en");
   const [concept, setConcept] = useState("");
+
+  // Fetch AI-generated questions
+  const { data: aiQuestions = [], refetch } = useQuery({
+    queryKey: ["ai-questions", category, language],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ai_generated_questions')
+        .select('*')
+        .eq('status', 'approved')
+        .eq('test_category', category)
+        .eq('language', language)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      if (error) throw error;
+      return data as AIQuestion[];
+    }
+  });
 
   const handleGenerate = async () => {
     if (!concept.trim()) {
@@ -42,6 +70,7 @@ export default function AdminQuestionGenerator() {
 
       toast.success(`Successfully generated ${data.count} questions!`);
       setConcept("");
+      refetch(); // Refresh the questions list
     } catch (error) {
       console.error('Error generating questions:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to generate questions');
@@ -52,21 +81,11 @@ export default function AdminQuestionGenerator() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header with back button */}
+      {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="px-6 py-4 flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="shrink-0"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-base font-bold">AI Question Generator</h1>
-            <p className="text-xs text-muted-foreground">Generate unlimited practice questions</p>
-          </div>
+        <div className="px-6 py-4">
+          <h1 className="text-base font-bold">AI Question Generator</h1>
+          <p className="text-xs text-muted-foreground">Generate unlimited practice questions</p>
         </div>
       </header>
 
@@ -176,8 +195,48 @@ export default function AdminQuestionGenerator() {
             <p>1. Enter a specific driving concept or rule you want to practice</p>
             <p>2. Select category, difficulty level, and language</p>
             <p>3. AI generates unique questions based on official Japanese driving rules</p>
-            <p>4. Generated questions are instantly available for your practice sessions</p>
+            <p>4. Generated questions appear below and are instantly available for practice</p>
             <p>5. Keep generating more questions to expand your study materials endlessly!</p>
+          </CardContent>
+        </Card>
+
+        {/* Generated Questions Display */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Generated Questions ({aiQuestions.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {aiQuestions.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No questions generated yet. Create your first batch above!
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {aiQuestions.map((q) => (
+                  <div key={q.id} className="border rounded-lg p-4 space-y-2">
+                    <div className="flex items-start gap-2">
+                      {q.answer ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                      )}
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{q.question}</p>
+                        <p className="text-xs text-muted-foreground mt-2">{q.explanation}</p>
+                        <div className="flex gap-2 mt-2">
+                          <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                            {q.difficulty_level}
+                          </span>
+                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
+                            {new Date(q.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

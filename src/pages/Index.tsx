@@ -10,6 +10,7 @@ import { saveQuizProgress, loadQuizProgress, clearQuizProgress } from "@/lib/sup
 import { trackAnswer } from "@/lib/supabase/performance";
 import { getWeakCategories } from "@/lib/supabase/performance";
 import { saveTestHistory } from "@/lib/supabase/tests";
+import { getAllQuestionsWithAI } from "@/lib/supabase/aiQuestions";
 
 type QuizMode = 'quick' | 'focused' | 'permit' | 'license';
 type Screen = 'home' | 'quiz' | 'results';
@@ -95,19 +96,21 @@ const Index = () => {
     setTimeLimit(time);
     setStartTime(Date.now());
     
-    let filteredQuestions = questions;
+    // Get all questions including AI-generated ones
+    const allQuestions = await getAllQuestionsWithAI(questions, 'en');
+    let filteredQuestions = allQuestions;
     
     // Filter by weak areas if requested
     if (weakAreas) {
       const weakCategories = await getWeakCategories(user.id);
       if (weakCategories.length > 0) {
         const weakCategoryNames = weakCategories.map(wc => wc.category);
-        filteredQuestions = questions.filter(q => weakCategoryNames.includes(q.test));
+        filteredQuestions = allQuestions.filter(q => weakCategoryNames.includes(q.test));
       }
     }
     // Filter by category if selected
     else if (category) {
-      filteredQuestions = questions.filter(q => q.test === category);
+      filteredQuestions = allQuestions.filter(q => q.test === category);
     }
     
     // Shuffle and select questions
