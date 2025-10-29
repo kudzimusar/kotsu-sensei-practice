@@ -256,7 +256,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
         <div className="flex justify-between items-center px-6 py-4">
           <div>
             <h1 className="text-base font-bold">
-              Welcome back, {profile?.gender === 'male' ? 'Mr.' : profile?.gender === 'female' ? 'Mrs.' : ''} {profile?.full_name || 'User'}!
+              Welcome back, {profile?.gender === 'male' ? 'Mr' : profile?.gender === 'female' ? 'Miss' : ''} {profile?.full_name?.split(' ').pop() || 'User'}!
             </h1>
           </div>
           <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
