@@ -159,10 +159,12 @@ const StudyCalendar = () => {
     await deleteMutation.mutateAsync(id);
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setEditingEvent(null);
-    setNewEvent({ title: '', type: 'lesson', time: '', description: '', location: '', instructor: '' });
+  const handleDialogChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      setEditingEvent(null);
+      setNewEvent({ title: '', type: 'lesson', time: '', description: '', location: '', instructor: '' });
+    }
   };
 
   const eventsOnSelectedDate = events.filter(
@@ -243,7 +245,7 @@ const StudyCalendar = () => {
                 {eventsOnSelectedDate.length} event(s) scheduled
               </p>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
+            <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
               <DialogTrigger asChild>
                 <Button size="sm">
                   <Plus className="w-4 h-4 mr-1" />
