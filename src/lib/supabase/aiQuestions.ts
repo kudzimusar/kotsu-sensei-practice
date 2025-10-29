@@ -20,7 +20,7 @@ export const getAIQuestions = async (language: string = 'en'): Promise<Question[
     question: q.question,
     answer: q.answer,
     explanation: q.explanation,
-    figure: undefined
+    figure: q.figure_url || undefined
   }));
 };
 

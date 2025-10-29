@@ -36,6 +36,8 @@ serve(async (req) => {
 
     const startTime = Date.now();
 
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+
     // Build the prompt
     const systemPrompt = `You are an expert Japanese driving test question writer. Generate realistic, accurate practice questions based on official Japanese traffic rules.
 
@@ -60,7 +62,7 @@ EXAMPLE QUESTIONS:
    A: TRUE
    E: "The vehicle on the side with the obstacle must yield to oncoming traffic."`;
 
-    // Call Gemini API
+    // Call Gemini API for text generation
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
       {
@@ -79,11 +81,14 @@ EXAMPLE QUESTIONS:
       "answer": true,
       "explanation": "Explanation here",
       "source_concept": "Specific rule or concept",
-      "difficulty_level": "medium"
+      "difficulty_level": "medium",
+      "needs_image": false,
+      "image_description": "Description of traffic sign or situation if needs_image is true"
     }
   ]
 }
 
+Set needs_image to true for questions about road signs, traffic signals, or visual scenarios. Provide a clear image_description.
 Make sure to return valid JSON only, no additional text.`
             }]
           }],
@@ -119,11 +124,52 @@ Make sure to return valid JSON only, no additional text.`
     const parsedResponse = JSON.parse(jsonMatch[0]);
     const questions = parsedResponse.questions || [];
 
+    // Generate images for questions that need them
+    const questionsWithImages = await Promise.all(
+      questions.map(async (q: any) => {
+        let figureUrl = null;
+
+        if (q.needs_image && q.image_description && LOVABLE_API_KEY) {
+          try {
+            const imagePrompt = `Generate a clear, simple illustration of: ${q.image_description}. Style: Clean vector graphic suitable for a driving test, high contrast, educational.`;
+            
+            const imageResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'google/gemini-2.5-flash-image-preview',
+                messages: [{
+                  role: 'user',
+                  content: imagePrompt
+                }],
+                modalities: ['image', 'text']
+              })
+            });
+
+            if (imageResponse.ok) {
+              const imageData = await imageResponse.json();
+              figureUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+            }
+          } catch (imgError) {
+            console.error('Error generating image:', imgError);
+          }
+        }
+
+        return {
+          ...q,
+          figure_url: figureUrl
+        };
+      })
+    );
+
     const endTime = Date.now();
     const duration = endTime - startTime;
 
     // Store questions in database
-    const questionsToInsert = questions.map((q: any) => ({
+    const questionsToInsert = questionsWithImages.map((q: any) => ({
       question: q.question,
       answer: q.answer,
       explanation: q.explanation,
@@ -131,6 +177,8 @@ Make sure to return valid JSON only, no additional text.`
       difficulty_level: q.difficulty_level || difficulty || 'medium',
       source_concept: q.source_concept || concept,
       language: language || 'en',
+      figure_url: q.figure_url,
+      figure_description: q.image_description,
       status: 'approved' // Auto-approve for immediate use
     }));
 

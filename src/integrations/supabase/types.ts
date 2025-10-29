@@ -21,6 +21,7 @@ export type Database = {
           difficulty_level: string | null
           explanation: string
           figure_description: string | null
+          figure_url: string | null
           generated_at: string | null
           id: string
           language: string | null
@@ -43,6 +44,7 @@ export type Database = {
           difficulty_level?: string | null
           explanation: string
           figure_description?: string | null
+          figure_url?: string | null
           generated_at?: string | null
           id?: string
           language?: string | null
@@ -65,6 +67,7 @@ export type Database = {
           difficulty_level?: string | null
           explanation?: string
           figure_description?: string | null
+          figure_url?: string | null
           generated_at?: string | null
           id?: string
           language?: string | null

@@ -19,6 +19,7 @@ interface AIQuestion {
   test_category: string;
   difficulty_level: string;
   language: string;
+  figure_url: string | null;
   created_at: string;
 }
 
@@ -222,6 +223,17 @@ export default function AdminQuestionGenerator() {
                       )}
                       <div className="flex-1">
                         <p className="font-medium text-sm">{q.question}</p>
+                        {q.figure_url && (
+                          <div className="my-3 flex justify-center">
+                            <div className="p-2 bg-muted rounded-lg border">
+                              <img
+                                src={q.figure_url}
+                                alt="Generated traffic sign or scenario"
+                                className="max-w-[120px] max-h-[120px] object-contain"
+                              />
+                            </div>
+                          </div>
+                        )}
                         <p className="text-xs text-muted-foreground mt-2">{q.explanation}</p>
                         <div className="flex gap-2 mt-2">
                           <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
