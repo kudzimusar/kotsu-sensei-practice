@@ -25,15 +25,22 @@ const Index = () => {
   const [timeLimit, setTimeLimit] = useState<number | null>(null);
   const [startTime, setStartTime] = useState<number>(Date.now());
 
-  // Check for category query parameter and auto-start quiz
+  // Check for category or test query parameter and auto-start quiz
   useEffect(() => {
     const category = searchParams.get('category');
+    const test = searchParams.get('test');
+    
     if (category && user && screen === 'home') {
       handleStartQuiz('focused', category);
-      // Clear the query parameter after starting
       setSearchParams({});
+    } else if (test && user && screen === 'home') {
+      const testMode = test as QuizMode;
+      if (testMode === 'permit' || testMode === 'license') {
+        handleStartQuiz(testMode);
+        setSearchParams({});
+      }
     }
-  }, [searchParams, user]);
+  }, [searchParams, user, screen]);
 
   const handleContinueLearning = async () => {
     if (!user) return;

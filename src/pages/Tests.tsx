@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
+import TestSelectionDialog from "@/components/TestSelectionDialog";
 import { Clock, CheckCircle, XCircle, Trophy } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 const Tests = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [showTestDialog, setShowTestDialog] = useState(false);
 
   const { data: testHistory = [] } = useQuery({
     queryKey: ["testHistory", user?.id],
@@ -25,6 +28,21 @@ const Tests = () => {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     return `${mins} min`;
+  };
+
+  const getTestTypeName = (type: string) => {
+    switch (type) {
+      case 'permit':
+        return "Learner's Permit Test";
+      case 'license':
+        return "Driver's License Test";
+      case 'quick':
+        return "Quick Practice";
+      case 'focused':
+        return "Focused Study";
+      default:
+        return type;
+    }
   };
 
   return (
@@ -75,12 +93,12 @@ const Tests = () => {
         {/* Quick Actions */}
         <section className="mb-6">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => setShowTestDialog(true)}
             style={{ background: 'var(--gradient-blue)' }}
             className="w-full rounded-2xl shadow-lg p-5 text-white text-left"
           >
             <h3 className="font-bold text-lg mb-1">Start New Test</h3>
-            <p className="text-white/90 text-sm">Choose from Quick, Focused, or Full Exam</p>
+            <p className="text-white/90 text-sm">Full exam simulation - timed tests</p>
           </button>
         </section>
 
@@ -100,7 +118,7 @@ const Tests = () => {
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-bold text-sm">{test.test_type}</h3>
+                      <h3 className="font-bold text-sm">{getTestTypeName(test.test_type)}</h3>
                       <p className="text-xs text-muted-foreground">
                         {format(new Date(test.date), 'MMM d, yyyy')}
                       </p>
@@ -146,6 +164,7 @@ const Tests = () => {
         </section>
       </main>
 
+      <TestSelectionDialog open={showTestDialog} onOpenChange={setShowTestDialog} />
       <BottomNav />
     </div>
   );
