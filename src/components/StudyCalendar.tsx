@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, Plus, Edit2, Car, BookOpen, FileCheck, MapPin } from "lucide-react";
+import { Trash2, Plus, Edit2, Car, BookOpen, FileCheck, MapPin, Bell } from "lucide-react";
 import { format, isSameDay, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { getEvents, createEvent, updateEvent, deleteEvent } from "@/lib/supabase/events";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export type EventType = 'lesson' | 'test' | 'class' | 'practice';
 
@@ -87,6 +88,7 @@ const StudyCalendar = () => {
     mutationFn: createEvent,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
+      toast.success("Event added successfully!");
     },
   });
 
@@ -94,6 +96,7 @@ const StudyCalendar = () => {
     mutationFn: ({ id, updates }: { id: string; updates: any }) => updateEvent(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
+      toast.success("Event updated successfully!");
     },
   });
 
@@ -101,6 +104,7 @@ const StudyCalendar = () => {
     mutationFn: deleteEvent,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
+      toast.success("Event deleted successfully!");
     },
   });
 
@@ -175,13 +179,25 @@ const StudyCalendar = () => {
     .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())
     .slice(0, 3);
 
+  // Get dates that have events for visual indicators
+  const eventDates = events.map(e => parseISO(e.date));
+  
+  // Custom day content to show event indicators
+  const modifiers = {
+    hasEvent: eventDates,
+  };
+
+  const modifiersClassNames = {
+    hasEvent: 'relative after:content-[""] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-primary after:rounded-full',
+  };
+
   return (
     <div className="space-y-6">
       {/* Upcoming Events Summary */}
       {upcomingEvents.length > 0 && (
-        <Card className="p-4">
+        <Card className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-            <FileCheck className="w-4 h-4" />
+            <Bell className="w-4 h-4 text-blue-600" />
             Upcoming Events
           </h3>
           <div className="space-y-2">
@@ -189,13 +205,13 @@ const StudyCalendar = () => {
               const config = getEventTypeConfig(event.type as EventType);
               const Icon = config.icon;
               return (
-                <div key={event.id} className="flex items-center gap-3 text-sm">
+                <div key={event.id} className="flex items-center gap-3 text-sm bg-white/80 rounded-lg p-2">
                   <Badge className={`${config.badgeColor} text-white`}>
                     {format(parseISO(event.date), 'MMM d')}
                   </Badge>
                   <Icon className="w-4 h-4 text-muted-foreground" />
-                  <span className="flex-1">{event.title}</span>
-                  {event.time && <span className="text-xs text-muted-foreground">{event.time}</span>}
+                  <span className="flex-1 font-medium">{event.title}</span>
+                  {event.time && <span className="text-xs text-muted-foreground font-semibold">{event.time}</span>}
                 </div>
               );
             })}
@@ -209,6 +225,8 @@ const StudyCalendar = () => {
           mode="single"
           selected={selectedDate}
           onSelect={setSelectedDate}
+          modifiers={modifiers}
+          modifiersClassNames={modifiersClassNames}
           className="rounded-md border w-full pointer-events-auto"
         />
       </Card>
