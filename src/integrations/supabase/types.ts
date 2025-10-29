@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_generated_questions: {
+        Row: {
+          answer: boolean
+          created_at: string | null
+          difficulty_level: string | null
+          explanation: string
+          figure_description: string | null
+          generated_at: string | null
+          id: string
+          language: string | null
+          question: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_concept: string | null
+          status: string | null
+          test_category: string
+          times_correct: number | null
+          times_incorrect: number | null
+          times_used: number | null
+          updated_at: string | null
+          user_feedback_score: number | null
+        }
+        Insert: {
+          answer: boolean
+          created_at?: string | null
+          difficulty_level?: string | null
+          explanation: string
+          figure_description?: string | null
+          generated_at?: string | null
+          id?: string
+          language?: string | null
+          question: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_concept?: string | null
+          status?: string | null
+          test_category: string
+          times_correct?: number | null
+          times_incorrect?: number | null
+          times_used?: number | null
+          updated_at?: string | null
+          user_feedback_score?: number | null
+        }
+        Update: {
+          answer?: boolean
+          created_at?: string | null
+          difficulty_level?: string | null
+          explanation?: string
+          figure_description?: string | null
+          generated_at?: string | null
+          id?: string
+          language?: string | null
+          question?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_concept?: string | null
+          status?: string | null
+          test_category?: string
+          times_correct?: number | null
+          times_incorrect?: number | null
+          times_used?: number | null
+          updated_at?: string | null
+          user_feedback_score?: number | null
+        }
+        Relationships: []
+      }
       category_performance: {
         Row: {
           category: string
@@ -68,6 +137,57 @@ export type Database = {
           gender?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      question_generation_logs: {
+        Row: {
+          batch_id: string | null
+          cost_estimate: number | null
+          created_at: string | null
+          generation_duration_ms: number | null
+          id: string
+          model_used: string
+          prompt_used: string
+          questions_generated: number | null
+          questions_requested: number | null
+          source_concept: string | null
+          target_category: string | null
+          target_language: string | null
+          tokens_used: number | null
+          triggered_by: string | null
+        }
+        Insert: {
+          batch_id?: string | null
+          cost_estimate?: number | null
+          created_at?: string | null
+          generation_duration_ms?: number | null
+          id?: string
+          model_used: string
+          prompt_used: string
+          questions_generated?: number | null
+          questions_requested?: number | null
+          source_concept?: string | null
+          target_category?: string | null
+          target_language?: string | null
+          tokens_used?: number | null
+          triggered_by?: string | null
+        }
+        Update: {
+          batch_id?: string | null
+          cost_estimate?: number | null
+          created_at?: string | null
+          generation_duration_ms?: number | null
+          id?: string
+          model_used?: string
+          prompt_used?: string
+          questions_generated?: number | null
+          questions_requested?: number | null
+          source_concept?: string | null
+          target_category?: string | null
+          target_language?: string | null
+          tokens_used?: number | null
+          triggered_by?: string | null
         }
         Relationships: []
       }
@@ -244,6 +364,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_question_feedback: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string
+          is_accurate: boolean | null
+          is_clear: boolean | null
+          question_id: string
+          rating: number | null
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          is_accurate?: boolean | null
+          is_clear?: boolean | null
+          question_id: string
+          rating?: number | null
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          is_accurate?: boolean | null
+          is_clear?: boolean | null
+          question_id?: string
+          rating?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_question_feedback_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "ai_generated_questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
