@@ -7,14 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format, differenceInDays } from "date-fns";
+import { loadProgress, getWeakCategories } from "@/lib/progressTracking";
 
 type QuizMode = 'quick' | 'focused' | 'permit' | 'license';
 
 interface QuizHomeProps {
-  onStartQuiz: (mode: QuizMode, category?: string) => void;
+  onStartQuiz: (mode: QuizMode, category?: string, weakAreas?: boolean) => void;
+  onContinueLearning?: () => void;
 }
 
-const QuizHome = ({ onStartQuiz }: QuizHomeProps) => {
+const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showModes, setShowModes] = useState(false);
@@ -55,6 +57,27 @@ const QuizHome = ({ onStartQuiz }: QuizHomeProps) => {
   const handleBack = () => {
     setShowModes(false);
     setSelectedCategory(null);
+  };
+
+  const handleContinueLearning = () => {
+    const progress = loadProgress();
+    if (progress && onContinueLearning) {
+      onContinueLearning();
+    } else {
+      // No saved progress, start a quick practice
+      handleQuickStart('quick');
+    }
+  };
+
+  const handleWeakAreas = () => {
+    const weakCategories = getWeakCategories();
+    if (weakCategories.length > 0) {
+      // Start focused study on weak areas
+      onStartQuiz('focused', undefined, true);
+    } else {
+      // No weak areas detected, start regular focused study
+      handleQuickStart('focused');
+    }
   };
 
   const daysRemaining = examDate ? differenceInDays(examDate, new Date()) : null;
@@ -277,36 +300,49 @@ const QuizHome = ({ onStartQuiz }: QuizHomeProps) => {
           </div>
         </section>
 
-        {/* Continue Learning */}
+        {/* Continue Learning & Weak Areas */}
         <section>
           <h2 className="font-bold text-xl mb-4">Continue Learning</h2>
           <div className="space-y-4">
-            {testCategories.slice(0, 2).map((category, idx) => (
-              <button
-                key={category}
-                onClick={() => handleCategorySelect(category)}
-                className="w-full bg-white rounded-2xl shadow-md overflow-hidden text-left transform transition hover:scale-[1.02]"
-              >
-                <div className={`h-32 ${idx === 0 ? 'bg-gradient-to-br from-blue-400 to-blue-600' : 'bg-gradient-to-br from-red-400 to-red-600'} flex items-center justify-center`}>
-                  <span className="text-white text-4xl font-bold">{idx === 0 ? '🚦' : '⚠️'}</span>
+            <button
+              onClick={handleContinueLearning}
+              className="w-full bg-white rounded-2xl shadow-md overflow-hidden text-left transform transition hover:scale-[1.02]"
+            >
+              <div className="h-32 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                <span className="text-white text-4xl font-bold">🚦</span>
+              </div>
+              <div className="p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-bold text-sm">Continue Where You Left Off</h3>
+                  <span className="text-blue-700 font-bold text-xs">Resume</span>
                 </div>
-                <div className="p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-bold text-sm line-clamp-1">{category}</h3>
-                    <span className={`${idx === 0 ? 'text-blue-700' : 'text-red-700'} font-bold text-xs`}>
-                      {idx === 0 ? '5/10' : '65%'}
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-gray-100 rounded-full mb-3">
-                    <div className={`h-2 ${idx === 0 ? 'bg-blue-500' : 'bg-red-500'} rounded-full`} style={{ width: idx === 0 ? '50%' : '65%' }}></div>
-                  </div>
-                  <div className={`${idx === 0 ? 'bg-blue-600' : 'bg-red-600'} py-2.5 px-4 rounded-lg text-white text-xs font-medium flex items-center justify-center`}>
-                    <ChevronRight size={16} className="mr-1" />
-                    {idx === 0 ? 'Continue Learning' : 'Practice Weak Area'}
-                  </div>
+                <p className="text-muted-foreground text-xs mb-3">Pick up your last practice session</p>
+                <div className="bg-blue-600 py-2.5 px-4 rounded-lg text-white text-xs font-medium flex items-center justify-center">
+                  <ChevronRight size={16} className="mr-1" />
+                  Continue Learning
                 </div>
-              </button>
-            ))}
+              </div>
+            </button>
+
+            <button
+              onClick={handleWeakAreas}
+              className="w-full bg-white rounded-2xl shadow-md overflow-hidden text-left transform transition hover:scale-[1.02]"
+            >
+              <div className="h-32 bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center">
+                <span className="text-white text-4xl font-bold">⚠️</span>
+              </div>
+              <div className="p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-bold text-sm">Practice Weak Areas</h3>
+                  <span className="text-red-700 font-bold text-xs">Focus</span>
+                </div>
+                <p className="text-muted-foreground text-xs mb-3">Work on categories where you need improvement</p>
+                <div className="bg-red-600 py-2.5 px-4 rounded-lg text-white text-xs font-medium flex items-center justify-center">
+                  <ChevronRight size={16} className="mr-1" />
+                  Practice Weak Areas
+                </div>
+              </div>
+            </button>
           </div>
         </section>
       </main>

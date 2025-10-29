@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import QuizHome from "@/components/QuizHome";
 import QuizQuestion from "@/components/QuizQuestion";
 import QuizResults from "@/components/QuizResults";
 import { questions } from "@/data/questions";
 import type { Question } from "@/data/questions";
+import { saveProgress, clearProgress, trackAnswer, getWeakCategories, loadProgress } from "@/lib/progressTracking";
 
 type QuizMode = 'quick' | 'focused' | 'permit' | 'license';
 type Screen = 'home' | 'quiz' | 'results';
@@ -15,6 +16,33 @@ const Index = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLimit, setTimeLimit] = useState<number | null>(null);
+
+  // Remove the resume effect since we'll handle it directly
+  const handleContinueLearning = () => {
+    const progress = loadProgress();
+    if (progress) {
+      setQuizMode(progress.quizMode);
+      setSelectedQuestions(progress.selectedQuestions);
+      setCurrentQuestionIndex(progress.currentQuestionIndex);
+      setScore(progress.score);
+      setTimeLimit(progress.timeLimit);
+      setScreen('quiz');
+    }
+  };
+
+  // Save progress whenever quiz state changes
+  useEffect(() => {
+    if (screen === 'quiz' && selectedQuestions.length > 0) {
+      saveProgress({
+        quizMode,
+        selectedQuestions,
+        currentQuestionIndex,
+        score,
+        timeLimit,
+        timestamp: Date.now()
+      });
+    }
+  }, [screen, quizMode, selectedQuestions, currentQuestionIndex, score, timeLimit]);
 
   const getQuestionCount = (mode: QuizMode): number => {
     switch (mode) {
@@ -33,16 +61,26 @@ const Index = () => {
     }
   };
 
-  const handleStartQuiz = (mode: QuizMode, category?: string) => {
+  const handleStartQuiz = (mode: QuizMode, category?: string, weakAreas?: boolean) => {
     setQuizMode(mode);
     const count = getQuestionCount(mode);
     const time = getTimeLimit(mode);
     setTimeLimit(time);
     
+    let filteredQuestions = questions;
+    
+    // Filter by weak areas if requested
+    if (weakAreas) {
+      const weakCategories = getWeakCategories();
+      if (weakCategories.length > 0) {
+        const weakCategoryNames = weakCategories.map(wc => wc.category);
+        filteredQuestions = questions.filter(q => weakCategoryNames.includes(q.test));
+      }
+    }
     // Filter by category if selected
-    const filteredQuestions = category 
-      ? questions.filter(q => q.test === category)
-      : questions;
+    else if (category) {
+      filteredQuestions = questions.filter(q => q.test === category);
+    }
     
     // Shuffle and select questions
     const shuffled = [...filteredQuestions].sort(() => Math.random() - 0.5);
@@ -56,6 +94,12 @@ const Index = () => {
   const handleAnswer = (correct: boolean) => {
     if (correct) {
       setScore(score + 1);
+    }
+    
+    // Track answer for performance analytics
+    const currentQuestion = selectedQuestions[currentQuestionIndex];
+    if (currentQuestion) {
+      trackAnswer(currentQuestion.test, correct);
     }
   };
 
@@ -75,11 +119,17 @@ const Index = () => {
     setScreen('home');
     setCurrentQuestionIndex(0);
     setScore(0);
+    clearProgress(); // Clear saved progress when going home
   };
 
   return (
     <>
-      {screen === 'home' && <QuizHome onStartQuiz={handleStartQuiz} />}
+      {screen === 'home' && (
+        <QuizHome 
+          onStartQuiz={handleStartQuiz} 
+          onContinueLearning={handleContinueLearning}
+        />
+      )}
       
       {screen === 'quiz' && selectedQuestions.length > 0 && (
         <QuizQuestion
