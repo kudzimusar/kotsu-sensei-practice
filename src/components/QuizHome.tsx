@@ -10,6 +10,8 @@ import { format, differenceInDays, parseISO, isPast, isToday } from "date-fns";
 import { loadProgress, getWeakCategories } from "@/lib/progressTracking";
 import { useAuth } from "@/hooks/useAuth";
 import { getEvents } from "@/lib/supabase/events";
+import { getAllPerformance } from "@/lib/supabase/performance";
+import { getTestHistory } from "@/lib/supabase/tests";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,10 +39,72 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
     enabled: !!user,
   });
 
+  const { data: performance = [] } = useQuery({
+    queryKey: ["performance", user?.id],
+    queryFn: () => getAllPerformance(user!.id),
+    enabled: !!user,
+  });
+
+  const { data: testHistory = [] } = useQuery({
+    queryKey: ["testHistory", user?.id],
+    queryFn: () => getTestHistory(user!.id),
+    enabled: !!user,
+  });
+
   // Get next upcoming event
   const upcomingEvent = events
     .filter(e => !isPast(parseISO(e.date)) || isToday(parseISO(e.date)))
     .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())[0];
+
+  // Calculate test readiness based on performance
+  const testReadiness = performance.length > 0
+    ? Math.round(performance.reduce((sum, p) => sum + (p.percentage || 0), 0) / performance.length)
+    : 0;
+
+  // Calculate streak
+  const calculateStreak = () => {
+    if (testHistory.length === 0 && performance.length === 0) return 0;
+    
+    const activityDates = new Set<string>();
+    
+    testHistory.forEach(test => {
+      const date = format(new Date(test.date), 'yyyy-MM-dd');
+      activityDates.add(date);
+    });
+    
+    performance.forEach(perf => {
+      if (perf.updated_at) {
+        const date = format(new Date(perf.updated_at), 'yyyy-MM-dd');
+        activityDates.add(date);
+      }
+    });
+    
+    if (activityDates.size === 0) return 0;
+    
+    const sortedDates = Array.from(activityDates).sort((a, b) => 
+      new Date(b).getTime() - new Date(a).getTime()
+    );
+    
+    let streak = 0;
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    let checkDate = new Date(todayStr);
+    
+    for (const dateStr of sortedDates) {
+      const activityDate = new Date(dateStr);
+      const checkDateStr = format(checkDate, 'yyyy-MM-dd');
+      
+      if (dateStr === checkDateStr) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else if (activityDate < checkDate) {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+
+  const currentStreak = calculateStreak();
 
   useEffect(() => {
     const category = searchParams.get('category');
@@ -354,14 +418,16 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
         <section className="mb-8">
           <div className="bg-white rounded-2xl shadow-md p-5">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="font-bold text-sm">Test Ready: 75%</h2>
-              <div className="flex items-center bg-amber-100 px-3 py-1.5 rounded-full">
-                <Flame className="text-amber-500 mr-1.5" size={14} />
-                <p className="font-medium text-amber-700 text-[10px]">7-Day Streak 🔥</p>
-              </div>
+              <h2 className="font-bold text-sm">Test Ready: {testReadiness}%</h2>
+              {currentStreak > 0 && (
+                <div className="flex items-center bg-amber-100 px-3 py-1.5 rounded-full">
+                  <Flame className="text-amber-500 mr-1.5" size={14} />
+                  <p className="font-medium text-amber-700 text-[10px]">{currentStreak}-Day Streak 🔥</p>
+                </div>
+              )}
             </div>
             <div className="h-2 bg-indigo-100 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-500 rounded-full" style={{ width: '75%' }}></div>
+              <div className="h-full bg-blue-500 rounded-full" style={{ width: `${testReadiness}%` }}></div>
             </div>
           </div>
         </section>
