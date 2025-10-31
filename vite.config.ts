@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  base: "/kotsu-sensei-practice/", // ← THIS FIXES THE 404s
+  base: mode === "production" ? "/kotsu-sensei-practice/" : "/",
   build: {
     outDir: "dist",
     assetsDir: "assets",
