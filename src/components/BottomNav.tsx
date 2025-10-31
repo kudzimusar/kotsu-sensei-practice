@@ -11,6 +11,7 @@ const BottomNav = () => {
     { path: "/", icon: Home, label: "Home" },
     { path: "/study", icon: BookOpen, label: "Study" },
     { path: "/tests", icon: ClipboardList, label: "Tests" },
+    { path: "/generate", icon: Sparkles, label: "AI" },
     { path: "/profile", icon: User, label: isGuest ? "Sign Up" : "Profile" },
   ];
 
