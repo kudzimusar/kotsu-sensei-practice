@@ -14,6 +14,7 @@ import Support from "./pages/Support";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import QuestionGenerator from "./pages/QuestionGenerator";
+import Lectures from "./pages/Lectures";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Index />} />
           <Route path="/study" element={<Study />} />
+          <Route path="/lectures" element={<Lectures />} />
           <Route path="/tests" element={<Tests />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/generate" element={<ProtectedRoute><QuestionGenerator /></ProtectedRoute>} />
