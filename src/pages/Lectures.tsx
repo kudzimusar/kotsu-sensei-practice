@@ -76,23 +76,44 @@ const Lectures = () => {
   }, [user]);
 
   const loadCurriculum = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     try {
+      console.log("Loading curriculum for user:", user.id);
+      
+      // Try to get existing curriculum
       let data = await getUserCurriculum(user.id);
+      console.log("Curriculum data fetched:", data?.length || 0, "lectures");
+      
+      // If no curriculum exists, initialize it
+      if (!data || data.length === 0) {
+        console.log("No curriculum found, initializing...");
+        await initializeCurriculumForUser(user.id);
+        
+        // Retry fetching after initialization
+        data = await getUserCurriculum(user.id);
+        console.log("Curriculum after initialization:", data?.length || 0, "lectures");
+      }
       
       if (!data || data.length === 0) {
-        await initializeCurriculumForUser(user.id);
-        data = await getUserCurriculum(user.id);
+        throw new Error("Failed to initialize curriculum");
       }
       
       setCurriculum(data);
+      
+      // Get progress statistics
       const progressData = await getCurriculumProgress(user.id);
+      console.log("Progress data:", progressData);
       setProgress(progressData);
-    } catch (error) {
+      
+      toast.success("Curriculum loaded successfully!");
+    } catch (error: any) {
       console.error("Error loading curriculum:", error);
-      toast.error("Failed to load curriculum");
+      toast.error(error?.message || "Failed to load curriculum. Please refresh the page.");
     } finally {
       setLoading(false);
     }
@@ -533,7 +554,7 @@ const Lectures = () => {
             <p className="text-lg text-muted-foreground">Schedule and track your classroom lecture progress</p>
           </div>
 
-          {!user ? (
+              {!user ? (
             <Card className="p-12 text-center border-2 border-green-200">
               <GraduationCap className="h-20 w-20 mx-auto mb-6 text-green-500" />
               <h2 className="text-2xl font-bold mb-4">Sign In Required</h2>
@@ -543,6 +564,29 @@ const Lectures = () => {
               <Button size="lg" className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
                 Sign In
               </Button>
+            </Card>
+          ) : loading ? (
+            <Card className="p-12 text-center border-2 border-blue-200">
+              <div className="flex flex-col items-center gap-4">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600"></div>
+                <h2 className="text-2xl font-bold">Loading Curriculum...</h2>
+                <p className="text-muted-foreground">Please wait while we fetch your lecture schedule</p>
+              </div>
+            </Card>
+          ) : curriculum.length === 0 ? (
+            <Card className="p-12 text-center border-2 border-amber-200">
+              <div className="flex flex-col items-center gap-4">
+                <BookOpen className="h-16 w-16 text-amber-500" />
+                <h2 className="text-2xl font-bold">No Curriculum Found</h2>
+                <p className="text-muted-foreground mb-4">We couldn't load your curriculum. This might be a temporary issue.</p>
+                <Button 
+                  size="lg" 
+                  onClick={loadCurriculum}
+                  className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600"
+                >
+                  Try Again
+                </Button>
+              </div>
             </Card>
           ) : (
             <>

@@ -13,22 +13,37 @@ export interface UserLectureSchedule {
 }
 
 export const getUserCurriculum = async (userId: string) => {
+  console.log("Fetching curriculum for user:", userId);
+  
   const { data, error } = await supabase
     .from("user_lecture_schedule")
     .select("*")
     .eq("user_id", userId)
     .order("lecture_number", { ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    console.error("Error fetching curriculum:", error);
+    throw new Error(`Failed to fetch curriculum: ${error.message}`);
+  }
+  
+  console.log("Fetched curriculum data:", data?.length || 0, "lectures");
   return data as UserLectureSchedule[];
 };
 
 export const initializeCurriculumForUser = async (userId: string) => {
-  const { error } = await supabase.rpc("initialize_user_curriculum", {
+  console.log("Initializing curriculum for user:", userId);
+  
+  const { data, error } = await supabase.rpc("initialize_user_curriculum", {
     p_user_id: userId,
   });
 
-  if (error) throw error;
+  if (error) {
+    console.error("Error initializing curriculum:", error);
+    throw new Error(`Failed to initialize curriculum: ${error.message}`);
+  }
+  
+  console.log("Curriculum initialized successfully", data);
+  return data;
 };
 
 export const updateLectureSchedule = async (
