@@ -428,6 +428,42 @@ export type Database = {
           },
         ]
       }
+      user_lecture_schedule: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          lecture_number: number
+          scheduled_date: string | null
+          stage: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          lecture_number: number
+          scheduled_date?: string | null
+          stage: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          lecture_number?: number
+          scheduled_date?: string | null
+          stage?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_question_feedback: {
         Row: {
           comment: string | null
@@ -531,6 +567,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      initialize_user_curriculum: {
+        Args: { p_user_id: string }
+        Returns: undefined
       }
       migrate_guest_to_user: {
         Args: { p_guest_session_id: string; p_user_id: string }
