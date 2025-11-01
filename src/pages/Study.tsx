@@ -3,7 +3,7 @@ import StudyCalendar from "@/components/StudyCalendar";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { testCategories } from "@/data/questions";
-import { BookOpen, Target, TrendingUp, Calendar } from "lucide-react";
+import { BookOpen, Target, TrendingUp, Calendar, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
@@ -132,6 +132,26 @@ const Study = () => {
                   </div>
                 </div>
               </Card>
+            </section>
+
+            {/* Lectures & Textbook */}
+            <section>
+              <Link to="/lectures">
+                <Card className="p-5 bg-gradient-to-br from-primary/10 to-primary/5 hover:shadow-lg transition-shadow cursor-pointer border-primary/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                        <GraduationCap className="text-primary" size={24} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm">Lectures & Textbook</h3>
+                        <p className="text-xs text-muted-foreground">Track classroom lectures & study materials</p>
+                      </div>
+                    </div>
+                    <span className="text-primary font-bold text-xs">Open →</span>
+                  </div>
+                </Card>
+              </Link>
             </section>
 
             {/* Study by Category */}
