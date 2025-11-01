@@ -12,6 +12,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BookOpen,
   Calendar as CalendarIcon,
@@ -398,11 +399,24 @@ const Lectures = () => {
 
           <div className="mb-8 text-center">
             <h1 className="text-5xl font-bold mb-3 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Driving Textbook
+              Driving Textbooks
             </h1>
-            <p className="text-lg text-muted-foreground">Rules of the Road - Complete Reference Guide</p>
+            <p className="text-lg text-muted-foreground">Choose your preferred study material</p>
           </div>
 
+          <Tabs defaultValue="rules-of-road" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 h-auto mb-8">
+              <TabsTrigger value="rules-of-road" className="text-base py-3">
+                <BookOpen className="mr-2 h-5 w-5" />
+                Rules of the Road
+              </TabsTrigger>
+              <TabsTrigger value="other-materials" className="text-base py-3">
+                <BookMarked className="mr-2 h-5 w-5" />
+                Additional Materials
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="rules-of-road">
           {/* Table of Contents */}
           <Card className="mb-8 border-2 border-blue-200">
             <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
@@ -567,6 +581,92 @@ const Lectures = () => {
               </div>
             </CardContent>
           </Card>
+            </TabsContent>
+
+            <TabsContent value="other-materials">
+              <Card className="border-2 border-purple-200">
+                <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
+                  <CardTitle className="flex items-center gap-3 text-2xl">
+                    <BookMarked className="h-6 w-6 text-purple-600" />
+                    Additional Study Materials
+                  </CardTitle>
+                  <CardDescription className="text-base">Supplementary resources and guides</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-6">
+                    {/* NPA Official Guide */}
+                    <div className="p-6 rounded-xl border-2 border-purple-100 hover:border-purple-300 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-900/10 dark:to-pink-900/10 transition-all">
+                      <div className="flex items-start gap-4">
+                        <div className="p-3 rounded-lg bg-purple-500 text-white">
+                          <FileText className="h-8 w-8" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-purple-900 dark:text-purple-100 mb-2">
+                            National Police Agency (NPA) Guide
+                          </h3>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Official guide covering basic traffic rules and road signs in English. Essential for understanding Japanese traffic regulations.
+                          </p>
+                          <Button asChild variant="outline" className="border-purple-300">
+                            <a 
+                              href="https://www.npa.go.jp/policies/application/license_renewal/pdf/english.pdf" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                            >
+                              View PDF <ExternalLink className="ml-2 h-4 w-4" />
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* JAF Guide */}
+                    <div className="p-6 rounded-xl border-2 border-blue-100 hover:border-blue-300 bg-gradient-to-br from-blue-50/50 to-sky-50/50 dark:from-blue-900/10 dark:to-sky-900/10 transition-all">
+                      <div className="flex items-start gap-4">
+                        <div className="p-3 rounded-lg bg-blue-500 text-white">
+                          <BookOpen className="h-8 w-8" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-blue-900 dark:text-blue-100 mb-2">
+                            JAF Driving Resources
+                          </h3>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Japan Automobile Federation provides comprehensive driving guides, road rules, and safety information.
+                          </p>
+                          <Button asChild variant="outline" className="border-blue-300">
+                            <a 
+                              href="https://jaf.or.jp/common/kuruma-qa/category-drive" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                            >
+                              Visit JAF <ExternalLink className="ml-2 h-4 w-4" />
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Coming Soon */}
+                    <div className="p-6 rounded-xl border-2 border-dashed border-amber-200 bg-gradient-to-br from-amber-50/50 to-yellow-50/50 dark:from-amber-900/10 dark:to-yellow-900/10">
+                      <div className="flex items-start gap-4">
+                        <div className="p-3 rounded-lg bg-amber-500 text-white">
+                          <Lightbulb className="h-8 w-8" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-amber-900 dark:text-amber-100 mb-2">
+                            More Materials Coming Soon
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            We're constantly adding new study materials, practice guides, and reference books. Check back regularly for updates!
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     );
