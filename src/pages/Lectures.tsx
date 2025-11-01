@@ -162,32 +162,35 @@ const Lectures = () => {
       completed: { label: "Completed", className: "bg-green-500 text-white hover:bg-green-600" },
     };
     const variant = variants[status as keyof typeof variants] || variants.not_started;
-    return <Badge className={cn(variant.className, "cursor-pointer transition-colors")}>{variant.label}</Badge>;
+    return <Badge className={cn(variant.className, "cursor-pointer transition-colors text-xs px-2 py-0.5")}>{variant.label}</Badge>;
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20 pb-20">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="mb-8 text-center">
-          <h1 className="text-5xl font-bold mb-3 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+      <div className="container mx-auto px-3 py-6 max-w-6xl">
+        <div className="mb-6 text-center">
+          <h1 className="text-3xl sm:text-5xl font-bold mb-2 sm:mb-3 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
             Lectures & Study Materials
           </h1>
-          <p className="text-lg text-muted-foreground">Your complete guide to Japanese driving education</p>
+          <p className="text-sm sm:text-lg text-muted-foreground">Your complete guide to Japanese driving education</p>
         </div>
 
         <Tabs defaultValue="textbook" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="textbook" className="text-lg">
-              <BookOpen className="h-5 w-5 mr-2" />
-              Textbooks
+          <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-auto">
+            <TabsTrigger value="textbook" className="text-xs sm:text-lg py-2">
+              <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Textbooks</span>
+              <span className="sm:hidden">Books</span>
             </TabsTrigger>
-            <TabsTrigger value="curriculum" className="text-lg">
-              <GraduationCap className="h-5 w-5 mr-2" />
-              Curriculum
+            <TabsTrigger value="curriculum" className="text-xs sm:text-lg py-2">
+              <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Curriculum</span>
+              <span className="sm:hidden">Study</span>
             </TabsTrigger>
-            <TabsTrigger value="shop" className="text-lg">
-              <ShoppingBag className="h-5 w-5 mr-2" />
-              Shop & Earn
+            <TabsTrigger value="shop" className="text-xs sm:text-lg py-2">
+              <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Shop & Earn</span>
+              <span className="sm:hidden">Shop</span>
             </TabsTrigger>
           </TabsList>
 
@@ -206,50 +209,50 @@ const Lectures = () => {
           {/* Curriculum Tab */}
           <TabsContent value="curriculum">
             {!user ? (
-              <Card className="p-12 text-center border-2">
-                <GraduationCap className="h-20 w-20 mx-auto mb-6 text-primary" />
-                <h2 className="text-2xl font-bold mb-4">Sign In Required</h2>
-                <p className="text-lg text-muted-foreground mb-6">
+              <Card className="p-6 sm:p-12 text-center border-2">
+                <GraduationCap className="h-16 w-16 sm:h-20 sm:w-20 mx-auto mb-4 sm:mb-6 text-primary" />
+                <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Sign In Required</h2>
+                <p className="text-sm sm:text-lg text-muted-foreground mb-4 sm:mb-6">
                   Please sign in to access your curriculum tracker
                 </p>
               </Card>
             ) : loading ? (
-              <Card className="p-12 text-center">
-                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary mx-auto mb-4"></div>
-                <h2 className="text-2xl font-bold">Loading Curriculum...</h2>
+              <Card className="p-6 sm:p-12 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-4 border-primary mx-auto mb-3 sm:mb-4"></div>
+                <h2 className="text-xl sm:text-2xl font-bold">Loading Curriculum...</h2>
               </Card>
             ) : (
               <div className="space-y-6">
                 {/* Progress Overview */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-2xl">Progress Overview</CardTitle>
-                    <CardDescription>Track your lecture completion</CardDescription>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-xl sm:text-2xl">Progress Overview</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">Track your lecture completion</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
-                      <div className="flex justify-between mb-3">
-                        <span className="text-sm font-semibold">Overall Progress</span>
-                        <span className="text-sm font-bold text-green-600">{progress.completed}/{progress.total} lectures</span>
+                  <CardContent className="space-y-4 sm:space-y-6">
+                    <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+                      <div className="flex justify-between mb-2 sm:mb-3">
+                        <span className="text-xs sm:text-sm font-semibold">Overall Progress</span>
+                        <span className="text-xs sm:text-sm font-bold text-green-600">{progress.completed}/{progress.total} lectures</span>
                       </div>
-                      <Progress value={progress.percentComplete} className="h-4 mb-3" />
-                      <p className="text-center text-3xl font-bold text-green-600">
+                      <Progress value={progress.percentComplete} className="h-3 sm:h-4 mb-2 sm:mb-3" />
+                      <p className="text-center text-2xl sm:text-3xl font-bold text-green-600">
                         {progress.percentComplete}%
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="p-4 rounded-xl bg-green-100 dark:bg-green-900/40 text-center">
-                        <p className="text-3xl font-bold text-green-600">{progress.completed}</p>
-                        <p className="text-xs font-semibold mt-1">Completed</p>
+                    <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                      <div className="p-3 sm:p-4 rounded-xl bg-green-100 dark:bg-green-900/40 text-center">
+                        <p className="text-2xl sm:text-3xl font-bold text-green-600">{progress.completed}</p>
+                        <p className="text-[10px] sm:text-xs font-semibold mt-1">Completed</p>
                       </div>
-                      <div className="p-4 rounded-xl bg-blue-100 dark:bg-blue-900/40 text-center">
-                        <p className="text-3xl font-bold text-blue-600">{progress.scheduled}</p>
-                        <p className="text-xs font-semibold mt-1">Scheduled</p>
+                      <div className="p-3 sm:p-4 rounded-xl bg-blue-100 dark:bg-blue-900/40 text-center">
+                        <p className="text-2xl sm:text-3xl font-bold text-blue-600">{progress.scheduled}</p>
+                        <p className="text-[10px] sm:text-xs font-semibold mt-1">Scheduled</p>
                       </div>
-                      <div className="p-4 rounded-xl bg-gray-100 dark:bg-gray-800/40 text-center">
-                        <p className="text-3xl font-bold text-muted-foreground">{progress.notStarted}</p>
-                        <p className="text-xs font-semibold mt-1">Not Started</p>
+                      <div className="p-3 sm:p-4 rounded-xl bg-gray-100 dark:bg-gray-800/40 text-center">
+                        <p className="text-2xl sm:text-3xl font-bold text-muted-foreground">{progress.notStarted}</p>
+                        <p className="text-[10px] sm:text-xs font-semibold mt-1">Not Started</p>
                       </div>
                     </div>
                   </CardContent>
@@ -257,34 +260,39 @@ const Lectures = () => {
 
                 {/* Lecture Schedule */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Lecture Schedule</CardTitle>
-                    <CardDescription>Manage your 26 classroom lectures</CardDescription>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-xl sm:text-2xl">Lecture Schedule</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">Manage your 26 classroom lectures</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       {curriculum.map((lecture) => {
                         const material = lessonMaterials.find(m => m.lecture_number === lecture.lecture_number);
                         const isExpanded = expandedLectures.has(lecture.lecture_number);
                         
                         return (
-                          <div key={lecture.id} className="p-4 rounded-lg border-2 hover:border-primary transition-colors">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-3">
-                                <Badge variant="outline" className="text-base px-3">
-                                  Lecture {lecture.lecture_number}
-                                </Badge>
-                                <h3 className="font-semibold">{lecture.stage}</h3>
+                          <div key={lecture.id} className="p-3 rounded-lg border-2 hover:border-primary transition-colors bg-card">
+                            <div className="flex flex-col gap-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-sm px-2 py-0.5 shrink-0">
+                                    L{lecture.lecture_number}
+                                  </Badge>
+                                  <h3 className="font-semibold text-sm">{lecture.stage}</h3>
+                                </div>
+                                <div onClick={() => handleStatusToggle(lecture.lecture_number, lecture.status)} className="shrink-0">
+                                  {getStatusBadge(lecture.status)}
+                                </div>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Popover>
                                   <PopoverTrigger asChild>
-                                    <Button variant="outline" size="sm">
-                                      <CalendarIcon className="h-4 w-4 mr-2" />
-                                      {lecture.scheduled_date ? format(new Date(lecture.scheduled_date), "PP") : "Schedule"}
+                                    <Button variant="outline" size="sm" className="w-full text-xs">
+                                      <CalendarIcon className="h-3 w-3 mr-1.5" />
+                                      {lecture.scheduled_date ? format(new Date(lecture.scheduled_date), "MMM d, yyyy") : "Schedule"}
                                     </Button>
                                   </PopoverTrigger>
-                                  <PopoverContent>
+                                  <PopoverContent className="w-auto p-0" align="start">
                                     <Calendar
                                       mode="single"
                                       selected={lecture.scheduled_date ? new Date(lecture.scheduled_date) : undefined}
@@ -292,30 +300,28 @@ const Lectures = () => {
                                     />
                                   </PopoverContent>
                                 </Popover>
-                                <div onClick={() => handleStatusToggle(lecture.lecture_number, lecture.status)}>
-                                  {getStatusBadge(lecture.status)}
-                                </div>
                               </div>
                             </div>
                             
                             {material && (
-                              <div className="mt-3">
+                              <div className="mt-2">
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => toggleLectureExpanded(lecture.lecture_number)}
+                                  className="text-xs h-8"
                                 >
                                   {isExpanded ? "Hide" : "Show"} Materials
                                 </Button>
                                 
                                 {isExpanded && (
-                                  <div className="mt-3 p-4 bg-muted/50 rounded-lg space-y-3">
+                                  <div className="mt-2 p-3 bg-muted/50 rounded-lg space-y-2">
                                     {material.textbook_references && material.textbook_references.length > 0 && (
                                       <div>
-                                        <h4 className="font-semibold mb-2">Textbook References:</h4>
-                                        <ul className="list-disc list-inside space-y-1">
+                                        <h4 className="font-semibold mb-1.5 text-xs sm:text-sm">Textbook References:</h4>
+                                        <ul className="list-disc list-inside space-y-0.5">
                                           {material.textbook_references.map((ref, idx) => (
-                                            <li key={idx} className="text-sm">{ref}</li>
+                                            <li key={idx} className="text-xs sm:text-sm">{ref}</li>
                                           ))}
                                         </ul>
                                       </div>
@@ -323,10 +329,10 @@ const Lectures = () => {
                                     
                                     {material.key_concepts && material.key_concepts.length > 0 && (
                                       <div>
-                                        <h4 className="font-semibold mb-2">Key Concepts:</h4>
-                                        <ul className="list-disc list-inside space-y-1">
+                                        <h4 className="font-semibold mb-1.5 text-xs sm:text-sm">Key Concepts:</h4>
+                                        <ul className="list-disc list-inside space-y-0.5">
                                           {material.key_concepts.map((concept, idx) => (
-                                            <li key={idx} className="text-sm">{concept}</li>
+                                            <li key={idx} className="text-xs sm:text-sm">{concept}</li>
                                           ))}
                                         </ul>
                                       </div>
