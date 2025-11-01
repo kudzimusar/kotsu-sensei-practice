@@ -25,6 +25,8 @@ import {
   GraduationCap,
   ArrowLeft,
   FileText,
+  Lightbulb,
+  MessageSquare,
 } from "lucide-react";
 import { format } from "date-fns";
 import { 
@@ -47,6 +49,7 @@ import signRailway from "@/assets/sign-railway.png";
 import signPriority from "@/assets/sign-priority.png";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserCurriculum, updateLectureSchedule, getCurriculumProgress, initializeCurriculumForUser } from "@/lib/supabase/curriculum";
+import { getAllLessonMaterials, type LessonMaterial } from "@/lib/supabase/lessonMaterials";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -55,8 +58,10 @@ const Lectures = () => {
   const [view, setView] = useState<"main" | "textbook" | "curriculum">("main");
   const [searchTerm, setSearchTerm] = useState("");
   const [curriculum, setCurriculum] = useState<any[]>([]);
+  const [lessonMaterials, setLessonMaterials] = useState<LessonMaterial[]>([]);
   const [progress, setProgress] = useState({ total: 26, completed: 0, scheduled: 0, notStarted: 26, percentComplete: 0 });
   const [loading, setLoading] = useState(true);
+  const [expandedLectures, setExpandedLectures] = useState<Set<number>>(new Set());
 
   const signImages: { [key: string]: string } = {
     "Bicycle": signBicycle,
@@ -73,7 +78,7 @@ const Lectures = () => {
     } else {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id]); // Only depend on user ID, not the entire user object
 
   const loadCurriculum = async () => {
     if (!user) {
@@ -105,15 +110,19 @@ const Lectures = () => {
       
       setCurriculum(data);
       
+      // Load lesson materials
+      const materials = await getAllLessonMaterials();
+      setLessonMaterials(materials);
+      
       // Get progress statistics
       const progressData = await getCurriculumProgress(user.id);
       console.log("Progress data:", progressData);
       setProgress(progressData);
       
-      toast.success("Curriculum loaded successfully!");
+      // Only show success toast on manual retry, not automatic loads
     } catch (error: any) {
       console.error("Error loading curriculum:", error);
-      toast.error(error?.message || "Failed to load curriculum. Please refresh the page.");
+      toast.error(error?.message || "Failed to load curriculum");
     } finally {
       setLoading(false);
     }
@@ -123,11 +132,20 @@ const Lectures = () => {
     if (!user || !date) return;
 
     try {
-      await updateLectureSchedule(user.id, lectureNumber, {
+      const updated = await updateLectureSchedule(user.id, lectureNumber, {
         scheduled_date: format(date, "yyyy-MM-dd"),
         status: "scheduled",
       });
-      await loadCurriculum();
+      
+      // Update local state instead of reloading everything
+      setCurriculum(prev => prev.map(lec => 
+        lec.lecture_number === lectureNumber ? { ...lec, ...updated } : lec
+      ));
+      
+      // Update progress
+      const progressData = await getCurriculumProgress(user.id);
+      setProgress(progressData);
+      
       toast.success("Lecture scheduled!");
     } catch (error) {
       console.error("Error scheduling lecture:", error);
@@ -145,15 +163,36 @@ const Lectures = () => {
     } as const;
 
     try {
-      await updateLectureSchedule(user.id, lectureNumber, {
+      const updated = await updateLectureSchedule(user.id, lectureNumber, {
         status: statusCycle[currentStatus as keyof typeof statusCycle] as any,
       });
-      await loadCurriculum();
+      
+      // Update local state instead of reloading everything
+      setCurriculum(prev => prev.map(lec => 
+        lec.lecture_number === lectureNumber ? { ...lec, ...updated } : lec
+      ));
+      
+      // Update progress
+      const progressData = await getCurriculumProgress(user.id);
+      setProgress(progressData);
+      
       toast.success("Status updated!");
     } catch (error) {
       console.error("Error updating status:", error);
       toast.error("Failed to update status");
     }
+  };
+
+  const toggleLectureExpanded = (lectureNumber: number) => {
+    setExpandedLectures(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(lectureNumber)) {
+        newSet.delete(lectureNumber);
+      } else {
+        newSet.add(lectureNumber);
+      }
+      return newSet;
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -683,8 +722,11 @@ const Lectures = () => {
                         <div className="space-y-4 pt-4">
                           {curriculum.filter(l => l.stage === "First Stage").map((lecture) => {
                             const curriculumInfo = curriculumLectures.find(cl => cl.number === lecture.lecture_number);
+                            const materials = lessonMaterials.find(m => m.lecture_number === lecture.lecture_number);
+                            const isExpanded = expandedLectures.has(lecture.lecture_number);
+                            
                             return (
-                              <div key={lecture.id} className="p-5 rounded-xl border-2 border-green-200 hover:border-green-400 bg-white dark:bg-gray-900 hover:shadow-lg transition-all">
+                              <div key={lecture.id} className="p-5 rounded-xl border-2 border-green-200 hover:border-green-400 bg-white dark:bg-gray-900 transition-all">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
                                   <div className="flex items-center gap-3">
                                     <Badge variant="outline" className="text-lg px-4 py-2 border-green-400 font-bold">
@@ -718,7 +760,7 @@ const Lectures = () => {
                                   )}
                                 </div>
 
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 mb-3">
                                   <Popover>
                                     <PopoverTrigger asChild>
                                       <Button variant="outline" size="sm" className="flex-1">
@@ -736,7 +778,79 @@ const Lectures = () => {
                                       />
                                     </PopoverContent>
                                   </Popover>
+                                  
+                                  {materials && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => toggleLectureExpanded(lecture.lecture_number)}
+                                      className="flex-1"
+                                    >
+                                      <Lightbulb className="mr-2 h-4 w-4" />
+                                      {isExpanded ? "Hide" : "Show"} Materials
+                                    </Button>
+                                  )}
                                 </div>
+
+                                {/* Lesson Materials Section */}
+                                {isExpanded && materials && (
+                                  <div className="mt-4 space-y-4 p-4 rounded-lg bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-900/10 dark:to-emerald-900/10 border border-green-200">
+                                    {/* Textbook References */}
+                                    <div>
+                                      <h4 className="font-bold text-sm text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
+                                        <BookOpen className="h-4 w-4" />
+                                        Textbook References
+                                      </h4>
+                                      <ul className="space-y-1">
+                                        {materials.textbook_references.map((ref, idx) => (
+                                          <li key={idx} className="text-sm text-muted-foreground pl-6 relative">
+                                            <span className="absolute left-0">📖</span>
+                                            {ref}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+
+                                    {/* Key Concepts */}
+                                    <div>
+                                      <h4 className="font-bold text-sm text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
+                                        <Lightbulb className="h-4 w-4" />
+                                        Key Concepts
+                                      </h4>
+                                      <ul className="space-y-1">
+                                        {materials.key_concepts.map((concept, idx) => (
+                                          <li key={idx} className="text-sm text-muted-foreground pl-6 relative">
+                                            <span className="absolute left-0">💡</span>
+                                            {concept}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+
+                                    {/* Practice Questions */}
+                                    <div>
+                                      <h4 className="font-bold text-sm text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
+                                        <MessageSquare className="h-4 w-4" />
+                                        Practice Questions
+                                      </h4>
+                                      <div className="space-y-3">
+                                        {materials.practice_questions.map((q, idx) => (
+                                          <div key={idx} className="p-3 rounded-lg bg-white dark:bg-gray-900 border border-green-200">
+                                            <p className="font-semibold text-sm mb-2 text-green-900 dark:text-green-100">
+                                              Q{idx + 1}: {q.question}
+                                            </p>
+                                            <p className="text-sm text-blue-700 dark:text-blue-300 mb-1">
+                                              <strong>A:</strong> {q.answer}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground italic">
+                                              {q.explanation}
+                                            </p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -753,8 +867,11 @@ const Lectures = () => {
                         <div className="space-y-4 pt-4">
                           {curriculum.filter(l => l.stage === "Second Stage").map((lecture) => {
                             const curriculumInfo = curriculumLectures.find(cl => cl.number === lecture.lecture_number);
+                            const materials = lessonMaterials.find(m => m.lecture_number === lecture.lecture_number);
+                            const isExpanded = expandedLectures.has(lecture.lecture_number);
+                            
                             return (
-                              <div key={lecture.id} className="p-5 rounded-xl border-2 border-purple-200 hover:border-purple-400 bg-white dark:bg-gray-900 hover:shadow-lg transition-all">
+                              <div key={lecture.id} className="p-5 rounded-xl border-2 border-purple-200 hover:border-purple-400 bg-white dark:bg-gray-900 transition-all">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
                                   <div className="flex items-center gap-3">
                                     <Badge variant="outline" className="text-lg px-4 py-2 border-purple-400 font-bold">
@@ -788,7 +905,7 @@ const Lectures = () => {
                                   )}
                                 </div>
 
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 mb-3">
                                   <Popover>
                                     <PopoverTrigger asChild>
                                       <Button variant="outline" size="sm" className="flex-1">
@@ -806,7 +923,79 @@ const Lectures = () => {
                                       />
                                     </PopoverContent>
                                   </Popover>
+                                  
+                                  {materials && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => toggleLectureExpanded(lecture.lecture_number)}
+                                      className="flex-1"
+                                    >
+                                      <Lightbulb className="mr-2 h-4 w-4" />
+                                      {isExpanded ? "Hide" : "Show"} Materials
+                                    </Button>
+                                  )}
                                 </div>
+
+                                {/* Lesson Materials Section */}
+                                {isExpanded && materials && (
+                                  <div className="mt-4 space-y-4 p-4 rounded-lg bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-900/10 dark:to-pink-900/10 border border-purple-200">
+                                    {/* Textbook References */}
+                                    <div>
+                                      <h4 className="font-bold text-sm text-purple-800 dark:text-purple-200 mb-2 flex items-center gap-2">
+                                        <BookOpen className="h-4 w-4" />
+                                        Textbook References
+                                      </h4>
+                                      <ul className="space-y-1">
+                                        {materials.textbook_references.map((ref, idx) => (
+                                          <li key={idx} className="text-sm text-muted-foreground pl-6 relative">
+                                            <span className="absolute left-0">📖</span>
+                                            {ref}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+
+                                    {/* Key Concepts */}
+                                    <div>
+                                      <h4 className="font-bold text-sm text-purple-800 dark:text-purple-200 mb-2 flex items-center gap-2">
+                                        <Lightbulb className="h-4 w-4" />
+                                        Key Concepts
+                                      </h4>
+                                      <ul className="space-y-1">
+                                        {materials.key_concepts.map((concept, idx) => (
+                                          <li key={idx} className="text-sm text-muted-foreground pl-6 relative">
+                                            <span className="absolute left-0">💡</span>
+                                            {concept}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+
+                                    {/* Practice Questions */}
+                                    <div>
+                                      <h4 className="font-bold text-sm text-purple-800 dark:text-purple-200 mb-2 flex items-center gap-2">
+                                        <MessageSquare className="h-4 w-4" />
+                                        Practice Questions
+                                      </h4>
+                                      <div className="space-y-3">
+                                        {materials.practice_questions.map((q, idx) => (
+                                          <div key={idx} className="p-3 rounded-lg bg-white dark:bg-gray-900 border border-purple-200">
+                                            <p className="font-semibold text-sm mb-2 text-purple-900 dark:text-purple-100">
+                                              Q{idx + 1}: {q.question}
+                                            </p>
+                                            <p className="text-sm text-blue-700 dark:text-blue-300 mb-1">
+                                              <strong>A:</strong> {q.answer}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground italic">
+                                              {q.explanation}
+                                            </p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}

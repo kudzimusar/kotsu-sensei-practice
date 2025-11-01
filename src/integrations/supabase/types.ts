@@ -127,6 +127,39 @@ export type Database = {
           },
         ]
       }
+      curriculum_lesson_materials: {
+        Row: {
+          created_at: string
+          id: string
+          key_concepts: string[] | null
+          lecture_number: number
+          practice_questions: Json | null
+          stage: string
+          textbook_references: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key_concepts?: string[] | null
+          lecture_number: number
+          practice_questions?: Json | null
+          stage: string
+          textbook_references?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key_concepts?: string[] | null
+          lecture_number?: number
+          practice_questions?: Json | null
+          stage?: string
+          textbook_references?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       guest_sessions: {
         Row: {
           created_at: string
