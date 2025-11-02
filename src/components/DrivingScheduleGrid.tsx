@@ -218,64 +218,67 @@ export function DrivingScheduleGrid() {
         <ScheduleTemplateLoader onLoadComplete={loadSchedule} />
       )}
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-bold">{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-bold">{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h2>
           {events.length > 0 && (
-            <Badge variant={isOfficialUser ? "default" : "outline"} className="text-xs">
-              {isOfficialUser ? "📅 Your Official Schedule" : "📅 Custom Schedule"} ({events.length})
+            <Badge variant={isOfficialUser ? "default" : "outline"} className="text-xs w-fit">
+              {isOfficialUser ? "📅 Official" : "📅 Custom"} ({events.length})
             </Badge>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 self-end sm:self-auto">
           {isOfficialUser && (
             <Button 
               variant="outline" 
               size="sm" 
               onClick={handleResetSchedule}
               disabled={resetting}
+              className="text-xs sm:text-sm px-2 sm:px-3"
             >
-              <RefreshCw className={cn("w-4 h-4 mr-2", resetting && "animate-spin")} />
-              Reset to Template
+              <RefreshCw className={cn("w-3 h-3 sm:w-4 sm:h-4 sm:mr-2", resetting && "animate-spin")} />
+              <span className="hidden sm:inline">Reset</span>
             </Button>
           )}
-          <Button variant="outline" size="icon" onClick={prevMonth}>
+          <Button variant="outline" size="sm" onClick={prevMonth} className="h-8 w-8 sm:h-9 sm:w-9 p-0">
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={nextMonth}>
+          <Button variant="outline" size="sm" onClick={nextMonth} className="h-8 w-8 sm:h-9 sm:w-9 p-0">
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      <div className="flex gap-4 flex-wrap text-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-muted rounded border" />
+      <div className="flex gap-3 sm:gap-4 flex-wrap text-xs sm:text-sm">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-muted rounded border" />
           <span>Available</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-muted/50 rounded border border-dashed" />
-          <span>Blocked (Holiday/Weekend)</span>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-muted/50 rounded border border-dashed" />
+          <span className="hidden sm:inline">Blocked (Holiday/Weekend)</span>
+          <span className="sm:hidden">Blocked</span>
         </div>
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-green-600" />
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
           <span>Completed</span>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
         <div className="min-w-[800px]">
-          <div className="grid grid-cols-[80px_repeat(10,1fr)] gap-1">
-            <div className="sticky left-0 bg-background z-10 font-semibold p-2">Day</div>
+          <div className="grid grid-cols-[60px_repeat(10,1fr)] sm:grid-cols-[80px_repeat(10,1fr)] gap-1">
+            <div className="sticky left-0 bg-background z-10 font-semibold p-1 sm:p-2 text-xs sm:text-sm">Day</div>
             {TIME_SLOTS.map(slot => (
-              <div key={slot} className="text-xs font-semibold p-2 text-center">{slot}</div>
+              <div key={slot} className="text-[10px] sm:text-xs font-semibold p-1 sm:p-2 text-center">{slot}</div>
             ))}
 
             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
               <>
-                <div key={`day-${day}`} className="sticky left-0 bg-background z-10 p-2 font-medium border-r">
-                  <div>{day} {getDayOfWeek(day)}</div>
-                  {isHoliday(day) && <div className="text-[10px] text-red-500">Holiday</div>}
+                <div key={`day-${day}`} className="sticky left-0 bg-background z-10 p-1 sm:p-2 font-medium border-r text-xs sm:text-sm">
+                  <div className="leading-tight">{day}<span className="hidden sm:inline"> {getDayOfWeek(day)}</span></div>
+                  <div className="sm:hidden text-[9px] opacity-70">{getDayOfWeek(day).slice(0, 3)}</div>
+                  {isHoliday(day) && <div className="text-[9px] sm:text-[10px] text-red-500">Holiday</div>}
                 </div>
                 {TIME_SLOTS.map(slot => {
                   const blocked = isBlocked(day, slot);
@@ -288,7 +291,7 @@ export function DrivingScheduleGrid() {
                       key={`${day}-${slot}`}
                       onClick={() => handleCellClick(day, slot)}
                       className={cn(
-                        "min-h-[60px] p-1 border rounded cursor-pointer transition-colors",
+                        "min-h-[50px] sm:min-h-[60px] p-0.5 sm:p-1 border rounded cursor-pointer transition-colors",
                         blocked && "bg-muted/50 border-dashed cursor-not-allowed",
                         !blocked && !hasEvent && "hover:bg-accent",
                         hasEvent && EVENT_COLORS[event.event_type],
@@ -296,16 +299,16 @@ export function DrivingScheduleGrid() {
                       )}
                     >
                       {hasEvent && (
-                        <div className="flex flex-col items-center justify-center h-full gap-1">
+                        <div className="flex flex-col items-center justify-center h-full gap-0.5 sm:gap-1">
                           {event.status === 'completed' && (
-                            <CheckCircle2 className="w-3 h-3" />
+                            <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                           )}
                           {event.symbol && (
-                            <Badge variant="outline" className="text-[10px] px-1 py-0">
+                            <Badge variant="outline" className="text-[8px] sm:text-[10px] px-0.5 sm:px-1 py-0 leading-tight">
                               {event.symbol}
                             </Badge>
                           )}
-                          <div className="text-[10px] text-center font-medium">
+                          <div className="text-[8px] sm:text-[10px] text-center font-medium leading-tight px-0.5">
                             {event.custom_label || (event.event_type === 'theory' ? `学科${event.lecture_number}` : event.event_type)}
                           </div>
                         </div>
