@@ -16,6 +16,7 @@ import {
 } from "@/lib/supabase/drivingSchedule";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { SampleScheduleLoader } from "./SampleScheduleLoader";
 
 const TIME_SLOTS = [
   "08:40", "09:40", "10:40", "11:40",
@@ -175,6 +176,11 @@ export function DrivingScheduleGrid() {
 
   return (
     <div className="space-y-4">
+      {/* Sample Data Loader */}
+      {events.length === 0 && !loading && (
+        <SampleScheduleLoader />
+      )}
+
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h2>
         <div className="flex gap-2">
