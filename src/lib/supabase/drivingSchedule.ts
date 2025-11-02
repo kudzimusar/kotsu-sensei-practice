@@ -26,7 +26,8 @@ export interface Holiday {
 
 export const getMonthSchedule = async (userId: string, year: number, month: number) => {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
 
   const { data, error } = await supabase
     .from("driving_school_schedule")
@@ -43,7 +44,8 @@ export const getMonthSchedule = async (userId: string, year: number, month: numb
 
 export const getHolidays = async (year: number, month: number) => {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
 
   const { data, error } = await supabase
     .from("holidays")
