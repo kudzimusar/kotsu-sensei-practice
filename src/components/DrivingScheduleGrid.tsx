@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Plus, BookOpen, Car, ClipboardCheck, Brain, Compass, CheckCircle2, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, BookOpen, Car, ClipboardCheck, Brain, Compass, CheckCircle2, Calendar, RefreshCw } from "lucide-react";
 import { ScheduleEventModal } from "./ScheduleEventModal";
 import { useAuth } from "@/hooks/useAuth";
 import { 
@@ -14,6 +14,7 @@ import {
   type DrivingScheduleEvent,
   type Holiday
 } from "@/lib/supabase/drivingSchedule";
+import { resetUserSchedule } from "@/lib/supabase/scheduleReset";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ScheduleTemplateLoader } from "./ScheduleTemplateLoader";
@@ -51,6 +52,7 @@ export function DrivingScheduleGrid() {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [resetting, setResetting] = useState(false);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
@@ -91,6 +93,12 @@ export function DrivingScheduleGrid() {
   const isHoliday = (day: number) => {
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     return holidays.some(h => h.date === dateStr);
+  };
+
+  const getDayOfWeek = (day: number) => {
+    const date = new Date(year, month - 1, day);
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return days[date.getDay()];
   };
 
   const isWeekend = (day: number) => {
@@ -172,6 +180,24 @@ export function DrivingScheduleGrid() {
     setCurrentDate(new Date(year, month - 2, 1));
   };
 
+  const handleResetSchedule = async () => {
+    if (!isOfficialUser) return;
+    
+    if (!confirm("This will reset your schedule to the official template. Continue?")) return;
+    
+    setResetting(true);
+    try {
+      await resetUserSchedule();
+      toast.success("Schedule reset successfully");
+      await loadSchedule();
+    } catch (error) {
+      console.error("Error resetting schedule:", error);
+      toast.error("Failed to reset schedule");
+    } finally {
+      setResetting(false);
+    }
+  };
+
   if (!user) {
     return (
       <Card className="p-8 text-center">
@@ -202,6 +228,17 @@ export function DrivingScheduleGrid() {
           )}
         </div>
         <div className="flex gap-2">
+          {isOfficialUser && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleResetSchedule}
+              disabled={resetting}
+            >
+              <RefreshCw className={cn("w-4 h-4 mr-2", resetting && "animate-spin")} />
+              Reset to Template
+            </Button>
+          )}
           <Button variant="outline" size="icon" onClick={prevMonth}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -237,7 +274,7 @@ export function DrivingScheduleGrid() {
             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
               <>
                 <div key={`day-${day}`} className="sticky left-0 bg-background z-10 p-2 font-medium border-r">
-                  {day}
+                  <div>{day} {getDayOfWeek(day)}</div>
                   {isHoliday(day) && <div className="text-[10px] text-red-500">Holiday</div>}
                 </div>
                 {TIME_SLOTS.map(slot => {
