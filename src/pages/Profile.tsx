@@ -1,18 +1,21 @@
 import BottomNav from "@/components/BottomNav";
-import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Info, FileText, Shield } from "lucide-react";
+import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Info, FileText, Shield, BookOpen, Car, Clock } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { format, differenceInDays } from "date-fns";
+import { useNavigate, Link } from "react-router-dom";
+import { format, differenceInDays, parseISO, isAfter } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { getProfile } from "@/lib/supabase/profiles";
 import { getAllPerformance } from "@/lib/supabase/performance";
 import { getTestHistory } from "@/lib/supabase/tests";
+import { getMonthSchedule } from "@/lib/supabase/drivingSchedule";
 import { useQuery } from "@tanstack/react-query";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { GoalsDialog } from "@/components/GoalsDialog";
 import { SupportDialog } from "@/components/SupportDialog";
 import StudyCalendar from "@/components/StudyCalendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -41,12 +44,30 @@ const Profile = () => {
     enabled: !!user,
   });
 
+  // Fetch driving schedule data
+  const currentDate = new Date();
+  const { data: scheduleEvents = [] } = useQuery({
+    queryKey: ["scheduleEvents", user?.id, currentDate.getFullYear(), currentDate.getMonth() + 1],
+    queryFn: () => getMonthSchedule(user!.id, currentDate.getFullYear(), currentDate.getMonth() + 1),
+    enabled: !!user,
+  });
+
   const examDate = profile?.exam_date ? new Date(profile.exam_date) : undefined;
   const daysRemaining = examDate ? differenceInDays(examDate, new Date()) : null;
 
   const totalQuestions = performance.reduce((sum, p) => sum + p.total, 0);
   const questionsCompleted = totalQuestions;
   const testsPassed = testHistory.filter(t => t.passed).length;
+
+  // Calculate schedule statistics
+  const totalScheduledEvents = scheduleEvents.length;
+  const completedEvents = scheduleEvents.filter(e => e.status === 'completed').length;
+  const upcomingEvents = scheduleEvents.filter(e => 
+    e.status === 'scheduled' && isAfter(parseISO(e.date), new Date())
+  );
+  const nextEvent = upcomingEvents.sort((a, b) => 
+    parseISO(a.date).getTime() - parseISO(b.date).getTime()
+  )[0];
   
   // Calculate current streak
   const calculateStreak = () => {
@@ -151,6 +172,58 @@ const Profile = () => {
             </div>
           </div>
         </section>
+
+        {/* Driving Schedule Overview */}
+        {totalScheduledEvents > 0 && (
+          <section className="mb-6">
+            <button onClick={() => navigate('/lectures')} className="w-full text-left">
+              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 p-5 hover:shadow-lg transition-shadow cursor-pointer">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Calendar className="text-blue-600" size={24} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm text-blue-900">Driving Schedule</h3>
+                      <p className="text-xs text-blue-600">{upcomingEvents.length} upcoming events</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-blue-600 text-white text-xs">
+                    {completedEvents}/{totalScheduledEvents}
+                  </Badge>
+                </div>
+
+                {nextEvent && (
+                  <div className="bg-white/60 rounded-lg p-3 mb-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className="w-4 h-4 text-blue-600" />
+                      <span className="text-xs font-semibold text-blue-900">Next Event</span>
+                    </div>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-blue-900">{nextEvent.custom_label || nextEvent.event_type}</p>
+                        <p className="text-xs text-blue-700">
+                          {format(parseISO(nextEvent.date), 'MMM d, yyyy')} at {nextEvent.time_slot.split('-')[0]}
+                        </p>
+                      </div>
+                      {nextEvent.event_type === 'theory' && (
+                        <BookOpen className="w-5 h-5 text-blue-600" />
+                      )}
+                      {nextEvent.event_type === 'driving' && (
+                        <Car className="w-5 h-5 text-blue-600" />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center text-xs text-blue-700">
+                  <span>View full schedule</span>
+                  <span className="text-blue-600 font-bold">→</span>
+                </div>
+              </Card>
+            </button>
+          </section>
+        )}
 
         {/* Progress Overview */}
         <section className="mb-6">
