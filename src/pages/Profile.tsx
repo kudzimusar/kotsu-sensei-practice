@@ -50,6 +50,7 @@ const Profile = () => {
     queryKey: ["scheduleEvents", user?.id, currentDate.getFullYear(), currentDate.getMonth() + 1],
     queryFn: () => getMonthSchedule(user!.id, currentDate.getFullYear(), currentDate.getMonth() + 1),
     enabled: !!user,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
   const examDate = profile?.exam_date ? new Date(profile.exam_date) : undefined;

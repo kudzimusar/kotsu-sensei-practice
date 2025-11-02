@@ -63,6 +63,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
     queryKey: ["upcomingDrivingEvent", user?.id],
     queryFn: () => getUpcomingEvent(user!.id),
     enabled: !!user,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
   // Get next upcoming event (combine calendar and driving schedule)
