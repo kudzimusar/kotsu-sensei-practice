@@ -1,4 +1,4 @@
-import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays } from "lucide-react";
+import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays, Bell, BookOpen, Video, AlertTriangle } from "lucide-react";
 import { testCategories } from "@/data/questions";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -17,7 +17,6 @@ import { getProfile } from "@/lib/supabase/profiles";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DrivingScheduleGrid } from "@/components/DrivingScheduleGrid";
 import { useNavigate } from "react-router-dom";
 
 type QuizMode = 'quick' | 'focused' | 'permit' | 'license';
@@ -287,7 +286,22 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]">
+    <div className="min-h-screen bg-[#F5F7FA] pt-14">
+      {/* Header */}
+      <header className="fixed inset-x-0 top-0 bg-white z-10 shadow-sm">
+        <div className="flex justify-end items-center px-6 py-3">
+          <div className="flex items-center space-x-3">
+            <button className="rounded-full p-2 bg-gray-100 hover:bg-gray-200 transition-colors">
+              <Bell className="w-5 h-5 text-gray-600" />
+            </button>
+            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+              <span className="text-white font-medium">
+                {isGuest ? '👤' : (profile?.full_name?.charAt(0) || 'U')}
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
 
       <main className="px-5 py-6 pb-24">
         {/* Guest Banner */}
@@ -317,276 +331,237 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
             </Card>
           </section>
         )}
-        {/* Main Action Cards */}
-        <section className="mb-8">
-          <div className="space-y-4">
-            <button
-              onClick={() => handleQuickStart('quick')}
-              style={{ background: 'var(--gradient-blue)' }}
-              className="w-full rounded-2xl shadow-lg p-5 text-white flex justify-between items-center transform transition hover:scale-[1.02]"
-            >
-              <div className="text-left">
-                <h3 className="font-bold text-sm mb-1">Quick Practice</h3>
-                <p className="text-white/90 text-xs">10 Questions • Random topics</p>
-              </div>
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <Zap className="text-white" size={24} />
-              </div>
-            </button>
 
-            <button
-              onClick={() => handleQuickStart('focused')}
-              style={{ background: 'var(--gradient-purple)' }}
-              className="w-full rounded-2xl shadow-lg p-5 text-white flex justify-between items-center transform transition hover:scale-[1.02]"
-            >
-              <div className="text-left">
-                <h3 className="font-bold text-sm mb-1">Focused Study</h3>
-                <p className="text-white/90 text-xs">20 Questions • Mixed difficulty</p>
-              </div>
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <Target className="text-white" size={24} />
-              </div>
-            </button>
-
-            <div
-              style={{ background: 'var(--gradient-green)' }}
-              className="w-full rounded-2xl shadow-lg p-5 text-white"
-            >
-              <div className="flex justify-between items-center mb-4">
-                <div className="text-left">
-                  <h3 className="font-bold text-sm">Full Exam Simulation</h3>
-                  <p className="text-white/90 text-[10px]">Timed practice tests</p>
-                </div>
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                  <FileText className="text-white" size={24} />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleQuickStart('permit')}
-                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg py-2.5 px-3 text-xs text-white font-medium flex-1 text-center transition"
-                >
-                  <div className="font-bold mb-0.5">Learner's Permit</div>
-                  <div className="text-white/80">50 Qs (30 min)</div>
-                </button>
-                <button
-                  onClick={() => handleQuickStart('license')}
-                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg py-2.5 px-3 text-xs text-white font-medium flex-1 text-center transition"
-                >
-                  <div className="font-bold mb-0.5">Driver's License</div>
-                  <div className="text-white/80">100 Qs (1 hr)</div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Upcoming Event */}
-        {upcomingEvent && (
-          <section className="mb-8">
-            <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200 p-5">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <CalendarIcon className="text-indigo-600" size={24} />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                  <Badge className="bg-indigo-600 text-white text-[10px]">
-                      {format(parseISO(upcomingEvent.date), 'MMM d, yyyy')}
-                    </Badge>
-                    {isToday(parseISO(upcomingEvent.date)) && (
-                      <Badge className="bg-green-600 text-white text-[10px]">Today</Badge>
-                    )}
-                  </div>
-                  <h3 className="font-bold text-indigo-900 text-sm mb-1">
-                    {upcomingEvent.title}
-                  </h3>
-                  <div className="space-y-1 text-xs text-indigo-700">
-                    {upcomingEvent.time && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        <span>{upcomingEvent.time}</span>
-                      </div>
-                    )}
-                    {upcomingEvent.location && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        <span>{upcomingEvent.location}</span>
-                      </div>
-                    )}
-                    {upcomingEvent.instructor && (
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4" />
-                        <span>{upcomingEvent.instructor}</span>
-                      </div>
-                    )}
-                    {upcomingEvent.description && (
-                      <p className="mt-2 text-[10px] opacity-80">{upcomingEvent.description}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </section>
-        )}
-
-        {/* Exam Date Reminder */}
-        <section className="mb-8">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="w-full bg-amber-50 border border-amber-200 rounded-2xl shadow-md p-4 flex items-center text-left hover:bg-amber-100 transition">
-                <div className="mr-4 w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <CalendarIcon className="text-amber-600" size={24} />
-                </div>
-                <div className="flex-1">
-                  {examDate ? (
-                    <>
-                      <h3 className="font-bold text-amber-800 text-xs">
-                        Exam Date: {format(examDate, 'MMMM d, yyyy')}
-                      </h3>
-                      <p className="text-amber-700 text-[10px]">
-                        {daysRemaining !== null && daysRemaining >= 0 
-                          ? `${daysRemaining} days remaining` 
-                          : daysRemaining !== null && daysRemaining < 0
-                          ? `${Math.abs(daysRemaining)} days overdue`
-                          : ''}
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="font-bold text-amber-800 text-xs">Set Your Exam Date</h3>
-                      <p className="text-amber-700 text-[10px]">Click to choose a date</p>
-                    </>
-                  )}
-                </div>
-                <ChevronRight className="text-amber-600" size={20} />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="center">
-              <Calendar
-                mode="single"
-                selected={examDate}
-                onSelect={setExamDate}
-                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </section>
-
-        {/* Progress */}
-        <section className="mb-8">
+        {/* Progress Section */}
+        <section className="mb-6">
           <div className="bg-white rounded-2xl shadow-md p-5">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="font-bold text-sm">Test Ready: {testReadiness}%</h2>
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="font-bold text-lg">Test Ready: {testReadiness}%</h2>
               {currentStreak > 0 && (
                 <div className="flex items-center bg-amber-100 px-3 py-1.5 rounded-full">
-                  <Flame className="text-amber-500 mr-1.5" size={14} />
-                  <p className="font-medium text-amber-700 text-[10px]">{currentStreak}-Day Streak 🔥</p>
+                  <Flame className="text-amber-500 mr-1.5" size={16} />
+                  <p className="font-medium text-amber-700 text-xs">{currentStreak}-Day Streak 🔥</p>
                 </div>
               )}
             </div>
-            <div className="h-2 bg-indigo-100 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-500 rounded-full" style={{ width: `${testReadiness}%` }}></div>
+            <div className="h-2 bg-indigo-100 rounded-full overflow-hidden mb-2">
+              <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${testReadiness}%` }}></div>
+            </div>
+            {examDate && daysRemaining !== null && daysRemaining >= 0 && (
+              <div className="flex items-center mt-4">
+                <CalendarIcon className="text-blue-600 mr-2" size={16} />
+                <span className="text-sm text-blue-800 font-medium">
+                  Your exam is in {daysRemaining} days - {format(examDate, 'MMMM d, yyyy')}
+                </span>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Practice Options Card */}
+        <section className="mb-6">
+          <h2 className="font-bold text-lg mb-3">Practice Options</h2>
+          <div className="bg-white rounded-2xl shadow-md p-4">
+            {/* Top Grid: Quick Practice & Focused Study */}
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <button
+                onClick={() => handleQuickStart('quick')}
+                style={{ background: 'var(--gradient-blue)' }}
+                className="rounded-xl p-4 text-white transform transition active:scale-[0.98]"
+              >
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-2">
+                  <Zap className="text-white" size={20} />
+                </div>
+                <h3 className="font-bold text-base mb-1">Quick Practice</h3>
+                <p className="text-xs text-white/90">10 random questions</p>
+              </button>
+              
+              <button
+                onClick={() => handleQuickStart('focused')}
+                style={{ background: 'var(--gradient-purple)' }}
+                className="rounded-xl p-4 text-white transform transition active:scale-[0.98]"
+              >
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-2">
+                  <Target className="text-white" size={20} />
+                </div>
+                <h3 className="font-bold text-base mb-1">Focused Study</h3>
+                <p className="text-xs text-white/90">20 specific questions</p>
+              </button>
+            </div>
+            
+            {/* Full Exam Simulation */}
+            <div
+              style={{ background: 'var(--gradient-green)' }}
+              className="rounded-xl p-4 text-white"
+            >
+              <div className="flex justify-between items-center mb-2">
+                <div>
+                  <h3 className="font-bold text-base">Full Exam Simulation</h3>
+                </div>
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <FileText className="text-white" size={20} />
+                </div>
+              </div>
+              <div className="flex justify-between gap-2 mt-2">
+                <button
+                  onClick={() => handleQuickStart('permit')}
+                  className="bg-white/20 hover:bg-white/30 rounded-lg py-2 px-3 text-xs text-white font-medium flex-1 backdrop-blur-sm transition active:scale-[0.98]"
+                >
+                  50 Qs (30 min)
+                </button>
+                <button
+                  onClick={() => handleQuickStart('license')}
+                  className="bg-white/20 hover:bg-white/30 rounded-lg py-2 px-3 text-xs text-white font-medium flex-1 backdrop-blur-sm transition active:scale-[0.98]"
+                >
+                  100 Qs (1 hr)
+                </button>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Continue Learning & Weak Areas */}
-        <section>
-          <h2 className="font-bold text-base mb-4">Continue Learning</h2>
-          <div className="space-y-4">
+        {/* Study Tools Section */}
+        <section className="mb-6">
+          <h2 className="font-bold text-lg mb-3">Study Tools</h2>
+          <div className="grid grid-cols-3 gap-3">
             <button
-              onClick={handleContinueLearning}
-              className="w-full bg-white rounded-2xl shadow-md overflow-hidden text-left transform transition hover:scale-[1.02]"
+              onClick={() => navigate('/study')}
+              className="bg-white rounded-xl shadow p-3 transform transition active:scale-[0.98]"
             >
-              <div className="h-32 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
-                <span className="text-white text-4xl font-bold">🚦</span>
+              <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mb-2">
+                <BookOpen className="text-indigo-600" size={20} />
               </div>
-              <div className="p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-bold text-sm">Continue Where You Left Off</h3>
-                  <span className="text-blue-700 font-bold text-xs">Resume</span>
-                </div>
-                <p className="text-muted-foreground text-xs mb-3">Pick up your last practice session</p>
-                <div className="bg-blue-600 py-2.5 px-4 rounded-lg text-white text-xs font-medium flex items-center justify-center">
-                  <ChevronRight size={16} className="mr-1" />
-                  Continue Learning
-                </div>
-              </div>
+              <h3 className="font-medium text-xs">Digital Textbooks</h3>
             </button>
-
+            
             <button
-              onClick={handleWeakAreas}
-              className="w-full bg-white rounded-2xl shadow-md overflow-hidden text-left transform transition hover:scale-[1.02]"
+              onClick={() => navigate('/lectures')}
+              className="bg-white rounded-xl shadow p-3 transform transition active:scale-[0.98]"
             >
-              <div className="h-32 bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center">
-                <span className="text-white text-4xl font-bold">⚠️</span>
+              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center mb-2">
+                <Video className="text-amber-600" size={20} />
               </div>
-              <div className="p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-bold text-sm">Practice Weak Areas</h3>
-                  <span className="text-red-700 font-bold text-xs">Focus</span>
-                </div>
-                <p className="text-muted-foreground text-xs mb-3">Work on categories where you need improvement</p>
-                <div className="bg-red-600 py-2.5 px-4 rounded-lg text-white text-xs font-medium flex items-center justify-center">
-                  <ChevronRight size={16} className="mr-1" />
-                  Practice Weak Areas
-                </div>
+              <h3 className="font-medium text-xs">Lectures</h3>
+            </button>
+            
+            <button
+              onClick={() => navigate('/planner')}
+              className="bg-white rounded-xl shadow p-3 transform transition active:scale-[0.98]"
+            >
+              <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mb-2">
+                <CalendarDays className="text-emerald-600" size={20} />
               </div>
+              <h3 className="font-medium text-xs">Driving Schedule</h3>
             </button>
           </div>
         </section>
 
-        {/* Planner Section */}
-        <section className="mt-8">
-          <h2 className="font-bold text-base mb-4">Planner</h2>
-          <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-            <div className="bg-gradient-to-br from-green-400 to-green-600 p-4 flex items-center">
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-3">
-                <CalendarDays className="text-white" size={24} />
-              </div>
-              <div>
-                <h3 className="font-bold text-white text-sm">Driving Schedule</h3>
-                <p className="text-white/90 text-xs">View and manage your lessons</p>
+        {/* Learning Progress Section */}
+        <section className="mb-6">
+          <div className="grid grid-cols-1 gap-4">
+            {/* Continue Learning */}
+            <div className="bg-white rounded-2xl shadow-md p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center flex-1">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                    <BookOpen className="text-blue-600" size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-base mb-1">Continue Learning</h3>
+                    <div className="flex items-center">
+                      <div className="w-16 h-1.5 bg-gray-100 rounded-full mr-2">
+                        <div className="w-1/2 h-1.5 bg-blue-500 rounded-full"></div>
+                      </div>
+                      <span className="text-xs text-gray-500">15/30</span>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleContinueLearning}
+                  className="bg-blue-600 hover:bg-blue-700 py-1.5 px-3 rounded-lg text-white text-xs font-medium ml-2"
+                >
+                  Continue
+                </Button>
               </div>
             </div>
-            <div className="p-4">
-              <DrivingScheduleGrid />
+            
+            {/* Practice Weak Areas */}
+            <div className="bg-white rounded-2xl shadow-md p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center flex-1">
+                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                    <AlertTriangle className="text-red-600" size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-base mb-1">Practice Weak Areas</h3>
+                    <div className="flex items-center">
+                      <div className="w-16 h-1.5 bg-gray-100 rounded-full mr-2">
+                        <div className="w-[65%] h-1.5 bg-red-500 rounded-full"></div>
+                      </div>
+                      <span className="text-xs text-gray-500">65% Correct</span>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleWeakAreas}
+                  className="bg-red-600 hover:bg-red-700 py-1.5 px-3 rounded-lg text-white text-xs font-medium ml-2"
+                >
+                  Practice
+                </Button>
+              </div>
             </div>
+          </div>
+        </section>
+
+        {/* Planner Preview */}
+        <section className="mb-6">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="font-bold text-lg">Upcoming Schedule</h2>
+            <button
+              onClick={() => navigate('/planner')}
+              className="text-blue-600 text-sm font-medium"
+            >
+              View All
+            </button>
+          </div>
+          
+          <div className="bg-white rounded-2xl shadow-md p-4">
+            {upcomingEvent ? (
+              <div className="space-y-3">
+                <div>
+                  <div className="flex items-center mb-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                    <p className="text-xs text-gray-500">
+                      {isToday(parseISO(upcomingEvent.date)) ? 'Today' : format(parseISO(upcomingEvent.date), 'MMM d')}
+                    </p>
+                  </div>
+                  <div className="flex items-center border-l-2 border-blue-500 pl-3 ml-1 py-1">
+                    <div className="mr-3 w-10 text-xs text-gray-500">
+                      {upcomingEvent.time || '9:00'}
+                    </div>
+                    <Badge className="bg-blue-100 text-blue-800 text-xs font-medium">
+                      {upcomingEvent.title}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-gray-500">No upcoming events</p>
+                <Button
+                  size="sm"
+                  onClick={() => navigate('/planner')}
+                  className="mt-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  Add Event
+                </Button>
+              </div>
+            )}
           </div>
         </section>
       </main>
-
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
-        <div className="flex justify-around py-3">
-          <div className="flex flex-col items-center text-blue-600">
-            <svg className="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-            </svg>
-            <span className="text-xs font-medium">Home</span>
-          </div>
-          <div className="flex flex-col items-center text-gray-400">
-            <svg className="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-            </svg>
-            <span className="text-xs">Study</span>
-          </div>
-          <div className="flex flex-col items-center text-gray-400">
-            <svg className="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-            </svg>
-            <span className="text-xs">Tests</span>
-          </div>
-          <div className="flex flex-col items-center text-gray-400">
-            <svg className="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-            </svg>
-            <span className="text-xs">Profile</span>
-          </div>
-        </div>
-      </nav>
 
       <BottomNav />
     </div>
