@@ -32,6 +32,9 @@ import { TextbookSelector } from "@/components/TextbookSelector";
 import { TextbookContent } from "@/components/TextbookContent";
 import { ShopAndEarn } from "@/components/ShopAndEarn";
 import { DrivingScheduleGrid } from "@/components/DrivingScheduleGrid";
+import BottomNav from "@/components/BottomNav";
+import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 const Lectures = () => {
   const { user } = useAuth();
@@ -167,14 +170,23 @@ const Lectures = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20 pb-20">
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
-        <div className="mb-4 sm:mb-6 text-center">
-          <h1 className="text-2xl sm:text-5xl font-bold mb-1.5 sm:mb-3 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Lectures & Study Materials
-          </h1>
-          <p className="text-xs sm:text-lg text-muted-foreground">Your complete guide to Japanese driving education</p>
-        </div>
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20 pb-20">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
+          {/* Back Button */}
+          <div className="mb-3 sm:mb-4">
+            <Link to="/study" className="inline-flex items-center gap-2 text-sm sm:text-base text-muted-foreground hover:text-primary transition-colors">
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span>Back to Study</span>
+            </Link>
+          </div>
+
+          <div className="mb-4 sm:mb-6 text-center">
+            <h1 className="text-2xl sm:text-5xl font-bold mb-1.5 sm:mb-3 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Lectures & Study Materials
+            </h1>
+            <p className="text-xs sm:text-lg text-muted-foreground">Your complete guide to Japanese driving education</p>
+          </div>
 
         <Tabs defaultValue="textbook" className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-4 sm:mb-8 h-auto">
@@ -380,6 +392,8 @@ const Lectures = () => {
         </Tabs>
       </div>
     </div>
+    <BottomNav />
+    </>
   );
 };
 
