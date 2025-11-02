@@ -242,55 +242,55 @@ export function DrivingScheduleGrid() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Template Loader for Non-Official Users */}
       {events.length === 0 && !loading && !isOfficialUser && (
         <ScheduleTemplateLoader onLoadComplete={loadSchedule} />
       )}
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <h2 className="text-xl sm:text-2xl font-bold">{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h2>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 className="text-base sm:text-2xl font-bold truncate">{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h2>
           {events.length > 0 && (
-            <Badge variant={isOfficialUser ? "default" : "outline"} className="text-xs w-fit">
-              {isOfficialUser ? "📅 Official" : "📅 Custom"} ({events.length})
+            <Badge variant={isOfficialUser ? "default" : "outline"} className="text-[10px] sm:text-xs shrink-0 px-1.5 sm:px-2 py-0">
+              {isOfficialUser ? "📅" : "📅"} <span className="hidden sm:inline">{isOfficialUser ? "Official" : "Custom"}</span> ({events.length})
             </Badge>
           )}
         </div>
-        <div className="flex gap-2 self-end sm:self-auto">
+        <div className="flex gap-1.5 sm:gap-2 shrink-0">
           {isOfficialUser && (
             <Button 
               variant="default" 
               size="sm" 
               onClick={handleResetSchedule}
               disabled={resetting}
-              className="text-xs sm:text-sm px-3 sm:px-4 bg-primary hover:bg-primary/90"
+              className="h-7 w-7 sm:h-9 sm:w-auto sm:px-4 p-0 sm:p-2"
             >
-              <RefreshCw className={cn("w-4 h-4 sm:mr-2", resetting && "animate-spin")} />
+              <RefreshCw className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2", resetting && "animate-spin")} />
               <span className="hidden sm:inline">Reset to Template</span>
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={prevMonth} className="h-8 w-8 sm:h-9 sm:w-9 p-0">
-            <ChevronLeft className="w-4 h-4" />
+          <Button variant="outline" size="sm" onClick={prevMonth} className="h-7 w-7 sm:h-9 sm:w-9 p-0">
+            <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={nextMonth} className="h-8 w-8 sm:h-9 sm:w-9 p-0">
-            <ChevronRight className="w-4 h-4" />
+          <Button variant="outline" size="sm" onClick={nextMonth} className="h-7 w-7 sm:h-9 sm:w-9 p-0">
+            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </Button>
         </div>
       </div>
 
-      <div className="flex gap-3 sm:gap-4 flex-wrap text-xs sm:text-sm">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-muted rounded border" />
+      <div className="flex gap-2 sm:gap-4 flex-wrap text-[10px] sm:text-sm">
+        <div className="flex items-center gap-1 sm:gap-2">
+          <div className="w-2.5 h-2.5 sm:w-4 sm:h-4 bg-muted rounded border" />
           <span>Available</span>
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-muted/50 rounded border border-dashed" />
+        <div className="flex items-center gap-1 sm:gap-2">
+          <div className="w-2.5 h-2.5 sm:w-4 sm:h-4 bg-muted/50 rounded border border-dashed" />
           <span className="hidden sm:inline">Blocked (Holiday/Weekend)</span>
           <span className="sm:hidden">Blocked</span>
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+        <div className="flex items-center gap-1 sm:gap-2">
+          <CheckCircle2 className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-green-600" />
           <span>Completed</span>
         </div>
       </div>
