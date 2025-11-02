@@ -12,6 +12,7 @@ import { format, isSameDay, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { getEvents, createEvent, updateEvent, deleteEvent } from "@/lib/supabase/events";
+import { getMonthSchedule } from "@/lib/supabase/drivingSchedule";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -81,6 +82,14 @@ const StudyCalendar = () => {
   const { data: events = [] } = useQuery({
     queryKey: ["events", user?.id],
     queryFn: () => getEvents(user!.id),
+    enabled: !!user,
+  });
+
+  // Get driving schedule events for current month
+  const currentMonth = selectedDate || new Date();
+  const { data: drivingEvents = [] } = useQuery({
+    queryKey: ["drivingSchedule", user?.id, currentMonth.getFullYear(), currentMonth.getMonth() + 1],
+    queryFn: () => getMonthSchedule(user!.id, currentMonth.getFullYear(), currentMonth.getMonth() + 1),
     enabled: !!user,
   });
 
@@ -167,6 +176,7 @@ const StudyCalendar = () => {
     }
   };
 
+  // Combine regular events with driving schedule events
   const eventsOnSelectedDate = events.filter(
     e => selectedDate && isSameDay(parseISO(e.date), selectedDate)
   ).sort((a, b) => {
@@ -176,13 +186,53 @@ const StudyCalendar = () => {
     return a.time.localeCompare(b.time);
   });
 
+  const drivingEventsOnSelectedDate = drivingEvents.filter(
+    e => selectedDate && isSameDay(parseISO(e.date), selectedDate)
+  ).map(e => ({
+    id: e.id,
+    date: e.date,
+    title: e.custom_label || (e.event_type === 'theory' ? `学科${e.lecture_number}` : e.event_type),
+    type: e.event_type,
+    time: e.time_slot.split('-')[0], // Get start time
+    description: e.notes || '',
+    location: e.location || '',
+    instructor: e.instructor || '',
+    isDrivingSchedule: true,
+    status: e.status
+  }));
+
+  const allEventsOnSelectedDate = [...eventsOnSelectedDate, ...drivingEventsOnSelectedDate]
+    .sort((a, b) => {
+      if (!a.time && !b.time) return 0;
+      if (!a.time) return 1;
+      if (!b.time) return -1;
+      return a.time.localeCompare(b.time);
+    });
+
   const upcomingEvents = events
     .filter(e => parseISO(e.date) >= new Date())
     .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())
     .slice(0, 3);
 
+  const upcomingDrivingEvents = drivingEvents
+    .filter(e => parseISO(e.date) >= new Date() && e.status === 'scheduled')
+    .map(e => ({
+      id: e.id,
+      date: e.date,
+      title: e.custom_label || (e.event_type === 'theory' ? `学科${e.lecture_number}` : e.event_type),
+      type: e.event_type,
+      time: e.time_slot.split('-')[0],
+      isDrivingSchedule: true
+    }))
+    .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())
+    .slice(0, 3);
+
+  const allUpcomingEvents = [...upcomingEvents, ...upcomingDrivingEvents]
+    .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())
+    .slice(0, 3);
+
   // Get dates that have events for visual indicators
-  const eventDates = events.map(e => parseISO(e.date));
+  const eventDates = [...events.map(e => parseISO(e.date)), ...drivingEvents.map(e => parseISO(e.date))];
   
   // Custom day content to show event indicators
   const modifiers = {
@@ -196,16 +246,17 @@ const StudyCalendar = () => {
   return (
     <div className="space-y-6">
       {/* Upcoming Events Summary */}
-      {upcomingEvents.length > 0 && (
+      {allUpcomingEvents.length > 0 && (
         <Card className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
             <Bell className="w-4 h-4 text-blue-600" />
             Upcoming Events
           </h3>
           <div className="space-y-2">
-            {upcomingEvents.map(event => {
+            {allUpcomingEvents.map(event => {
               const config = getEventTypeConfig(event.type as EventType);
               const Icon = config.icon;
+              const isDriving = 'isDrivingSchedule' in event && event.isDrivingSchedule;
               return (
                 <div key={event.id} className="flex items-center gap-3 text-sm bg-white/80 rounded-lg p-2">
                   <Badge className={`${config.badgeColor} text-white`}>
@@ -213,6 +264,7 @@ const StudyCalendar = () => {
                   </Badge>
                   <Icon className="w-4 h-4 text-muted-foreground" />
                   <span className="flex-1 font-medium">{event.title}</span>
+                  {isDriving && <Badge variant="outline" className="text-[10px]">Schedule</Badge>}
                   {event.time && <span className="text-xs text-muted-foreground font-semibold">{event.time}</span>}
                 </div>
               );
@@ -242,7 +294,7 @@ const StudyCalendar = () => {
                 {format(selectedDate, 'EEEE, MMMM d, yyyy')}
               </h3>
               <p className="text-sm text-muted-foreground">
-                {eventsOnSelectedDate.length} event(s) scheduled
+                {allEventsOnSelectedDate.length} event(s) scheduled
               </p>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
@@ -344,24 +396,34 @@ const StudyCalendar = () => {
           </div>
 
           <div className="space-y-2">
-            {eventsOnSelectedDate.length === 0 ? (
+            {allEventsOnSelectedDate.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">
                 No events scheduled for this day
               </p>
             ) : (
-              eventsOnSelectedDate.map(event => {
+              allEventsOnSelectedDate.map(event => {
                 const config = getEventTypeConfig(event.type as EventType);
                 const Icon = config.icon;
+                const isDrivingSchedule = 'isDrivingSchedule' in event && event.isDrivingSchedule;
+                const isCompleted = 'status' in event && event.status === 'completed';
                 return (
                   <div
                     key={event.id}
-                    className={`p-4 rounded-lg border-l-4 ${config.color}`}
+                    className={`p-4 rounded-lg border-l-4 ${config.color} ${isCompleted ? 'opacity-70' : ''}`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-start gap-2 flex-1">
                         <Icon className="w-5 h-5 mt-0.5" />
                         <div className="flex-1">
-                          <p className="font-semibold text-sm">{event.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-sm">{event.title}</p>
+                            {isDrivingSchedule && (
+                              <Badge variant="outline" className="text-[10px]">Schedule</Badge>
+                            )}
+                            {isCompleted && (
+                              <Badge variant="outline" className="text-[10px] bg-green-50">✓ Completed</Badge>
+                            )}
+                          </div>
                           <div className="flex flex-wrap gap-2 mt-1">
                             {event.time && (
                               <span className="text-xs opacity-75 flex items-center gap-1">
@@ -387,22 +449,24 @@ const StudyCalendar = () => {
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditEvent(event)}
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteEvent(event.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      {!isDrivingSchedule && (
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditEvent(event)}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteEvent(event.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
