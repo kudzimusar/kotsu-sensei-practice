@@ -11,8 +11,6 @@ import { trackAnswer } from "@/lib/supabase/performance";
 import { getWeakCategories } from "@/lib/supabase/performance";
 import { saveTestHistory } from "@/lib/supabase/tests";
 import { getAllQuestionsWithAI } from "@/lib/supabase/aiQuestions";
-import { getUpcomingEvent } from "@/lib/supabase/drivingSchedule";
-
 type QuizMode = 'quick' | 'focused' | 'permit' | 'license';
 type Screen = 'home' | 'quiz' | 'results';
 

@@ -58,63 +58,60 @@ export function DrivingScheduleGrid() {
   const month = currentDate.getMonth() + 1;
   const daysInMonth = new Date(year, month, 0).getDate();
 
+  const [hasAutoReset, setHasAutoReset] = useState(false);
+
   useEffect(() => {
     if (user) {
       loadSchedule();
     }
   }, [user, currentDate]);
 
-  // Auto-reset for official user on first load
+  // Auto-reset for official user ONLY ONCE on first load
   useEffect(() => {
-    const autoReset = async () => {
-      if (!isOfficialUser || loading || events.length === 0) return;
-      
-      // Check if schedule has old Japanese data
-      const hasOldData = events.some(e => 
-        e.custom_label?.includes('学科') || 
-        e.custom_label?.includes('技能') ||
-        e.custom_label?.includes('試験')
-      );
-      
-      if (hasOldData) {
-        console.log("Detected old schedule data, auto-resetting...");
-        setResetting(true);
-        try {
-          await resetUserSchedule();
-          toast.success("Schedule updated to latest template");
-          await loadSchedule();
-        } catch (error) {
-          console.error("Auto-reset failed:", error);
-        } finally {
-          setResetting(false);
-        }
-      }
-    };
+    if (!isOfficialUser || loading || events.length === 0 || hasAutoReset) return;
     
-    autoReset();
-  }, [isOfficialUser, loading, events.length]);
+    // Check if schedule has old Japanese data
+    const hasOldData = events.some(e => 
+      e.custom_label?.includes('学科') || 
+      e.custom_label?.includes('技能') ||
+      e.custom_label?.includes('試験')
+    );
+    
+    if (hasOldData) {
+      console.log("Detected old schedule data, auto-resetting...");
+      setResetting(true);
+      setHasAutoReset(true); // Prevent future auto-resets
+      resetUserSchedule()
+        .then(() => {
+          toast.success("Schedule updated to latest template");
+          return loadSchedule();
+        })
+        .catch((error) => {
+          console.error("Auto-reset failed:", error);
+        })
+        .finally(() => {
+          setResetting(false);
+        });
+    }
+  }, [isOfficialUser, loading, events.length, hasAutoReset]);
 
   const loadSchedule = async () => {
     if (!user) {
-      console.log("No user logged in");
       setLoading(false);
       return;
     }
     
-    console.log("Loading schedule for user:", user.id, "Month:", month, "Year:", year);
     setLoading(true);
     try {
       const [scheduleData, holidaysData] = await Promise.all([
         getMonthSchedule(user.id, year, month),
         getHolidays(year, month),
       ]);
-      console.log("Schedule loaded:", scheduleData.length, "events");
       setEvents(scheduleData as DrivingScheduleEvent[]);
       setHolidays(holidaysData as Holiday[]);
     } catch (error) {
       console.error("Error loading schedule:", error);
-      console.error("Error details:", JSON.stringify(error, null, 2));
-      toast.error(`Failed to load schedule: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error("Failed to load schedule");
     } finally {
       setLoading(false);
     }
