@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSettings, updateSettings } from "@/lib/supabase/settings";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,7 +41,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     },
   });
 
-  const handleToggle = (field: string, value: boolean) => {
+  const handleToggle = (field: string, value: boolean | string) => {
     updateMutation.mutate({ [field]: value });
   };
 
@@ -48,9 +49,27 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Notification Settings</DialogTitle>
+          <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
         <div className="space-y-6 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="language" className="text-sm font-medium">
+              Language / 言語
+            </Label>
+            <Select
+              value={settings?.language ?? 'ja'}
+              onValueChange={(value) => handleToggle("language", value)}
+            >
+              <SelectTrigger id="language">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ja">日本語 (Japanese)</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="flex items-center justify-between">
             <Label htmlFor="email" className="flex flex-col gap-1">
               <span className="font-medium">Email Notifications</span>

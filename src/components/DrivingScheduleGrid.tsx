@@ -21,7 +21,7 @@ import { ScheduleTemplateLoader } from "./ScheduleTemplateLoader";
 
 const TIME_SLOTS = [
   "08:40", "09:40", "10:40", "11:40",
-  "13:30", "14:30", "14:50", "15:30",
+  "13:30", "14:30", "15:30",
   "16:30", "17:40", "18:40", "19:40"
 ];
 
@@ -70,11 +70,12 @@ export function DrivingScheduleGrid() {
   useEffect(() => {
     if (!isOfficialUser || loading || events.length === 0 || hasAutoReset) return;
     
-    // Check if schedule has old Japanese data
+    // Check if schedule has old data (Japanese labels or incorrect 14:50 time slot)
     const hasOldData = events.some(e => 
-      e.custom_label?.includes('学科') || 
+      e.time_slot === '14:50' ||
+      (e.custom_label?.includes('学科') && !e.custom_label?.includes('Lecture')) ||
       e.custom_label?.includes('技能') ||
-      e.custom_label?.includes('試験')
+      e.custom_label?.includes('AT所内') === false && e.event_type === 'driving'
     );
     
     if (hasOldData) {
@@ -294,7 +295,7 @@ export function DrivingScheduleGrid() {
 
       <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
         <div className="min-w-[1200px]">
-          <div className="grid grid-cols-[60px_repeat(12,1fr)] sm:grid-cols-[80px_repeat(12,1fr)] gap-1">
+          <div className="grid grid-cols-[60px_repeat(11,1fr)] sm:grid-cols-[80px_repeat(11,1fr)] gap-1">
             <div className="sticky left-0 bg-background z-10 font-semibold p-1 sm:p-2 text-xs sm:text-sm">Day</div>
             {TIME_SLOTS.map(slot => (
               <div key={slot} className="text-[10px] sm:text-xs font-semibold p-1 sm:p-2 text-center">{slot}</div>

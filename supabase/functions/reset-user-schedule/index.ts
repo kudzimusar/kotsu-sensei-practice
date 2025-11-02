@@ -23,6 +23,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Get user's language preference (default to Japanese)
+    const { data: settings } = await supabase
+      .from('user_settings')
+      .select('language')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    const language = settings?.language || 'ja';
+
     // Delete all existing schedule records for this user
     const { error: deleteError } = await supabase
       .from('driving_school_schedule')
@@ -31,42 +40,81 @@ Deno.serve(async (req) => {
 
     if (deleteError) throw deleteError;
 
-    // Insert correct schedule data from Japanese schedule
+    // English schedule labels
+    const enLabels = {
+      theory: (n: number) => `Lecture ${n}`,
+      driving: 'AT - On-Site Driving',
+      practiceTest: 'Practice Test (P)',
+      orientation: 'Orientation',
+      aptitude: 'Aptitude Test + Lecture 1',
+      writtenTest: 'Written Test',
+      drivingTest: 'Driving Test',
+      completionTest: 'Stage 1 Completion Test',
+      finalDriving: 'Final Driving Test',
+      finalWritten: 'Final Written Test',
+    };
+
+    // Japanese schedule labels (original)
+    const jaLabels = {
+      theory: (n: number) => `学科${n}`,
+      driving: 'AT所内',
+      practiceTest: '(P)',
+      orientation: 'オリエンテーション',
+      aptitude: '適性 + 学科1',
+      writtenTest: '筆記試験',
+      drivingTest: '技能検定',
+      completionTest: '修了検定',
+      finalDriving: '修了検定',
+      finalWritten: '終了検定',
+    };
+
+    const labels = language === 'en' ? enLabels : jaLabels;
+
+    // Complete November 2025 English Schedule - All 14:50 converted to 14:30
     const scheduleData = [
-      // November 2025 (15 events)
-      { date: '2025-11-02', time_slot: '14:50', event_type: 'orientation', lecture_number: null, custom_label: 'Orientation', status: 'scheduled' },
-      { date: '2025-11-08', time_slot: '11:40', event_type: 'theory', lecture_number: 10, custom_label: '学科10', status: 'scheduled' },
-      { date: '2025-11-08', time_slot: '13:30', event_type: 'theory', lecture_number: 4, custom_label: '学科4', status: 'scheduled' },
-      { date: '2025-11-15', time_slot: '11:40', event_type: 'theory', lecture_number: 8, custom_label: '学科8', status: 'scheduled' },
-      { date: '2025-11-15', time_slot: '13:30', event_type: 'theory', lecture_number: 5, custom_label: '学科5', status: 'scheduled' },
-      { date: '2025-11-15', time_slot: '14:30', event_type: 'driving', lecture_number: null, custom_label: 'AT所内', status: 'scheduled' },
-      { date: '2025-11-22', time_slot: '18:40', event_type: 'driving', lecture_number: null, custom_label: 'AT所内', status: 'scheduled' },
-      { date: '2025-11-23', time_slot: '13:30', event_type: 'driving', lecture_number: null, custom_label: 'AT所内', status: 'scheduled' },
-      { date: '2025-11-23', time_slot: '14:30', event_type: 'theory', lecture_number: 9, custom_label: '学科9', status: 'scheduled' },
-      { date: '2025-11-24', time_slot: '16:30', event_type: 'driving', lecture_number: null, custom_label: 'AT所内', status: 'scheduled' },
-      { date: '2025-11-24', time_slot: '18:40', event_type: 'theory', lecture_number: 3, custom_label: '学科3', status: 'scheduled' },
-      { date: '2025-11-29', time_slot: '16:30', event_type: 'driving', lecture_number: null, custom_label: 'AT所内', status: 'scheduled' },
-      { date: '2025-11-30', time_slot: '14:30', event_type: 'theory', lecture_number: 7, custom_label: '学科7', status: 'scheduled' },
-      { date: '2025-11-30', time_slot: '15:30', event_type: 'test', lecture_number: null, custom_label: '(P)', status: 'scheduled' },
-      { date: '2025-11-30', time_slot: '16:30', event_type: 'driving', lecture_number: null, custom_label: 'AT所内', status: 'scheduled' },
-      // December 2025 (17 events)
-      { date: '2025-12-06', time_slot: '11:40', event_type: 'theory', lecture_number: 6, custom_label: '学科6', status: 'scheduled' },
-      { date: '2025-12-06', time_slot: '14:30', event_type: 'driving', lecture_number: null, custom_label: 'AT所内', status: 'scheduled' },
-      { date: '2025-12-07', time_slot: '13:30', event_type: 'driving', lecture_number: null, custom_label: 'AT所内', status: 'scheduled' },
-      { date: '2025-12-07', time_slot: '15:30', event_type: 'test', lecture_number: null, custom_label: '(P)', status: 'scheduled' },
-      { date: '2025-12-13', time_slot: '15:30', event_type: 'driving', lecture_number: null, custom_label: 'AT所内', status: 'scheduled' },
-      { date: '2025-12-13', time_slot: '16:30', event_type: 'test', lecture_number: null, custom_label: '(P)', status: 'scheduled' },
-      { date: '2025-12-14', time_slot: '13:30', event_type: 'driving', lecture_number: null, custom_label: 'AT所内', status: 'scheduled' },
-      { date: '2025-12-20', time_slot: '15:30', event_type: 'test', lecture_number: null, custom_label: '(P)', status: 'scheduled' },
-      { date: '2025-12-20', time_slot: '16:30', event_type: 'theory', lecture_number: 2, custom_label: '学科2', status: 'scheduled' },
-      { date: '2025-12-20', time_slot: '18:40', event_type: 'driving', lecture_number: null, custom_label: 'AT所内', status: 'scheduled' },
-      { date: '2025-12-27', time_slot: '16:30', event_type: 'driving', lecture_number: null, custom_label: 'AT所内', status: 'scheduled' },
-      { date: '2025-12-27', time_slot: '17:40', event_type: 'test', lecture_number: null, custom_label: '(P)', status: 'scheduled' },
-      { date: '2025-12-27', time_slot: '18:40', event_type: 'test', lecture_number: null, custom_label: '(P)', status: 'scheduled' },
-      { date: '2025-12-28', time_slot: '10:40', event_type: 'test', lecture_number: null, custom_label: '修了検定', status: 'scheduled' },
+      // November 2025
+      { date: '2025-11-08', time_slot: '14:30', event_type: 'theory', lecture_number: 10, custom_label: labels.theory(10), status: 'scheduled' },
+      { date: '2025-11-08', time_slot: '16:30', event_type: 'theory', lecture_number: 4, custom_label: labels.theory(4), status: 'scheduled' },
+      { date: '2025-11-13', time_slot: '14:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      { date: '2025-11-15', time_slot: '14:30', event_type: 'theory', lecture_number: 8, custom_label: labels.theory(8), status: 'scheduled' },
+      { date: '2025-11-15', time_slot: '16:30', event_type: 'theory', lecture_number: 5, custom_label: labels.theory(5), status: 'scheduled' },
+      { date: '2025-11-15', time_slot: '18:40', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      { date: '2025-11-17', time_slot: '14:30', event_type: 'orientation', lecture_number: null, custom_label: labels.orientation, status: 'scheduled' },
+      { date: '2025-11-18', time_slot: '14:30', event_type: 'aptitude', lecture_number: 1, custom_label: labels.aptitude, status: 'scheduled' },
+      { date: '2025-11-20', time_slot: '14:30', event_type: 'theory', lecture_number: 2, custom_label: labels.theory(2), status: 'scheduled' },
+      { date: '2025-11-20', time_slot: '16:30', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
+      { date: '2025-11-22', time_slot: '14:30', event_type: 'theory', lecture_number: 9, custom_label: labels.theory(9), status: 'scheduled' },
+      { date: '2025-11-24', time_slot: '14:30', event_type: 'theory', lecture_number: 3, custom_label: labels.theory(3), status: 'scheduled' },
+      { date: '2025-11-24', time_slot: '16:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      { date: '2025-11-25', time_slot: '14:30', event_type: 'theory', lecture_number: 7, custom_label: labels.theory(7), status: 'scheduled' },
+      { date: '2025-11-25', time_slot: '16:30', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
+      { date: '2025-11-26', time_slot: '14:30', event_type: 'theory', lecture_number: 6, custom_label: labels.theory(6), status: 'scheduled' },
+      { date: '2025-11-26', time_slot: '16:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      { date: '2025-11-27', time_slot: '14:30', event_type: 'test', lecture_number: null, custom_label: labels.writtenTest, status: 'scheduled' },
+      { date: '2025-11-27', time_slot: '16:30', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
+      { date: '2025-11-28', time_slot: '14:30', event_type: 'test', lecture_number: null, custom_label: labels.drivingTest, status: 'scheduled' },
+      { date: '2025-11-28', time_slot: '16:30', event_type: 'test', lecture_number: null, custom_label: labels.completionTest, status: 'scheduled' },
+      { date: '2025-11-29', time_slot: '14:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      { date: '2025-11-29', time_slot: '16:30', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
+      
+      // December 2025 (keeping original December schedule - can be updated later if needed)
+      { date: '2025-12-06', time_slot: '11:40', event_type: 'theory', lecture_number: 6, custom_label: labels.theory(6), status: 'scheduled' },
+      { date: '2025-12-06', time_slot: '14:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      { date: '2025-12-07', time_slot: '13:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      { date: '2025-12-07', time_slot: '15:30', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
+      { date: '2025-12-13', time_slot: '15:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      { date: '2025-12-13', time_slot: '16:30', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
+      { date: '2025-12-14', time_slot: '13:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      { date: '2025-12-20', time_slot: '15:30', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
+      { date: '2025-12-20', time_slot: '16:30', event_type: 'theory', lecture_number: 2, custom_label: labels.theory(2), status: 'scheduled' },
+      { date: '2025-12-20', time_slot: '18:40', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      { date: '2025-12-27', time_slot: '16:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      { date: '2025-12-27', time_slot: '17:40', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
+      { date: '2025-12-27', time_slot: '18:40', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
+      { date: '2025-12-28', time_slot: '10:40', event_type: 'test', lecture_number: null, custom_label: labels.finalDriving, status: 'scheduled' },
       { date: '2025-12-28', time_slot: '13:30', event_type: 'driving', lecture_number: null, custom_label: 'Driving/Written', status: 'scheduled' },
-      { date: '2025-12-28', time_slot: '14:30', event_type: 'test', lecture_number: null, custom_label: 'Written Test', status: 'scheduled' },
-      { date: '2025-12-28', time_slot: '15:30', event_type: 'test', lecture_number: null, custom_label: '終了検定', status: 'scheduled' },
+      { date: '2025-12-28', time_slot: '14:30', event_type: 'test', lecture_number: null, custom_label: labels.writtenTest, status: 'scheduled' },
+      { date: '2025-12-28', time_slot: '15:30', event_type: 'test', lecture_number: null, custom_label: labels.finalWritten, status: 'scheduled' },
     ];
 
     const eventsWithUser = scheduleData.map(event => ({
@@ -82,7 +130,7 @@ Deno.serve(async (req) => {
     if (insertError) throw insertError;
 
     return new Response(
-      JSON.stringify({ success: true, events: data?.length || 0 }),
+      JSON.stringify({ success: true, events: data?.length || 0, language }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
