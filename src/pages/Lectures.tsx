@@ -168,33 +168,33 @@ const Lectures = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-purple-900/20 pb-20">
-      <div className="container mx-auto px-3 py-6 max-w-6xl">
-        <div className="mb-6 text-center">
-          <h1 className="text-3xl sm:text-5xl font-bold mb-2 sm:mb-3 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
+        <div className="mb-4 sm:mb-6 text-center">
+          <h1 className="text-2xl sm:text-5xl font-bold mb-1.5 sm:mb-3 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
             Lectures & Study Materials
           </h1>
-          <p className="text-sm sm:text-lg text-muted-foreground">Your complete guide to Japanese driving education</p>
+          <p className="text-xs sm:text-lg text-muted-foreground">Your complete guide to Japanese driving education</p>
         </div>
 
         <Tabs defaultValue="textbook" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6 sm:mb-8 h-auto">
-            <TabsTrigger value="textbook" className="text-xs sm:text-lg py-2">
-              <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+          <TabsList className="grid w-full grid-cols-4 mb-4 sm:mb-8 h-auto">
+            <TabsTrigger value="textbook" className="text-xs sm:text-base py-1.5 sm:py-2 px-2 sm:px-3">
+              <BookOpen className="h-3.5 w-3.5 sm:h-5 sm:w-5 mr-0.5 sm:mr-2" />
               <span className="hidden sm:inline">Textbooks</span>
               <span className="sm:hidden">Books</span>
             </TabsTrigger>
-            <TabsTrigger value="curriculum" className="text-xs sm:text-lg py-2">
-              <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+            <TabsTrigger value="curriculum" className="text-xs sm:text-base py-1.5 sm:py-2 px-2 sm:px-3">
+              <GraduationCap className="h-3.5 w-3.5 sm:h-5 sm:w-5 mr-0.5 sm:mr-2" />
               <span className="hidden sm:inline">Curriculum</span>
               <span className="sm:hidden">Study</span>
             </TabsTrigger>
-            <TabsTrigger value="schedule" className="text-xs sm:text-lg py-2">
-              <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+            <TabsTrigger value="schedule" className="text-xs sm:text-base py-1.5 sm:py-2 px-2 sm:px-3">
+              <CalendarIcon className="h-3.5 w-3.5 sm:h-5 sm:w-5 mr-0.5 sm:mr-2" />
               <span className="hidden sm:inline">Schedule</span>
               <span className="sm:hidden">Plan</span>
             </TabsTrigger>
-            <TabsTrigger value="shop" className="text-xs sm:text-lg py-2">
-              <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+            <TabsTrigger value="shop" className="text-xs sm:text-base py-1.5 sm:py-2 px-2 sm:px-3">
+              <ShoppingBag className="h-3.5 w-3.5 sm:h-5 sm:w-5 mr-0.5 sm:mr-2" />
               <span className="hidden sm:inline">Shop & Earn</span>
               <span className="sm:hidden">Shop</span>
             </TabsTrigger>
@@ -359,11 +359,11 @@ const Lectures = () => {
 
           {/* Schedule Tab */}
           <TabsContent value="schedule">
-            <Card className="p-6">
-              <div className="space-y-4">
+            <Card className="p-3 sm:p-6">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">Driving School Schedule Planner</h2>
-                  <p className="text-muted-foreground">
+                  <h2 className="text-lg sm:text-2xl font-bold mb-1.5 sm:mb-2">Driving School Schedule Planner</h2>
+                  <p className="text-xs sm:text-base text-muted-foreground leading-snug sm:leading-normal">
                     Plan your lectures and driving lessons. Schedules follow National Police Agency rules: 
                     No weekends/holidays except last Saturday of month from 16:30. Changes possible—update as needed.
                   </p>
