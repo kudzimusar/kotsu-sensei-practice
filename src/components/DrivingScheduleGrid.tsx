@@ -293,8 +293,8 @@ export function DrivingScheduleGrid() {
       </div>
 
       <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-        <div className="min-w-[800px]">
-          <div className="grid grid-cols-[60px_repeat(10,1fr)] sm:grid-cols-[80px_repeat(10,1fr)] gap-1">
+        <div className="min-w-[1200px]">
+          <div className="grid grid-cols-[60px_repeat(12,1fr)] sm:grid-cols-[80px_repeat(12,1fr)] gap-1">
             <div className="sticky left-0 bg-background z-10 font-semibold p-1 sm:p-2 text-xs sm:text-sm">Day</div>
             {TIME_SLOTS.map(slot => (
               <div key={slot} className="text-[10px] sm:text-xs font-semibold p-1 sm:p-2 text-center">{slot}</div>
