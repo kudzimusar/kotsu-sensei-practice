@@ -1,5 +1,33 @@
 # 🗓️ Driving School Schedule Implementation Guide
 
+## 🎯 User Types & Experiences
+
+### **Official Account** (kudzimusar@gmail.com)
+- **User ID**: `63908300-f3df-4fff-ab25-cc268e00a45b`
+- **Pre-populated Schedule**: ✅ 38 events from Nov 8 - Dec 28, 2025
+- **Badge Display**: "📅 Your Official Schedule" (blue badge)
+- **Template Loader**: Never shown (you have your official schedule)
+- **Features**:
+  - All 38 events from your uploaded driving school images
+  - Full edit/delete/mark complete capabilities
+  - Automatic sync with Home page and Calendar
+  - Can manage all events via UI
+  - Navigate to: **Lectures → Schedule** to see your official schedule
+
+### **Other Users** (All Other Accounts)
+- **Initial State**: Empty schedule
+- **Template Loader**: Shown when schedule is empty
+- **Badge Display**: "📅 Custom Schedule" (outline badge) after loading
+- **Features**:
+  - Click "Load Schedule Template" to add 38 sample events
+  - Full customization: edit dates, times, locations, notes
+  - Duplicate prevention: warns if loading multiple times
+  - Options: "Cancel", "Add Anyway", or "Replace All"
+  - Confirmation required with checkbox before loading
+  - Expandable "How to Use" instructions with examples
+
+---
+
 ## ✅ What Has Been Implemented
 
 ### **1. Database Tables Created**
