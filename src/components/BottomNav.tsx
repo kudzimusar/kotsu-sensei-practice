@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BookOpen, ClipboardList, User, Sparkles } from "lucide-react";
+import { Home, BookOpen, ClipboardList, User, Sparkles, CalendarDays } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const BottomNav = () => {
@@ -12,6 +12,7 @@ const BottomNav = () => {
     { path: "/study", icon: BookOpen, label: "Study" },
     { path: "/tests", icon: ClipboardList, label: "Tests" },
     { path: "/generate", icon: Sparkles, label: "AI" },
+    { path: "/planner", icon: CalendarDays, label: "Planner" },
     { path: "/profile", icon: User, label: isGuest ? "Sign Up" : "Profile" },
   ];
 

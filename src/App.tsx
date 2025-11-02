@@ -15,6 +15,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import QuestionGenerator from "./pages/QuestionGenerator";
 import Lectures from "./pages/Lectures";
+import Planner from "./pages/Planner";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/study" element={<Study />} />
           <Route path="/lectures" element={<Lectures />} />
           <Route path="/tests" element={<Tests />} />
+          <Route path="/planner" element={<Planner />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/generate" element={<ProtectedRoute><QuestionGenerator /></ProtectedRoute>} />
           <Route path="/about" element={<About />} />
