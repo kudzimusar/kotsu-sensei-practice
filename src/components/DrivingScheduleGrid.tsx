@@ -63,19 +63,26 @@ export function DrivingScheduleGrid() {
   }, [user, currentDate]);
 
   const loadSchedule = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log("No user logged in");
+      setLoading(false);
+      return;
+    }
     
+    console.log("Loading schedule for user:", user.id, "Month:", month, "Year:", year);
     setLoading(true);
     try {
       const [scheduleData, holidaysData] = await Promise.all([
         getMonthSchedule(user.id, year, month),
         getHolidays(year, month),
       ]);
+      console.log("Schedule loaded:", scheduleData.length, "events");
       setEvents(scheduleData as DrivingScheduleEvent[]);
       setHolidays(holidaysData as Holiday[]);
     } catch (error) {
       console.error("Error loading schedule:", error);
-      toast.error("Failed to load schedule");
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      toast.error(`Failed to load schedule: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -170,7 +177,10 @@ export function DrivingScheduleGrid() {
       <Card className="p-8 text-center">
         <Calendar className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
         <h3 className="text-lg font-semibold mb-2">Sign In Required</h3>
-        <p className="text-muted-foreground">Please sign in to access your driving school schedule.</p>
+        <p className="text-muted-foreground mb-4">Please sign in to access your driving school schedule.</p>
+        <p className="text-xs text-muted-foreground">
+          Official users (kudzimusar@gmail.com) will see their pre-populated schedule automatically.
+        </p>
       </Card>
     );
   }
