@@ -2,3 +2,9 @@ project_id = "ndulrvfwcqyvutcviebk"
 
 [functions.generate-questions]
 verify_jwt = false
+
+[functions.generate-referral-code]
+verify_jwt = true
+
+[functions.track-affiliate-click]
+verify_jwt = false

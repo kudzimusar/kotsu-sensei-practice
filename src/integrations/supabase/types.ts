@@ -14,6 +14,92 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_clicks: {
+        Row: {
+          converted: boolean | null
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          product_id: string | null
+          referral_code: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          converted?: boolean | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          product_id?: string | null
+          referral_code?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          converted?: boolean | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          product_id?: string | null
+          referral_code?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_clicks_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_products: {
+        Row: {
+          affiliate_url: string
+          category: string | null
+          commission_rate: number
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          price: number | null
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          affiliate_url: string
+          category?: string | null
+          commission_rate?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          price?: number | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          affiliate_url?: string
+          category?: string | null
+          commission_rate?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          price?: number | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       ai_generated_questions: {
         Row: {
           answer: boolean
@@ -461,6 +547,196 @@ export type Database = {
           },
         ]
       }
+      textbook_chapters: {
+        Row: {
+          chapter_number: number
+          content: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          page_end: number | null
+          page_start: number | null
+          sort_order: number | null
+          textbook_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          chapter_number: number
+          content?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          page_end?: number | null
+          page_start?: number | null
+          sort_order?: number | null
+          textbook_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          chapter_number?: number
+          content?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          page_end?: number | null
+          page_start?: number | null
+          sort_order?: number | null
+          textbook_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "textbook_chapters_textbook_id_fkey"
+            columns: ["textbook_id"]
+            isOneToOne: false
+            referencedRelation: "textbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      textbook_terminology: {
+        Row: {
+          category: string | null
+          chapter_reference: string | null
+          created_at: string | null
+          definition: string
+          example_usage: string | null
+          id: string
+          related_terms: string[] | null
+          sort_order: number | null
+          term: string
+          textbook_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          chapter_reference?: string | null
+          created_at?: string | null
+          definition: string
+          example_usage?: string | null
+          id?: string
+          related_terms?: string[] | null
+          sort_order?: number | null
+          term: string
+          textbook_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          chapter_reference?: string | null
+          created_at?: string | null
+          definition?: string
+          example_usage?: string | null
+          id?: string
+          related_terms?: string[] | null
+          sort_order?: number | null
+          term?: string
+          textbook_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "textbook_terminology_textbook_id_fkey"
+            columns: ["textbook_id"]
+            isOneToOne: false
+            referencedRelation: "textbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      textbooks: {
+        Row: {
+          amazon_link: string | null
+          author: string | null
+          cover_image_url: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          isbn: string | null
+          language: string | null
+          price: number | null
+          publisher: string | null
+          purchase_links: Json | null
+          sort_order: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          amazon_link?: string | null
+          author?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          isbn?: string | null
+          language?: string | null
+          price?: number | null
+          publisher?: string | null
+          purchase_links?: Json | null
+          sort_order?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          amazon_link?: string | null
+          author?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          isbn?: string | null
+          language?: string | null
+          price?: number | null
+          publisher?: string | null
+          purchase_links?: Json | null
+          sort_order?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_earnings: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          paid_at: string | null
+          reference_id: string | null
+          source: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          paid_at?: string | null
+          reference_id?: string | null
+          source: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          paid_at?: string | null
+          reference_id?: string | null
+          source?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_lecture_schedule: {
         Row: {
           completed_at: string | null
@@ -537,6 +813,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_referrals: {
+        Row: {
+          commission_earned: number | null
+          completed_at: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          referral_code: string
+          referred_user_id: string | null
+          referrer_user_id: string
+          status: string | null
+        }
+        Insert: {
+          commission_earned?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          referral_code: string
+          referred_user_id?: string | null
+          referrer_user_id: string
+          status?: string | null
+        }
+        Update: {
+          commission_earned?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          referral_code?: string
+          referred_user_id?: string | null
+          referrer_user_id?: string
+          status?: string | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
