@@ -11,6 +11,7 @@ import { loadProgress, getWeakCategories } from "@/lib/progressTracking";
 import { useAuth } from "@/hooks/useAuth";
 import { getEvents } from "@/lib/supabase/events";
 import { getAllPerformance } from "@/lib/supabase/performance";
+import { getUpcomingEvent } from "@/lib/supabase/drivingSchedule";
 import { getTestHistory } from "@/lib/supabase/tests";
 import { getProfile } from "@/lib/supabase/profiles";
 import { useQuery } from "@tanstack/react-query";
@@ -58,10 +59,42 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
     enabled: !!user,
   });
 
-  // Get next upcoming event
-  const upcomingEvent = events
+  const { data: upcomingDrivingEvent } = useQuery({
+    queryKey: ["upcomingDrivingEvent", user?.id],
+    queryFn: () => getUpcomingEvent(user!.id),
+    enabled: !!user,
+  });
+
+  // Get next upcoming event (combine calendar and driving schedule)
+  const upcomingCalendarEvent = events
     .filter(e => !isPast(parseISO(e.date)) || isToday(parseISO(e.date)))
     .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())[0];
+
+  const upcomingEvent = (() => {
+    if (!upcomingCalendarEvent && !upcomingDrivingEvent) return null;
+    if (!upcomingCalendarEvent) return {
+      ...upcomingDrivingEvent!,
+      title: upcomingDrivingEvent!.custom_label || (upcomingDrivingEvent!.event_type === 'theory' ? `学科${upcomingDrivingEvent!.lecture_number}` : upcomingDrivingEvent!.event_type),
+      time: upcomingDrivingEvent!.time_slot.split('-')[0],
+      description: upcomingDrivingEvent!.notes || '',
+      isDrivingSchedule: true
+    };
+    if (!upcomingDrivingEvent) return upcomingCalendarEvent;
+    
+    const calendarDate = parseISO(upcomingCalendarEvent.date);
+    const drivingDate = parseISO(upcomingDrivingEvent.date);
+    
+    if (drivingDate < calendarDate) {
+      return {
+        ...upcomingDrivingEvent,
+        title: upcomingDrivingEvent.custom_label || (upcomingDrivingEvent.event_type === 'theory' ? `学科${upcomingDrivingEvent.lecture_number}` : upcomingDrivingEvent.event_type),
+        time: upcomingDrivingEvent.time_slot.split('-')[0],
+        description: upcomingDrivingEvent.notes || '',
+        isDrivingSchedule: true
+      };
+    }
+    return upcomingCalendarEvent;
+  })();
 
   // Calculate test readiness based on performance
   const testReadiness = performance.length > 0
