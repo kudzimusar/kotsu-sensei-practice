@@ -1,0 +1,272 @@
+import { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, ChevronRight, Plus, BookOpen, Car, ClipboardCheck, Brain, Compass, CheckCircle2, Calendar } from "lucide-react";
+import { ScheduleEventModal } from "./ScheduleEventModal";
+import { useAuth } from "@/hooks/useAuth";
+import { 
+  getMonthSchedule, 
+  getHolidays, 
+  createScheduleEvent, 
+  updateScheduleEvent, 
+  deleteScheduleEvent,
+  type DrivingScheduleEvent,
+  type Holiday
+} from "@/lib/supabase/drivingSchedule";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+const TIME_SLOTS = [
+  "08:40", "09:40", "10:40", "11:40",
+  "13:40", "14:50", "16:30", "17:30",
+  "18:30", "19:40"
+];
+
+const EVENT_ICONS = {
+  theory: BookOpen,
+  driving: Car,
+  test: ClipboardCheck,
+  aptitude: Brain,
+  orientation: Compass,
+};
+
+const EVENT_COLORS = {
+  theory: "bg-green-100 dark:bg-green-900/30 border-green-500 text-green-700 dark:text-green-300",
+  driving: "bg-blue-100 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-300",
+  test: "bg-red-100 dark:bg-red-900/30 border-red-500 text-red-700 dark:text-red-300",
+  aptitude: "bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-700 dark:text-purple-300",
+  orientation: "bg-orange-100 dark:bg-orange-900/30 border-orange-500 text-orange-700 dark:text-orange-300",
+};
+
+export function DrivingScheduleGrid() {
+  const { user } = useAuth();
+  const [currentDate, setCurrentDate] = useState(new Date(2025, 10, 1)); // November 2025
+  const [events, setEvents] = useState<DrivingScheduleEvent[]>([]);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<DrivingScheduleEvent | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth() + 1;
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  useEffect(() => {
+    if (user) {
+      loadSchedule();
+    }
+  }, [user, currentDate]);
+
+  const loadSchedule = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const [scheduleData, holidaysData] = await Promise.all([
+        getMonthSchedule(user.id, year, month),
+        getHolidays(year, month),
+      ]);
+      setEvents(scheduleData as DrivingScheduleEvent[]);
+      setHolidays(holidaysData as Holiday[]);
+    } catch (error) {
+      console.error("Error loading schedule:", error);
+      toast.error("Failed to load schedule");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isHoliday = (day: number) => {
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return holidays.some(h => h.date === dateStr);
+  };
+
+  const isWeekend = (day: number) => {
+    const date = new Date(year, month - 1, day);
+    const dayOfWeek = date.getDay();
+    return dayOfWeek === 0 || dayOfWeek === 6;
+  };
+
+  const isLastSaturdayAfter1630 = (day: number, timeSlot: string) => {
+    const date = new Date(year, month - 1, day);
+    const dayOfWeek = date.getDay();
+    const isLastSaturday = dayOfWeek === 6 && day + 7 > daysInMonth;
+    const slotHour = parseInt(timeSlot.split(':')[0]);
+    return isLastSaturday && slotHour >= 16;
+  };
+
+  const isBlocked = (day: number, timeSlot: string) => {
+    if (isHoliday(day)) return true;
+    if (isWeekend(day) && !isLastSaturdayAfter1630(day, timeSlot)) return true;
+    return false;
+  };
+
+  const getEventsForCell = (day: number, timeSlot: string) => {
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return events.filter(e => e.date === dateStr && e.time_slot.startsWith(timeSlot));
+  };
+
+  const handleCellClick = (day: number, timeSlot: string) => {
+    if (isBlocked(day, timeSlot)) return;
+    
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const cellEvents = getEventsForCell(day, timeSlot);
+    
+    if (cellEvents.length > 0) {
+      setSelectedEvent(cellEvents[0]);
+    } else {
+      setSelectedEvent(null);
+    }
+    
+    setSelectedDate(dateStr);
+    setSelectedTimeSlot(timeSlot + "-" + (parseInt(timeSlot.split(':')[0]) + 1) + ":30");
+    setModalOpen(true);
+  };
+
+  const handleSave = async (eventData: Partial<DrivingScheduleEvent>) => {
+    if (!user) return;
+
+    try {
+      if (selectedEvent?.id) {
+        await updateScheduleEvent(selectedEvent.id, eventData);
+        toast.success("Event updated successfully");
+      } else {
+        await createScheduleEvent({ ...eventData, user_id: user.id } as any);
+        toast.success("Event created successfully");
+      }
+      await loadSchedule();
+    } catch (error) {
+      console.error("Error saving event:", error);
+      toast.error("Failed to save event");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteScheduleEvent(id);
+      toast.success("Event deleted successfully");
+      await loadSchedule();
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      toast.error("Failed to delete event");
+    }
+  };
+
+  const nextMonth = () => {
+    setCurrentDate(new Date(year, month, 1));
+  };
+
+  const prevMonth = () => {
+    setCurrentDate(new Date(year, month - 2, 1));
+  };
+
+  if (!user) {
+    return (
+      <Card className="p-8 text-center">
+        <Calendar className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+        <h3 className="text-lg font-semibold mb-2">Sign In Required</h3>
+        <p className="text-muted-foreground">Please sign in to access your driving school schedule.</p>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h2>
+        <div className="flex gap-2">
+          <Button variant="outline" size="icon" onClick={prevMonth}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={nextMonth}>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex gap-4 flex-wrap text-sm">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-muted rounded border" />
+          <span>Available</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-muted/50 rounded border border-dashed" />
+          <span>Blocked (Holiday/Weekend)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-green-600" />
+          <span>Completed</span>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <div className="min-w-[800px]">
+          <div className="grid grid-cols-[80px_repeat(10,1fr)] gap-1">
+            <div className="sticky left-0 bg-background z-10 font-semibold p-2">Day</div>
+            {TIME_SLOTS.map(slot => (
+              <div key={slot} className="text-xs font-semibold p-2 text-center">{slot}</div>
+            ))}
+
+            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
+              <>
+                <div key={`day-${day}`} className="sticky left-0 bg-background z-10 p-2 font-medium border-r">
+                  {day}
+                  {isHoliday(day) && <div className="text-[10px] text-red-500">Holiday</div>}
+                </div>
+                {TIME_SLOTS.map(slot => {
+                  const blocked = isBlocked(day, slot);
+                  const cellEvents = getEventsForCell(day, slot);
+                  const hasEvent = cellEvents.length > 0;
+                  const event = cellEvents[0];
+
+                  return (
+                    <div
+                      key={`${day}-${slot}`}
+                      onClick={() => handleCellClick(day, slot)}
+                      className={cn(
+                        "min-h-[60px] p-1 border rounded cursor-pointer transition-colors",
+                        blocked && "bg-muted/50 border-dashed cursor-not-allowed",
+                        !blocked && !hasEvent && "hover:bg-accent",
+                        hasEvent && EVENT_COLORS[event.event_type],
+                        event?.status === 'completed' && "opacity-70"
+                      )}
+                    >
+                      {hasEvent && (
+                        <div className="flex flex-col items-center justify-center h-full gap-1">
+                          {event.status === 'completed' && (
+                            <CheckCircle2 className="w-3 h-3" />
+                          )}
+                          {event.symbol && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0">
+                              {event.symbol}
+                            </Badge>
+                          )}
+                          <div className="text-[10px] text-center font-medium">
+                            {event.custom_label || (event.event_type === 'theory' ? `学科${event.lecture_number}` : event.event_type)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <ScheduleEventModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        event={selectedEvent}
+        date={selectedDate}
+        timeSlot={selectedTimeSlot}
+        onSave={handleSave}
+        onDelete={handleDelete}
+      />
+    </div>
+  );
+}
