@@ -126,3 +126,38 @@ export const getUpcomingEvent = async (userId: string) => {
 export const markEventComplete = async (id: string) => {
   return updateScheduleEvent(id, { status: 'completed' });
 };
+
+export const getUpcomingTestEvent = async (userId: string) => {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from("driving_school_schedule")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("status", "scheduled")
+    .eq("event_type", "test")
+    .gte("date", today)
+    .order("date", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getUpcomingScheduleEvents = async (userId: string, limit: number = 5) => {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from("driving_school_schedule")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("status", "scheduled")
+    .gte("date", today)
+    .order("date", { ascending: true })
+    .order("time_slot", { ascending: true })
+    .limit(limit);
+
+  if (error) throw error;
+  return data || [];
+};
