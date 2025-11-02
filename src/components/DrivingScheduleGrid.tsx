@@ -16,7 +16,7 @@ import {
 } from "@/lib/supabase/drivingSchedule";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { SampleScheduleLoader } from "./SampleScheduleLoader";
+import { ScheduleTemplateLoader } from "./ScheduleTemplateLoader";
 
 const TIME_SLOTS = [
   "08:40", "09:40", "10:40", "11:40",
@@ -42,6 +42,7 @@ const EVENT_COLORS = {
 
 export function DrivingScheduleGrid() {
   const { user } = useAuth();
+  const isOfficialUser = user?.id === '63908300-f3df-4fff-ab25-cc268e00a45b';
   const [currentDate, setCurrentDate] = useState(new Date(2025, 10, 1)); // November 2025
   const [events, setEvents] = useState<DrivingScheduleEvent[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
@@ -176,13 +177,20 @@ export function DrivingScheduleGrid() {
 
   return (
     <div className="space-y-4">
-      {/* Sample Data Loader */}
-      {events.length === 0 && !loading && (
-        <SampleScheduleLoader />
+      {/* Template Loader for Non-Official Users */}
+      {events.length === 0 && !loading && !isOfficialUser && (
+        <ScheduleTemplateLoader onLoadComplete={loadSchedule} />
       )}
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h2>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold">{currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h2>
+          {events.length > 0 && (
+            <Badge variant={isOfficialUser ? "default" : "outline"} className="text-xs">
+              {isOfficialUser ? "📅 Your Official Schedule" : "📅 Custom Schedule"} ({events.length})
+            </Badge>
+          )}
+        </div>
         <div className="flex gap-2">
           <Button variant="outline" size="icon" onClick={prevMonth}>
             <ChevronLeft className="w-4 h-4" />
