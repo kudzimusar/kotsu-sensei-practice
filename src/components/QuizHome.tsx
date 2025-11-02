@@ -1,4 +1,4 @@
-import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays, Bell, BookOpen, Video, AlertTriangle } from "lucide-react";
+import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays, Bell, BookOpen, Video, AlertTriangle, Car, ClipboardList } from "lucide-react";
 import { testCategories } from "@/data/questions";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -6,12 +6,12 @@ import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format, differenceInDays, parseISO, isPast, isToday } from "date-fns";
+import { format, differenceInDays, parseISO, isPast, isToday, addDays } from "date-fns";
 import { loadProgress, getWeakCategories } from "@/lib/progressTracking";
 import { useAuth } from "@/hooks/useAuth";
 import { getEvents } from "@/lib/supabase/events";
-import { getAllPerformance } from "@/lib/supabase/performance";
-import { getUpcomingEvent } from "@/lib/supabase/drivingSchedule";
+import { getAllPerformance, getDetailedTestReadiness } from "@/lib/supabase/performance";
+import { getUpcomingTestEvent, getUpcomingScheduleEvents } from "@/lib/supabase/drivingSchedule";
 import { getTestHistory } from "@/lib/supabase/tests";
 import { getProfile } from "@/lib/supabase/profiles";
 import { useQuery } from "@tanstack/react-query";
@@ -61,48 +61,39 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
     enabled: !!user,
   });
 
-  const { data: upcomingDrivingEvent } = useQuery({
-    queryKey: ["upcomingDrivingEvent", user?.id],
-    queryFn: () => getUpcomingEvent(user!.id),
+  const { data: upcomingTestEvent } = useQuery({
+    queryKey: ["upcomingTestEvent", user?.id],
+    queryFn: () => getUpcomingTestEvent(user!.id),
     enabled: !!user,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 
-  // Get next upcoming event (combine calendar and driving schedule)
-  const upcomingCalendarEvent = events
-    .filter(e => !isPast(parseISO(e.date)) || isToday(parseISO(e.date)))
-    .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())[0];
+  const { data: upcomingScheduleEvents = [] } = useQuery({
+    queryKey: ["upcomingScheduleEvents", user?.id],
+    queryFn: () => getUpcomingScheduleEvents(user!.id, 5),
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5,
+  });
 
-  const upcomingEvent = (() => {
-    if (!upcomingCalendarEvent && !upcomingDrivingEvent) return null;
-    if (!upcomingCalendarEvent) return {
-      ...upcomingDrivingEvent!,
-      title: upcomingDrivingEvent!.custom_label || (upcomingDrivingEvent!.event_type === 'theory' ? `学科${upcomingDrivingEvent!.lecture_number}` : upcomingDrivingEvent!.event_type),
-      time: upcomingDrivingEvent!.time_slot.split('-')[0],
-      description: upcomingDrivingEvent!.notes || '',
-      isDrivingSchedule: true
-    };
-    if (!upcomingDrivingEvent) return upcomingCalendarEvent;
-    
-    const calendarDate = parseISO(upcomingCalendarEvent.date);
-    const drivingDate = parseISO(upcomingDrivingEvent.date);
-    
-    if (drivingDate < calendarDate) {
-      return {
-        ...upcomingDrivingEvent,
-        title: upcomingDrivingEvent.custom_label || (upcomingDrivingEvent.event_type === 'theory' ? `学科${upcomingDrivingEvent.lecture_number}` : upcomingDrivingEvent.event_type),
-        time: upcomingDrivingEvent.time_slot.split('-')[0],
-        description: upcomingDrivingEvent.notes || '',
-        isDrivingSchedule: true
-      };
-    }
-    return upcomingCalendarEvent;
-  })();
+  const { data: detailedReadiness } = useQuery({
+    queryKey: ["detailedTestReadiness", user?.id],
+    queryFn: () => getDetailedTestReadiness(user!.id),
+    enabled: !!user,
+  });
 
-  // Calculate test readiness based on performance
-  const testReadiness = performance.length > 0
-    ? Math.round(performance.reduce((sum, p) => sum + (p.percentage || 0), 0) / performance.length)
-    : 0;
+  const testReadiness = detailedReadiness?.overallReadiness || 0;
+
+  // Calculate days until next test
+  const daysUntilTest = upcomingTestEvent 
+    ? Math.ceil((parseISO(upcomingTestEvent.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  const testDate = upcomingTestEvent 
+    ? format(parseISO(upcomingTestEvent.date), "MMMM d, yyyy")
+    : null;
+
+  // Get user's first name
+  const firstName = profile?.full_name?.split(' ')[0] || 'User';
 
   // Calculate streak
   const calculateStreak = () => {
@@ -289,13 +280,16 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
     <div className="min-h-screen bg-[#F5F7FA] pt-14">
       {/* Header */}
       <header className="fixed inset-x-0 top-0 bg-white z-10 shadow-sm">
-        <div className="flex justify-end items-center px-6 py-3">
-          <div className="flex items-center space-x-3">
+        <div className="flex justify-between items-center px-5 py-2">
+          <div>
+            <h1 className="text-lg font-bold">おはよう {firstName}</h1>
+          </div>
+          <div className="flex items-center space-x-2">
             <button className="rounded-full p-2 bg-gray-100 hover:bg-gray-200 transition-colors">
-              <Bell className="w-5 h-5 text-gray-600" />
+              <Bell className="w-4 h-4 text-gray-600" />
             </button>
-            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
-              <span className="text-white font-medium">
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+              <span className="text-white font-medium text-xs">
                 {isGuest ? '👤' : (profile?.full_name?.charAt(0) || 'U')}
               </span>
             </div>
@@ -336,22 +330,27 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
         <section className="mb-6">
           <div className="bg-white rounded-2xl shadow-md p-5">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="font-bold text-lg">Test Ready: {testReadiness}%</h2>
+              <div>
+                <h2 className="font-bold text-lg">Test Ready: {testReadiness}%</h2>
+                <p className="text-xs text-gray-500 mt-1">
+                  {detailedReadiness?.totalQuestions || 0} questions · {detailedReadiness?.categoriesMastered || 0}/{detailedReadiness?.totalCategories || 0} mastered
+                </p>
+              </div>
               {currentStreak > 0 && (
                 <div className="flex items-center bg-amber-100 px-3 py-1.5 rounded-full">
                   <Flame className="text-amber-500 mr-1.5" size={16} />
-                  <p className="font-medium text-amber-700 text-xs">{currentStreak}-Day Streak 🔥</p>
+                  <p className="font-medium text-amber-700 text-xs">{currentStreak} 🔥</p>
                 </div>
               )}
             </div>
             <div className="h-2 bg-indigo-100 rounded-full overflow-hidden mb-2">
               <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${testReadiness}%` }}></div>
             </div>
-            {examDate && daysRemaining !== null && daysRemaining >= 0 && (
+            {upcomingTestEvent && daysUntilTest !== null && (
               <div className="flex items-center mt-4">
                 <CalendarIcon className="text-blue-600 mr-2" size={16} />
                 <span className="text-sm text-blue-800 font-medium">
-                  Your exam is in {daysRemaining} days - {format(examDate, 'MMMM d, yyyy')}
+                  Your test is in {daysUntilTest} {daysUntilTest === 1 ? 'day' : 'days'} - {testDate}
                 </span>
               </div>
             )}
@@ -435,7 +434,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
             </button>
             
             <button
-              onClick={() => navigate('/lectures')}
+              onClick={() => navigate('/lectures?tab=curriculum')}
               className="bg-white rounded-xl shadow p-3 transform transition active:scale-[0.98]"
             >
               <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center mb-2">
@@ -520,46 +519,94 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
           <div className="flex justify-between items-center mb-3">
             <h2 className="font-bold text-lg">Upcoming Schedule</h2>
             <button
-              onClick={() => navigate('/planner')}
-              className="text-blue-600 text-sm font-medium"
+              onClick={() => navigate('/lectures?tab=schedule')}
+              className="text-blue-600 text-sm font-medium hover:underline"
             >
               View All
             </button>
           </div>
           
-          <div className="bg-white rounded-2xl shadow-md p-4">
-            {upcomingEvent ? (
-              <div className="space-y-3">
-                <div>
-                  <div className="flex items-center mb-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                    <p className="text-xs text-gray-500">
-                      {isToday(parseISO(upcomingEvent.date)) ? 'Today' : format(parseISO(upcomingEvent.date), 'MMM d')}
-                    </p>
-                  </div>
-                  <div className="flex items-center border-l-2 border-blue-500 pl-3 ml-1 py-1">
-                    <div className="mr-3 w-10 text-xs text-gray-500">
-                      {upcomingEvent.time || '9:00'}
+          {upcomingScheduleEvents.length > 0 ? (
+            <div className="bg-white rounded-2xl shadow-md p-4 space-y-4">
+              {upcomingScheduleEvents.map((event, index) => {
+                const eventDate = parseISO(event.date);
+                const isEventToday = isToday(eventDate);
+                const isTomorrow = format(eventDate, 'yyyy-MM-dd') === format(addDays(new Date(), 1), 'yyyy-MM-dd');
+                
+                let dateLabel = format(eventDate, "MMM d, EEE");
+                if (isEventToday) dateLabel = "Today";
+                else if (isTomorrow) dateLabel = "Tomorrow";
+
+                const eventTypeColors: Record<string, string> = {
+                  theory: "bg-blue-100 text-blue-800 border-blue-500",
+                  driving: "bg-green-100 text-green-800 border-green-500",
+                  test: "bg-red-100 text-red-800 border-red-500",
+                  orientation: "bg-purple-100 text-purple-800 border-purple-500",
+                  aptitude: "bg-amber-100 text-amber-800 border-amber-500",
+                };
+
+                const eventTypeIcons: Record<string, any> = {
+                  theory: Video,
+                  driving: Car,
+                  test: FileText,
+                  orientation: User,
+                  aptitude: ClipboardList,
+                };
+
+                const Icon = eventTypeIcons[event.event_type] || CalendarDays;
+                const colorClass = eventTypeColors[event.event_type] || "bg-gray-100 text-gray-800 border-gray-500";
+
+                return (
+                  <div key={event.id} className={index > 0 ? "pt-4 border-t" : ""}>
+                    <div className="flex items-center mb-2">
+                      <div className={`w-2 h-2 rounded-full mr-2 ${isEventToday ? 'bg-blue-500' : 'bg-gray-300'}`} />
+                      <p className="text-xs text-gray-500">{dateLabel}</p>
                     </div>
-                    <Badge className="bg-blue-100 text-blue-800 text-xs font-medium">
-                      {upcomingEvent.title}
-                    </Badge>
+                    <div className={`flex items-start border-l-2 ${colorClass.split(' ')[2]} pl-3 ml-1 py-1`}>
+                      <div className="mr-3 min-w-[50px] text-xs text-gray-500 mt-1">
+                        {event.time_slot}
+                      </div>
+                      <div className="flex-1">
+                        <Badge className={`${colorClass} hover:${colorClass.split(' ')[0]} mb-1`}>
+                          <Icon className="w-3 h-3 mr-1" />
+                          {event.custom_label || (event.event_type === 'theory' ? `学科${event.lecture_number}` : event.event_type)}
+                        </Badge>
+                        {(event.location || event.instructor) && (
+                          <div className="mt-1 text-xs text-gray-500 space-y-0.5">
+                            {event.location && (
+                              <div className="flex items-center">
+                                <MapPin className="w-3 h-3 mr-1" />
+                                <span>{event.location}</span>
+                              </div>
+                            )}
+                            {event.instructor && (
+                              <div className="flex items-center">
+                                <User className="w-3 h-3 mr-1" />
+                                <span>{event.instructor}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ) : (
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl shadow-md p-4">
               <div className="text-center py-4">
                 <p className="text-sm text-gray-500">No upcoming events</p>
                 <Button
                   size="sm"
-                  onClick={() => navigate('/planner')}
+                  onClick={() => navigate('/lectures?tab=schedule')}
                   className="mt-2 bg-blue-600 hover:bg-blue-700"
                 >
                   Add Event
                 </Button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </section>
       </main>
 
