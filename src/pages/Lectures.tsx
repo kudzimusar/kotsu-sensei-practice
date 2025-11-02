@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { TextbookSelector } from "@/components/TextbookSelector";
 import { TextbookContent } from "@/components/TextbookContent";
 import { ShopAndEarn } from "@/components/ShopAndEarn";
+import { DrivingScheduleGrid } from "@/components/DrivingScheduleGrid";
 
 const Lectures = () => {
   const { user } = useAuth();
@@ -176,7 +177,7 @@ const Lectures = () => {
         </div>
 
         <Tabs defaultValue="textbook" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-auto">
+          <TabsList className="grid w-full grid-cols-4 mb-6 sm:mb-8 h-auto">
             <TabsTrigger value="textbook" className="text-xs sm:text-lg py-2">
               <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Textbooks</span>
@@ -186,6 +187,11 @@ const Lectures = () => {
               <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Curriculum</span>
               <span className="sm:hidden">Study</span>
+            </TabsTrigger>
+            <TabsTrigger value="schedule" className="text-xs sm:text-lg py-2">
+              <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Schedule</span>
+              <span className="sm:hidden">Plan</span>
             </TabsTrigger>
             <TabsTrigger value="shop" className="text-xs sm:text-lg py-2">
               <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
@@ -349,6 +355,22 @@ const Lectures = () => {
                 </Card>
               </div>
             )}
+          </TabsContent>
+
+          {/* Schedule Tab */}
+          <TabsContent value="schedule">
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">Driving School Schedule Planner</h2>
+                  <p className="text-muted-foreground">
+                    Plan your lectures and driving lessons. Schedules follow National Police Agency rules: 
+                    No weekends/holidays except last Saturday of month from 16:30. Changes possible—update as needed.
+                  </p>
+                </div>
+                <DrivingScheduleGrid />
+              </div>
+            </Card>
           </TabsContent>
 
           {/* Shop & Earn Tab */}

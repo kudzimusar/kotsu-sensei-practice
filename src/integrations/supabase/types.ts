@@ -246,6 +246,57 @@ export type Database = {
         }
         Relationships: []
       }
+      driving_school_schedule: {
+        Row: {
+          created_at: string | null
+          custom_label: string | null
+          date: string
+          event_type: string
+          id: string
+          instructor: string | null
+          lecture_number: number | null
+          location: string | null
+          notes: string | null
+          status: string | null
+          symbol: string | null
+          time_slot: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          custom_label?: string | null
+          date: string
+          event_type: string
+          id?: string
+          instructor?: string | null
+          lecture_number?: number | null
+          location?: string | null
+          notes?: string | null
+          status?: string | null
+          symbol?: string | null
+          time_slot: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          custom_label?: string | null
+          date?: string
+          event_type?: string
+          id?: string
+          instructor?: string | null
+          lecture_number?: number | null
+          location?: string | null
+          notes?: string | null
+          status?: string | null
+          symbol?: string | null
+          time_slot?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       guest_sessions: {
         Row: {
           created_at: string
@@ -270,6 +321,30 @@ export type Database = {
           id?: string
           last_active?: string
           session_id?: string
+        }
+        Relationships: []
+      }
+      holidays: {
+        Row: {
+          country_code: string | null
+          created_at: string | null
+          date: string
+          id: string
+          name: string
+        }
+        Insert: {
+          country_code?: string | null
+          created_at?: string | null
+          date: string
+          id?: string
+          name: string
+        }
+        Update: {
+          country_code?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }
