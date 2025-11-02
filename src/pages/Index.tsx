@@ -4,7 +4,6 @@ import QuizHome from "@/components/QuizHome";
 import QuizQuestion from "@/components/QuizQuestion";
 import QuizResults from "@/components/QuizResults";
 import { DrivingScheduleGrid } from "@/components/DrivingScheduleGrid";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { questions } from "@/data/questions";
 import type { Question } from "@/data/questions";
 import { useAuth } from "@/hooks/useAuth";
@@ -181,21 +180,10 @@ const Index = () => {
   return (
     <>
       {screen === 'home' && (
-        <Tabs defaultValue="practice" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="practice">Practice</TabsTrigger>
-            <TabsTrigger value="schedule">Schedule</TabsTrigger>
-          </TabsList>
-          <TabsContent value="practice">
-            <QuizHome 
-              onStartQuiz={handleStartQuiz} 
-              onContinueLearning={handleContinueLearning}
-            />
-          </TabsContent>
-          <TabsContent value="schedule">
-            <DrivingScheduleGrid />
-          </TabsContent>
-        </Tabs>
+        <QuizHome 
+          onStartQuiz={handleStartQuiz} 
+          onContinueLearning={handleContinueLearning}
+        />
       )}
       
       {screen === 'quiz' && selectedQuestions.length > 0 && (

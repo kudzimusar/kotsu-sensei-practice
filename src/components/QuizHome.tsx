@@ -1,4 +1,4 @@
-import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User } from "lucide-react";
+import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays } from "lucide-react";
 import { testCategories } from "@/data/questions";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -17,6 +17,8 @@ import { getProfile } from "@/lib/supabase/profiles";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { DrivingScheduleGrid } from "@/components/DrivingScheduleGrid";
+import { useNavigate } from "react-router-dom";
 
 type QuizMode = 'quick' | 'focused' | 'permit' | 'license';
 
@@ -27,6 +29,7 @@ interface QuizHomeProps {
 
 const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
   const { user, guestId, isGuest } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showModes, setShowModes] = useState(false);
@@ -285,24 +288,6 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="flex justify-between items-center px-6 py-4">
-          <div>
-            <h1 className="text-base font-bold">
-              {isGuest 
-                ? "Welcome, Guest!" 
-                : `Welcome back, ${profile?.gender === 'male' ? 'Mr' : profile?.gender === 'female' ? 'Miss' : ''} ${profile?.full_name?.split(' ').pop() || 'User'}!`
-              }
-            </h1>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-            <span className="text-blue-600 font-semibold">
-              {isGuest ? '👤' : (profile?.full_name?.charAt(0) || 'U')}
-            </span>
-          </div>
-        </div>
-      </header>
 
       <main className="px-5 py-6 pb-24">
         {/* Guest Banner */}
@@ -550,6 +535,25 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
                 </div>
               </div>
             </button>
+          </div>
+        </section>
+
+        {/* Planner Section */}
+        <section className="mt-8">
+          <h2 className="font-bold text-base mb-4">Planner</h2>
+          <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+            <div className="bg-gradient-to-br from-green-400 to-green-600 p-4 flex items-center">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-3">
+                <CalendarDays className="text-white" size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-sm">Driving Schedule</h3>
+                <p className="text-white/90 text-xs">View and manage your lessons</p>
+              </div>
+            </div>
+            <div className="p-4">
+              <DrivingScheduleGrid />
+            </div>
           </div>
         </section>
       </main>
