@@ -15,11 +15,19 @@ const BottomNav = () => {
     { path: "/profile", icon: User, label: isGuest ? "Sign Up" : "Profile" },
   ];
 
+  // Check if current path starts with any nav item path
+  const isNavActive = (path: string) => {
+    if (path === "/") {
+      return location.pathname === "/";
+    }
+    return location.pathname.startsWith(path);
+  };
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
       <div className="flex justify-around py-3">
         {navItems.map(({ path, icon: Icon, label }) => {
-          const isActive = location.pathname === path;
+          const isActive = isNavActive(path);
           const handleClick = (e: React.MouseEvent) => {
             if (path === "/profile" && isGuest) {
               e.preventDefault();
