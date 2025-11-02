@@ -64,6 +64,36 @@ export function DrivingScheduleGrid() {
     }
   }, [user, currentDate]);
 
+  // Auto-reset for official user on first load
+  useEffect(() => {
+    const autoReset = async () => {
+      if (!isOfficialUser || loading || events.length === 0) return;
+      
+      // Check if schedule has old Japanese data
+      const hasOldData = events.some(e => 
+        e.custom_label?.includes('学科') || 
+        e.custom_label?.includes('技能') ||
+        e.custom_label?.includes('試験')
+      );
+      
+      if (hasOldData) {
+        console.log("Detected old schedule data, auto-resetting...");
+        setResetting(true);
+        try {
+          await resetUserSchedule();
+          toast.success("Schedule updated to latest template");
+          await loadSchedule();
+        } catch (error) {
+          console.error("Auto-reset failed:", error);
+        } finally {
+          setResetting(false);
+        }
+      }
+    };
+    
+    autoReset();
+  }, [isOfficialUser, loading, events.length]);
+
   const loadSchedule = async () => {
     if (!user) {
       console.log("No user logged in");
@@ -230,14 +260,14 @@ export function DrivingScheduleGrid() {
         <div className="flex gap-2 self-end sm:self-auto">
           {isOfficialUser && (
             <Button 
-              variant="outline" 
+              variant="default" 
               size="sm" 
               onClick={handleResetSchedule}
               disabled={resetting}
-              className="text-xs sm:text-sm px-2 sm:px-3"
+              className="text-xs sm:text-sm px-3 sm:px-4 bg-primary hover:bg-primary/90"
             >
-              <RefreshCw className={cn("w-3 h-3 sm:w-4 sm:h-4 sm:mr-2", resetting && "animate-spin")} />
-              <span className="hidden sm:inline">Reset</span>
+              <RefreshCw className={cn("w-4 h-4 sm:mr-2", resetting && "animate-spin")} />
+              <span className="hidden sm:inline">Reset to Template</span>
             </Button>
           )}
           <Button variant="outline" size="sm" onClick={prevMonth} className="h-8 w-8 sm:h-9 sm:w-9 p-0">
