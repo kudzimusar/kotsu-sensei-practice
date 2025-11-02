@@ -33,11 +33,13 @@ import { TextbookContent } from "@/components/TextbookContent";
 import { ShopAndEarn } from "@/components/ShopAndEarn";
 import { DrivingScheduleGrid } from "@/components/DrivingScheduleGrid";
 import BottomNav from "@/components/BottomNav";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 const Lectures = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'textbook';
   const [selectedTextbook, setSelectedTextbook] = useState<string | null>(null);
   const [curriculum, setCurriculum] = useState<any[]>([]);
   const [lessonMaterials, setLessonMaterials] = useState<LessonMaterial[]>([]);
@@ -188,7 +190,7 @@ const Lectures = () => {
             <p className="text-xs sm:text-lg text-muted-foreground">Your complete guide to Japanese driving education</p>
           </div>
 
-        <Tabs defaultValue="textbook" className="w-full">
+        <Tabs defaultValue={initialTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-4 sm:mb-8 h-auto">
             <TabsTrigger value="textbook" className="text-xs sm:text-base py-1.5 sm:py-2 px-2 sm:px-3">
               <BookOpen className="h-3.5 w-3.5 sm:h-5 sm:w-5 mr-0.5 sm:mr-2" />
