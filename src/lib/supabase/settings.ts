@@ -7,6 +7,7 @@ export interface UserSettings {
   push_notifications: boolean;
   study_reminders: boolean;
   test_reminders: boolean;
+  language: 'ja' | 'en';
   created_at: string;
   updated_at: string;
 }
@@ -37,6 +38,7 @@ export const createSettings = async (userId: string) => {
       push_notifications: true,
       study_reminders: true,
       test_reminders: true,
+      language: 'ja',
     })
     .select()
     .single();

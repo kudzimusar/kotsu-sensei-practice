@@ -948,6 +948,7 @@ export type Database = {
           created_at: string
           email_notifications: boolean
           id: string
+          language: string
           push_notifications: boolean
           study_reminders: boolean
           test_reminders: boolean
@@ -958,6 +959,7 @@ export type Database = {
           created_at?: string
           email_notifications?: boolean
           id?: string
+          language?: string
           push_notifications?: boolean
           study_reminders?: boolean
           test_reminders?: boolean
@@ -968,6 +970,7 @@ export type Database = {
           created_at?: string
           email_notifications?: boolean
           id?: string
+          language?: string
           push_notifications?: boolean
           study_reminders?: boolean
           test_reminders?: boolean
