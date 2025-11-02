@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import QuizHome from "@/components/QuizHome";
 import QuizQuestion from "@/components/QuizQuestion";
 import QuizResults from "@/components/QuizResults";
+import { DrivingScheduleGrid } from "@/components/DrivingScheduleGrid";
+import { Card } from "@/components/ui/card";
 import { questions } from "@/data/questions";
 import type { Question } from "@/data/questions";
 import { useAuth } from "@/hooks/useAuth";
@@ -179,10 +181,16 @@ const Index = () => {
   return (
     <>
       {screen === 'home' && (
-        <QuizHome 
-          onStartQuiz={handleStartQuiz} 
-          onContinueLearning={handleContinueLearning}
-        />
+        <div className="space-y-6">
+          <Card className="p-6">
+            <h2 className="text-2xl font-bold mb-4">My Schedule</h2>
+            <DrivingScheduleGrid />
+          </Card>
+          <QuizHome 
+            onStartQuiz={handleStartQuiz} 
+            onContinueLearning={handleContinueLearning}
+          />
+        </div>
       )}
       
       {screen === 'quiz' && selectedQuestions.length > 0 && (
