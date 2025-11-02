@@ -31,25 +31,42 @@ Deno.serve(async (req) => {
 
     if (deleteError) throw deleteError;
 
-    // Insert correct schedule data
+    // Insert correct schedule data from Japanese schedule
     const scheduleData = [
-      { date: '2025-11-02', time_slot: '14:50-16:20', event_type: 'orientation', lecture_number: null, custom_label: 'Orientation', status: 'scheduled' },
-      { date: '2025-11-08', time_slot: '18:30-20:00', event_type: 'theory', lecture_number: 1, custom_label: 'Theory 1', status: 'scheduled' },
-      { date: '2025-11-09', time_slot: '18:30-20:00', event_type: 'theory', lecture_number: 2, custom_label: 'Theory 2', status: 'scheduled' },
-      { date: '2025-11-15', time_slot: '18:30-20:00', event_type: 'theory', lecture_number: 3, custom_label: 'Theory 3', status: 'scheduled' },
-      { date: '2025-11-16', time_slot: '18:30-20:00', event_type: 'theory', lecture_number: 4, custom_label: 'Theory 4', status: 'scheduled' },
-      { date: '2025-11-22', time_slot: '18:30-20:00', event_type: 'theory', lecture_number: 5, custom_label: 'Theory 5', status: 'scheduled' },
-      { date: '2025-11-23', time_slot: '18:30-20:00', event_type: 'theory', lecture_number: 6, custom_label: 'Theory 6', status: 'scheduled' },
-      { date: '2025-11-29', time_slot: '18:30-20:00', event_type: 'theory', lecture_number: 7, custom_label: 'Theory 7', status: 'scheduled' },
-      { date: '2025-11-30', time_slot: '18:30-20:00', event_type: 'theory', lecture_number: 8, custom_label: 'Theory 8', status: 'scheduled' },
-      { date: '2025-12-06', time_slot: '18:30-20:00', event_type: 'theory', lecture_number: 9, custom_label: 'Theory 9', status: 'scheduled' },
-      { date: '2025-12-07', time_slot: '18:30-20:00', event_type: 'theory', lecture_number: 10, custom_label: 'Theory 10', status: 'scheduled' },
-      { date: '2025-12-13', time_slot: '18:30-20:00', event_type: 'theory', lecture_number: 11, custom_label: 'Theory 11', status: 'scheduled' },
-      { date: '2025-12-14', time_slot: '18:30-20:00', event_type: 'theory', lecture_number: 12, custom_label: 'Theory 12', status: 'scheduled' },
-      { date: '2025-12-20', time_slot: '18:30-20:00', event_type: 'theory', lecture_number: 13, custom_label: 'Theory 13', status: 'scheduled' },
-      { date: '2025-12-21', time_slot: '18:30-20:00', event_type: 'theory', lecture_number: 14, custom_label: 'Theory 14', status: 'scheduled' },
-      { date: '2025-12-27', time_slot: '14:50-16:20', event_type: 'aptitude', lecture_number: null, custom_label: 'Aptitude Test', status: 'scheduled' },
-      { date: '2025-12-28', time_slot: '14:50-16:20', event_type: 'driving', lecture_number: null, custom_label: 'AT On-Campus', status: 'scheduled' },
+      // November 2025
+      { date: '2025-11-02', time_slot: '14:50', event_type: 'orientation', lecture_number: null, custom_label: 'Orientation', status: 'scheduled' },
+      { date: '2025-11-08', time_slot: '11:40', event_type: 'theory', lecture_number: 10, custom_label: 'Theory 10', status: 'scheduled' },
+      { date: '2025-11-08', time_slot: '13:30', event_type: 'theory', lecture_number: 4, custom_label: 'Theory 4', status: 'scheduled' },
+      { date: '2025-11-15', time_slot: '11:40', event_type: 'theory', lecture_number: 8, custom_label: 'Theory 8', status: 'scheduled' },
+      { date: '2025-11-15', time_slot: '13:30', event_type: 'theory', lecture_number: 5, custom_label: 'Theory 5', status: 'scheduled' },
+      { date: '2025-11-15', time_slot: '14:30', event_type: 'driving', lecture_number: null, custom_label: 'AT On-Campus', status: 'scheduled' },
+      { date: '2025-11-22', time_slot: '18:40', event_type: 'driving', lecture_number: null, custom_label: 'AT On-Campus', status: 'scheduled' },
+      { date: '2025-11-23', time_slot: '13:30', event_type: 'driving', lecture_number: null, custom_label: 'AT On-Campus', status: 'scheduled' },
+      { date: '2025-11-23', time_slot: '14:30', event_type: 'theory', lecture_number: 9, custom_label: 'Theory 9', status: 'scheduled' },
+      { date: '2025-11-24', time_slot: '16:30', event_type: 'driving', lecture_number: null, custom_label: 'AT On-Campus', status: 'scheduled' },
+      { date: '2025-11-24', time_slot: '18:40', event_type: 'theory', lecture_number: 3, custom_label: 'Theory 3', status: 'scheduled' },
+      { date: '2025-11-29', time_slot: '16:30', event_type: 'driving', lecture_number: null, custom_label: 'AT On-Campus', status: 'scheduled' },
+      { date: '2025-11-30', time_slot: '14:30', event_type: 'theory', lecture_number: 7, custom_label: 'Theory 7', status: 'scheduled' },
+      { date: '2025-11-30', time_slot: '15:30', event_type: 'test', lecture_number: null, custom_label: 'Practical Test (P)', status: 'scheduled' },
+      { date: '2025-11-30', time_slot: '16:30', event_type: 'driving', lecture_number: null, custom_label: 'AT On-Campus', status: 'scheduled' },
+      // December 2025
+      { date: '2025-12-06', time_slot: '11:40', event_type: 'theory', lecture_number: 6, custom_label: 'Theory 6', status: 'scheduled' },
+      { date: '2025-12-06', time_slot: '14:30', event_type: 'driving', lecture_number: null, custom_label: 'AT On-Campus', status: 'scheduled' },
+      { date: '2025-12-07', time_slot: '13:30', event_type: 'driving', lecture_number: null, custom_label: 'AT On-Campus', status: 'scheduled' },
+      { date: '2025-12-07', time_slot: '15:30', event_type: 'test', lecture_number: null, custom_label: 'Practical Test (P)', status: 'scheduled' },
+      { date: '2025-12-13', time_slot: '15:30', event_type: 'driving', lecture_number: null, custom_label: 'AT On-Campus', status: 'scheduled' },
+      { date: '2025-12-13', time_slot: '16:30', event_type: 'test', lecture_number: null, custom_label: 'Practical Test (P)', status: 'scheduled' },
+      { date: '2025-12-14', time_slot: '13:30', event_type: 'driving', lecture_number: null, custom_label: 'AT On-Campus', status: 'scheduled' },
+      { date: '2025-12-20', time_slot: '15:30', event_type: 'test', lecture_number: null, custom_label: 'Practical Test (P)', status: 'scheduled' },
+      { date: '2025-12-20', time_slot: '16:30', event_type: 'theory', lecture_number: 2, custom_label: 'Theory 2', status: 'scheduled' },
+      { date: '2025-12-20', time_slot: '18:40', event_type: 'driving', lecture_number: null, custom_label: 'AT On-Campus', status: 'scheduled' },
+      { date: '2025-12-27', time_slot: '16:30', event_type: 'driving', lecture_number: null, custom_label: 'AT On-Campus', status: 'scheduled' },
+      { date: '2025-12-27', time_slot: '17:40', event_type: 'test', lecture_number: null, custom_label: 'Practical Test (P)', status: 'scheduled' },
+      { date: '2025-12-27', time_slot: '18:40', event_type: 'test', lecture_number: null, custom_label: 'Practical Test (P)', status: 'scheduled' },
+      { date: '2025-12-28', time_slot: '10:40', event_type: 'test', lecture_number: null, custom_label: 'Final Driving Test', status: 'scheduled' },
+      { date: '2025-12-28', time_slot: '13:30', event_type: 'test', lecture_number: null, custom_label: 'Test Session', status: 'scheduled' },
+      { date: '2025-12-28', time_slot: '14:30', event_type: 'test', lecture_number: null, custom_label: 'Written Test', status: 'scheduled' },
+      { date: '2025-12-28', time_slot: '15:30', event_type: 'test', lecture_number: null, custom_label: 'Final Written Test', status: 'scheduled' },
     ];
 
     const eventsWithUser = scheduleData.map(event => ({

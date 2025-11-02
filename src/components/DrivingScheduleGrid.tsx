@@ -21,8 +21,8 @@ import { ScheduleTemplateLoader } from "./ScheduleTemplateLoader";
 
 const TIME_SLOTS = [
   "08:40", "09:40", "10:40", "11:40",
-  "13:40", "14:50", "16:30", "17:30",
-  "18:30", "19:40"
+  "13:30", "14:30", "14:50", "15:30",
+  "16:30", "17:40", "18:40", "19:40"
 ];
 
 const EVENT_ICONS = {
@@ -150,7 +150,7 @@ export function DrivingScheduleGrid() {
 
   const getEventsForCell = (day: number, timeSlot: string) => {
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return events.filter(e => e.date === dateStr && e.time_slot.startsWith(timeSlot));
+    return events.filter(e => e.date === dateStr && e.time_slot === timeSlot);
   };
 
   const handleCellClick = (day: number, timeSlot: string) => {
