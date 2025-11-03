@@ -23,7 +23,7 @@ const Index = () => {
   const [selectedQuestions, setSelectedQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
-  const [timeLimit, setTimeLimit] = useState<number | null>(null);
+  const [timeLimit, setTimeLimit] = useState<number>(0);
   const [startTime, setStartTime] = useState<number>(Date.now());
 
   // Check for category or test query parameter and auto-start quiz
@@ -80,11 +80,12 @@ const Index = () => {
     }
   };
 
-  const getTimeLimit = (mode: QuizMode): number | null => {
+  const getTimeLimit = (mode: QuizMode): number => {
     switch (mode) {
-      case 'permit': return 30 * 60; // 30 minutes in seconds
-      case 'license': return 60 * 60; // 60 minutes in seconds
-      default: return null; // No time limit for quick and focused
+      case 'quick': return 6 * 60; // 6 minutes for 10 questions
+      case 'focused': return 12 * 60; // 12 minutes for 20 questions
+      case 'permit': return 30 * 60; // 30 minutes for 50 questions (official standard)
+      case 'license': return 50 * 60; // 50 minutes for 100 questions (official standard)
     }
   };
 

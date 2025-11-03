@@ -13,7 +13,7 @@ interface QuizQuestionProps {
   onAnswer: (correct: boolean) => void;
   onNext: () => void;
   onQuit: () => void;
-  timeLimit: number | null; // in seconds
+  timeLimit: number; // in seconds
   onTimeUp: () => void;
 }
 
@@ -30,23 +30,21 @@ const QuizQuestion = ({
   const { t } = useTranslation();
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(timeLimit);
+  const [timeRemaining, setTimeRemaining] = useState<number>(timeLimit);
 
   useEffect(() => {
     setTimeRemaining(timeLimit);
   }, [timeLimit]);
 
   useEffect(() => {
-    if (timeRemaining === null || timeRemaining <= 0) {
-      if (timeRemaining === 0) {
-        onTimeUp();
-      }
+    if (timeRemaining <= 0) {
+      onTimeUp();
       return;
     }
 
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
-        if (prev === null || prev <= 1) {
+        if (prev <= 1) {
           return 0;
         }
         return prev - 1;
@@ -78,7 +76,7 @@ const QuizQuestion = ({
   const progress = (questionNumber / totalQuestions) * 100;
   const isCorrect = selectedAnswer === question.answer;
 
-  const isTimeCritical = timeRemaining !== null && timeRemaining < 300; // Less than 5 minutes
+  const isTimeCritical = timeRemaining < 300; // Less than 5 minutes
 
   return (
     <div className="min-h-screen bg-background p-3 md:p-4 pb-24">
@@ -92,16 +90,14 @@ const QuizQuestion = ({
               <X className="w-4 h-4" />
               {t('common.close', 'Quit')}
             </button>
-            {timeRemaining !== null && (
-              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${
-                isTimeCritical ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'
-              }`}>
-                <Clock className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                <span className="text-xs md:text-sm font-bold">
-                  {formatTime(timeRemaining)}
-                </span>
-              </div>
-            )}
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${
+              isTimeCritical ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'
+            }`}>
+              <Clock className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <span className="text-xs md:text-sm font-bold">
+                {formatTime(timeRemaining)}
+              </span>
+            </div>
             <span className="text-xs md:text-sm font-medium text-muted-foreground">
               {questionNumber}/{totalQuestions}
             </span>
