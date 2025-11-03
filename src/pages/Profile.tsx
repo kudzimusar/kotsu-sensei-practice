@@ -81,12 +81,22 @@ const Profile = () => {
     return streak;
   };
 
+  // Calculate total lessons from schedule
+  const totalLessons = scheduleEvents.length;
+  const lessonsCompleted = scheduleEvents.filter(e => e.status === 'completed').length;
+  const lessonsScheduled = scheduleEvents.filter(e => e.status === 'scheduled').length;
+  const lessonsNotStarted = totalLessons - lessonsCompleted - lessonsScheduled;
+
   const userStats = {
     name: profile?.full_name || user?.email?.split('@')[0] || "User",
-    totalQuestions: 387, // Total available questions
+    totalQuestions: performance.reduce((sum, p) => sum + p.total, 0) || 0,
     questionsCompleted,
     testsPassed,
     currentStreak: calculateStreak(),
+    totalLessons,
+    lessonsCompleted,
+    lessonsScheduled,
+    lessonsNotStarted,
   };
 
   const menuItems = [
@@ -230,22 +240,56 @@ const Profile = () => {
         <section className="mb-6">
           <div className="bg-white rounded-2xl shadow-md p-5">
             <h3 className="font-bold text-sm mb-3">Overall Progress</h3>
+            
+            {/* Schedule Progress */}
+            {totalLessons > 0 && (
+              <div className="mb-4">
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-muted-foreground">Schedule Completion</span>
+                  <span className="font-bold">
+                    {lessonsCompleted}/{totalLessons} lessons
+                  </span>
+                </div>
+                <div className="w-full h-3 bg-gray-100 rounded-full mb-2">
+                  <div 
+                    className="h-3 bg-green-500 rounded-full"
+                    style={{ width: `${(lessonsCompleted / totalLessons) * 100}%` }}
+                  ></div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-[10px]">
+                  <div className="text-center">
+                    <span className="font-bold text-green-600">{lessonsCompleted}</span>
+                    <span className="text-muted-foreground"> Completed</span>
+                  </div>
+                  <div className="text-center">
+                    <span className="font-bold text-blue-600">{lessonsScheduled}</span>
+                    <span className="text-muted-foreground"> Scheduled</span>
+                  </div>
+                  <div className="text-center">
+                    <span className="font-bold text-gray-600">{lessonsNotStarted}</span>
+                    <span className="text-muted-foreground"> Not Started</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Questions Progress */}
             <div className="mb-2">
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-muted-foreground">Questions Completed</span>
+                <span className="text-muted-foreground">Practice Questions</span>
                 <span className="font-bold">
-                  {userStats.questionsCompleted}/{userStats.totalQuestions}
+                  {userStats.questionsCompleted} completed
                 </span>
               </div>
               <div className="w-full h-3 bg-gray-100 rounded-full">
                 <div 
                   className="h-3 bg-blue-500 rounded-full"
-                  style={{ width: `${(userStats.questionsCompleted / userStats.totalQuestions) * 100}%` }}
+                  style={{ width: `${Math.min((userStats.questionsCompleted / 500) * 100, 100)}%` }}
                 ></div>
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground">
-              {Math.round((userStats.questionsCompleted / userStats.totalQuestions) * 100)}% complete
+              Target: 500 questions for exam readiness
             </p>
           </div>
         </section>

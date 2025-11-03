@@ -134,9 +134,29 @@ const Study = () => {
               </Card>
             </section>
 
-            {/* Lectures & Textbook */}
+            {/* Digital Textbooks */}
             <section>
-              <Link to="/lectures">
+              <Link to="/lectures?tab=textbook">
+                <Card className="p-5 bg-gradient-to-br from-blue-500/10 to-blue-500/5 hover:shadow-lg transition-shadow cursor-pointer border-blue-500/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                        <BookOpen className="text-blue-600" size={24} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm">Digital Textbooks</h3>
+                        <p className="text-xs text-muted-foreground">Access official driving textbooks</p>
+                      </div>
+                    </div>
+                    <span className="text-blue-600 font-bold text-xs">Open →</span>
+                  </div>
+                </Card>
+              </Link>
+            </section>
+
+            {/* Lectures & Curriculum */}
+            <section>
+              <Link to="/lectures?tab=curriculum">
                 <Card className="p-5 bg-gradient-to-br from-primary/10 to-primary/5 hover:shadow-lg transition-shadow cursor-pointer border-primary/20">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -144,7 +164,7 @@ const Study = () => {
                         <GraduationCap className="text-primary" size={24} />
                       </div>
                       <div>
-                        <h3 className="font-bold text-sm">Lectures & Textbook</h3>
+                        <h3 className="font-bold text-sm">Lectures & Curriculum</h3>
                         <p className="text-xs text-muted-foreground">Track classroom lectures & study materials</p>
                       </div>
                     </div>
