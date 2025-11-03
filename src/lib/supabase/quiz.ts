@@ -8,7 +8,7 @@ export interface QuizProgress {
   quiz_mode: 'quick' | 'focused' | 'permit' | 'license';
   current_question_index: number;
   score: number;
-  time_limit: number | null;
+  time_limit: number;
   selected_questions: Question[];
 }
 
