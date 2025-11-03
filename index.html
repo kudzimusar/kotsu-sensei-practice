@@ -8,6 +8,14 @@
     <meta name="author" content="Kōtsū Sensei" />
     <meta name="keywords" content="Japan driving test, Japanese driver's license, road test practice, traffic rules Japan, driving exam preparation" />
 
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/kotsu-sensei-practice/manifest.json" />
+    <meta name="theme-color" content="#1a1a1a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Kōtsū Sensei" />
+
     <meta property="og:title" content="Kōtsū Sensei - Japan Driving Test Practice" />
     <meta property="og:description" content="Master Japan's driving test with practice questions and real road signs. Free quiz app for learner's permit and standard license." />
     <meta property="og:type" content="website" />
@@ -21,5 +29,24 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Register Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/kotsu-sensei-practice/service-worker.js')
+            .then(registration => {
+              console.log('Service Worker registered:', registration);
+              
+              // Check for updates periodically
+              setInterval(() => {
+                registration.update();
+              }, 60000); // Check every minute
+            })
+            .catch(error => {
+              console.log('Service Worker registration failed:', error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>
