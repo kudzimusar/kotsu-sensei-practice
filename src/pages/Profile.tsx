@@ -8,6 +8,7 @@ import { getProfile } from "@/lib/supabase/profiles";
 import { getAllPerformance } from "@/lib/supabase/performance";
 import { getTestHistory } from "@/lib/supabase/tests";
 import { getMonthSchedule } from "@/lib/supabase/drivingSchedule";
+import { getCurriculumProgress } from "@/lib/supabase/curriculum";
 import { useQuery } from "@tanstack/react-query";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { GoalsDialog } from "@/components/GoalsDialog";
@@ -47,16 +48,24 @@ const Profile = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Fetch driving schedule data
+  // Fetch driving schedule data for the schedule card
   const currentDate = new Date();
   const { data: scheduleEvents = [], isLoading: scheduleLoading } = useQuery({
     queryKey: ["scheduleEvents", user?.id, currentDate.getFullYear(), currentDate.getMonth() + 1],
     queryFn: () => getMonthSchedule(user!.id, currentDate.getFullYear(), currentDate.getMonth() + 1),
     enabled: !!user,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 
-  const isLoading = profileLoading || performanceLoading || testHistoryLoading || scheduleLoading;
+  // Fetch curriculum progress (26 lectures)
+  const { data: curriculumProgress, isLoading: curriculumLoading } = useQuery({
+    queryKey: ["curriculumProgress", user?.id],
+    queryFn: () => getCurriculumProgress(user!.id),
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const isLoading = profileLoading || performanceLoading || testHistoryLoading || scheduleLoading || curriculumLoading;
 
   const examDate = profile?.exam_date ? new Date(profile.exam_date) : undefined;
   const daysRemaining = examDate ? differenceInDays(examDate, new Date()) : null;
@@ -65,7 +74,7 @@ const Profile = () => {
   const questionsCompleted = totalQuestions;
   const testsPassed = testHistory.filter(t => t.passed).length;
 
-  // Calculate schedule statistics
+  // Calculate driving schedule statistics for the schedule card
   const totalScheduledEvents = scheduleEvents.length;
   const completedEvents = scheduleEvents.filter(e => e.status === 'completed').length;
   const upcomingEvents = scheduleEvents.filter(e => 
@@ -86,11 +95,11 @@ const Profile = () => {
     return streak;
   };
 
-  // Calculate total lessons from schedule
-  const totalLessons = scheduleEvents.length;
-  const lessonsCompleted = scheduleEvents.filter(e => e.status === 'completed').length;
-  const lessonsScheduled = scheduleEvents.filter(e => e.status === 'scheduled').length;
-  const lessonsNotStarted = totalLessons - lessonsCompleted - lessonsScheduled;
+  // Get curriculum progress (26 lectures from user_lecture_schedule)
+  const totalLessons = curriculumProgress?.total || 26;
+  const lessonsCompleted = curriculumProgress?.completed || 0;
+  const lessonsScheduled = curriculumProgress?.scheduled || 0;
+  const lessonsNotStarted = curriculumProgress?.notStarted || 26;
 
   const userStats = {
     name: profile?.full_name || user?.email?.split('@')[0] || "User",
