@@ -24,7 +24,7 @@ import signSpeed50 from "@/assets/sign-speed-50.png";
 import signNoEntry from "@/assets/sign-no-entry.png";
 import signPedestrian from "@/assets/sign-pedestrian.png";
 import { useAuth } from "@/hooks/useAuth";
-import { getUserCurriculum, updateLectureSchedule, getCurriculumProgress, initializeCurriculumForUser } from "@/lib/supabase/curriculum";
+import { getUserCurriculum, updateLectureSchedule, getCurriculumProgress, initializeCurriculumForUser, autoCompletePastLectures } from "@/lib/supabase/curriculum";
 import { getAllLessonMaterials, type LessonMaterial } from "@/lib/supabase/lessonMaterials";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -72,6 +72,9 @@ const Lectures = () => {
     
     setLoading(true);
     try {
+      // Auto-complete past lectures first
+      await autoCompletePastLectures();
+      
       let data = await getUserCurriculum(user.id);
       
       if (!data || data.length === 0) {

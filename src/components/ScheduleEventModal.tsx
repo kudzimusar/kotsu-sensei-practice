@@ -190,11 +190,17 @@ export function ScheduleEventModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="scheduled">📅 Scheduled</SelectItem>
+                <SelectItem value="completed">✅ Completed</SelectItem>
+                <SelectItem value="cancelled">❌ Cancelled</SelectItem>
               </SelectContent>
             </Select>
+            {new Date(date) < new Date() && status === 'scheduled' && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-1">
+                <Clock className="w-3 h-3" />
+                This date has passed. Consider marking as completed.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

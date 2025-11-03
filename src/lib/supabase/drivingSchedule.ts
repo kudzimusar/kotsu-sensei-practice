@@ -161,3 +161,21 @@ export const getUpcomingScheduleEvents = async (userId: string, limit: number = 
   if (error) throw error;
   return data || [];
 };
+
+export const autoCompletePastEvents = async () => {
+  const { error } = await supabase.rpc("auto_complete_past_schedule_events");
+  
+  if (error) {
+    console.error("Error auto-completing past events:", error);
+    throw error;
+  }
+};
+
+export const manuallyMarkComplete = async (eventId: string) => {
+  const { data, error } = await supabase.rpc("mark_schedule_event_complete", {
+    event_id: eventId,
+  });
+
+  if (error) throw error;
+  return data as DrivingScheduleEvent;
+};

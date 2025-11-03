@@ -7,8 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { getProfile } from "@/lib/supabase/profiles";
 import { getAllPerformance } from "@/lib/supabase/performance";
 import { getTestHistory } from "@/lib/supabase/tests";
-import { getMonthSchedule } from "@/lib/supabase/drivingSchedule";
-import { getCurriculumProgress } from "@/lib/supabase/curriculum";
+import { getMonthSchedule, autoCompletePastEvents } from "@/lib/supabase/drivingSchedule";
+import { getUserCurriculum, getCurriculumProgress, autoCompletePastLectures } from "@/lib/supabase/curriculum";
 import { useQuery } from "@tanstack/react-query";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { GoalsDialog } from "@/components/GoalsDialog";
@@ -17,6 +17,7 @@ import StudyCalendar from "@/components/StudyCalendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useEffect } from "react";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -26,6 +27,14 @@ const Profile = () => {
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
+
+  // Auto-complete past events and lectures when user loads the page
+  useEffect(() => {
+    if (user) {
+      autoCompletePastEvents().catch(console.error);
+      autoCompletePastLectures().catch(console.error);
+    }
+  }, [user?.id]);
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", user?.id],
