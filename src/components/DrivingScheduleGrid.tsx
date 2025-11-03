@@ -11,6 +11,7 @@ import {
   createScheduleEvent, 
   updateScheduleEvent, 
   deleteScheduleEvent,
+  autoCompletePastEvents,
   type DrivingScheduleEvent,
   type Holiday
 } from "@/lib/supabase/drivingSchedule";
@@ -104,6 +105,9 @@ export function DrivingScheduleGrid() {
     
     setLoading(true);
     try {
+      // Auto-complete past events first
+      await autoCompletePastEvents();
+      
       const [scheduleData, holidaysData] = await Promise.all([
         getMonthSchedule(user.id, year, month),
         getHolidays(year, month),
@@ -143,6 +147,11 @@ export function DrivingScheduleGrid() {
   const getEventsForCell = (day: number, timeSlot: string) => {
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     return events.filter(e => e.date === dateStr && e.time_slot === timeSlot);
+  };
+
+  const isPastDate = (day: number) => {
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return new Date(dateStr) < new Date(new Date().toISOString().split('T')[0]);
   };
 
   const handleCellClick = (day: number, timeSlot: string) => {
@@ -295,9 +304,12 @@ export function DrivingScheduleGrid() {
             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
               <>
                 <div key={`day-${day}`} className="sticky left-0 bg-background z-10 p-1 sm:p-2 font-medium border-r text-xs sm:text-sm">
-                  <div className="leading-tight">{day}<span className="hidden sm:inline"> {getDayOfWeek(day)}</span></div>
+                  <div className={cn("leading-tight", isPastDate(day) && "text-muted-foreground")}>
+                    {day}<span className="hidden sm:inline"> {getDayOfWeek(day)}</span>
+                  </div>
                   <div className="sm:hidden text-[9px] opacity-70">{getDayOfWeek(day).slice(0, 3)}</div>
                   {isHoliday(day) && <div className="text-[9px] sm:text-[10px] text-red-500">Holiday</div>}
+                  {isPastDate(day) && <div className="text-[9px] sm:text-[10px] text-muted-foreground">Past</div>}
                 </div>
                 {TIME_SLOTS.map(slot => {
                   const blocked = isBlocked(day, slot);

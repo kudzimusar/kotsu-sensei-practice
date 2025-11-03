@@ -1014,6 +1014,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_complete_past_schedule_events: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1024,6 +1025,31 @@ export type Database = {
       initialize_user_curriculum: {
         Args: { p_user_id: string }
         Returns: undefined
+      }
+      mark_schedule_event_complete: {
+        Args: { event_id: string }
+        Returns: {
+          created_at: string | null
+          custom_label: string | null
+          date: string
+          event_type: string
+          id: string
+          instructor: string | null
+          lecture_number: number | null
+          location: string | null
+          notes: string | null
+          status: string | null
+          symbol: string | null
+          time_slot: string
+          updated_at: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "driving_school_schedule"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       migrate_guest_to_user: {
         Args: { p_guest_session_id: string; p_user_id: string }

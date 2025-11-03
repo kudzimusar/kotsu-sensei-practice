@@ -98,3 +98,12 @@ export const getUpcomingLectures = async (userId: string, limit = 5) => {
   if (error) throw error;
   return data as UserLectureSchedule[];
 };
+
+export const autoCompletePastLectures = async () => {
+  const { error } = await supabase.rpc("auto_complete_past_schedule_events");
+  
+  if (error) {
+    console.error("Error auto-completing past lectures:", error);
+    throw error;
+  }
+};
