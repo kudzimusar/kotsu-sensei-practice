@@ -25,9 +25,10 @@ type QuizMode = 'quick' | 'focused' | 'permit' | 'license';
 interface QuizHomeProps {
   onStartQuiz: (mode: QuizMode, category?: string, weakAreas?: boolean) => void;
   onContinueLearning?: () => void;
+  isStartingQuiz?: boolean;
 }
 
-const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
+const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: QuizHomeProps) => {
   const { user, guestId, isGuest } = useAuth();
   const navigate = useNavigate();
   const { t, language, setLanguage } = useTranslation();
@@ -382,28 +383,36 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
             <div className="grid grid-cols-2 gap-3 mb-3">
             <button
               onClick={() => handleQuickStart('quick')}
-              disabled={false}
+              disabled={isStartingQuiz}
               style={{ background: 'var(--gradient-blue)' }}
               className="rounded-xl p-4 text-white transform transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-2">
-                <Zap className="text-white" size={20} />
+                {isStartingQuiz ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Zap className="text-white" size={20} />
+                )}
               </div>
               <h3 className="font-bold text-base mb-1">{t('home.quick_practice', 'Quick Practice')}</h3>
-              <p className="text-xs text-white/90">10 random questions</p>
+              <p className="text-xs text-white/90">{isStartingQuiz ? 'Loading...' : '10 random questions'}</p>
             </button>
             
             <button
               onClick={() => handleQuickStart('focused')}
-              disabled={false}
+              disabled={isStartingQuiz}
               style={{ background: 'var(--gradient-purple)' }}
               className="rounded-xl p-4 text-white transform transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-2">
-                <Target className="text-white" size={20} />
+                {isStartingQuiz ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Target className="text-white" size={20} />
+                )}
               </div>
               <h3 className="font-bold text-base mb-1">{t('home.focused_study', 'Focused Study')}</h3>
-              <p className="text-xs text-white/90">20 specific questions</p>
+              <p className="text-xs text-white/90">{isStartingQuiz ? 'Loading...' : '20 specific questions'}</p>
             </button>
             </div>
             
@@ -420,18 +429,22 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
                   <FileText className="text-white" size={20} />
                 </div>
               </div>
-              <div className="flex justify-between gap-2 mt-2">
+              <div className="flex gap-2">
                 <button
                   onClick={() => handleQuickStart('permit')}
-                  className="bg-white/20 hover:bg-white/30 rounded-lg py-2 px-3 text-xs text-white font-medium flex-1 backdrop-blur-sm transition active:scale-[0.98]"
+                  disabled={isStartingQuiz}
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg py-2.5 px-3 text-xs text-white font-medium flex-1 text-center transition disabled:opacity-50"
                 >
-                  50 Qs (30 min)
+                  <div className="font-bold mb-0.5">{isStartingQuiz ? 'Starting...' : "Learner's Permit"}</div>
+                  <div className="text-white/80">50 Qs (30 min)</div>
                 </button>
                 <button
                   onClick={() => handleQuickStart('license')}
-                  className="bg-white/20 hover:bg-white/30 rounded-lg py-2 px-3 text-xs text-white font-medium flex-1 backdrop-blur-sm transition active:scale-[0.98]"
+                  disabled={isStartingQuiz}
+                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg py-2.5 px-3 text-xs text-white font-medium flex-1 text-center transition disabled:opacity-50"
                 >
-                  100 Qs (1 hr)
+                  <div className="font-bold mb-0.5">{isStartingQuiz ? 'Starting...' : "Driver's License"}</div>
+                  <div className="text-white/80">100 Qs (1 hr)</div>
                 </button>
               </div>
             </div>
@@ -497,9 +510,14 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
                 <Button
                   size="sm"
                   onClick={handleContinueLearning}
-                  className="bg-blue-600 hover:bg-blue-700 py-1.5 px-3 rounded-lg text-white text-xs font-medium ml-2"
+                  disabled={isStartingQuiz}
+                  className="bg-blue-600 hover:bg-blue-700 py-1.5 px-3 rounded-lg text-white text-xs font-medium ml-2 disabled:opacity-50"
                 >
-                  {t('actions.continue', 'Continue')}
+                  {isStartingQuiz ? (
+                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    t('actions.continue', 'Continue')
+                  )}
                 </Button>
               </div>
             </div>
@@ -524,9 +542,14 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
                 <Button
                   size="sm"
                   onClick={handleWeakAreas}
-                  className="bg-red-600 hover:bg-red-700 py-1.5 px-3 rounded-lg text-white text-xs font-medium ml-2"
+                  disabled={isStartingQuiz}
+                  className="bg-red-600 hover:bg-red-700 py-1.5 px-3 rounded-lg text-white text-xs font-medium ml-2 disabled:opacity-50"
                 >
-                  {t('actions.practice', 'Practice')}
+                  {isStartingQuiz ? (
+                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    t('actions.practice', 'Practice')
+                  )}
                 </Button>
               </div>
             </div>

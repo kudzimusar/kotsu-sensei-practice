@@ -26,32 +26,37 @@ const Profile = () => {
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
 
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: () => getProfile(user!.id),
     enabled: !!user,
+    staleTime: 1000 * 60 * 5,
   });
 
-  const { data: performance = [] } = useQuery({
+  const { data: performance = [], isLoading: performanceLoading } = useQuery({
     queryKey: ["performance", user?.id],
     queryFn: () => getAllPerformance(user!.id),
     enabled: !!user,
+    staleTime: 1000 * 60 * 5,
   });
 
-  const { data: testHistory = [] } = useQuery({
+  const { data: testHistory = [], isLoading: testHistoryLoading } = useQuery({
     queryKey: ["testHistory", user?.id],
     queryFn: () => getTestHistory(user!.id),
     enabled: !!user,
+    staleTime: 1000 * 60 * 5,
   });
 
   // Fetch driving schedule data
   const currentDate = new Date();
-  const { data: scheduleEvents = [] } = useQuery({
+  const { data: scheduleEvents = [], isLoading: scheduleLoading } = useQuery({
     queryKey: ["scheduleEvents", user?.id, currentDate.getFullYear(), currentDate.getMonth() + 1],
     queryFn: () => getMonthSchedule(user!.id, currentDate.getFullYear(), currentDate.getMonth() + 1),
     enabled: !!user,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
+
+  const isLoading = profileLoading || performanceLoading || testHistoryLoading || scheduleLoading;
 
   const examDate = profile?.exam_date ? new Date(profile.exam_date) : undefined;
   const daysRemaining = examDate ? differenceInDays(examDate, new Date()) : null;
@@ -119,7 +124,31 @@ const Profile = () => {
         </div>
       </header>
 
-      <main className="px-5 py-6">
+      {isLoading ? (
+        <main className="px-5 py-6">
+          {/* Loading Skeleton */}
+          <div className="animate-pulse space-y-6">
+            <div className="bg-white rounded-2xl shadow-md p-6">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-14 h-14 rounded-full bg-gray-200"></div>
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-24"></div>
+                </div>
+              </div>
+              <div className="h-20 bg-gray-200 rounded-xl mb-4"></div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="h-16 bg-gray-200 rounded-lg"></div>
+                <div className="h-16 bg-gray-200 rounded-lg"></div>
+                <div className="h-16 bg-gray-200 rounded-lg"></div>
+              </div>
+            </div>
+            <div className="h-32 bg-white rounded-2xl shadow-md"></div>
+            <div className="h-24 bg-white rounded-2xl shadow-md"></div>
+          </div>
+        </main>
+      ) : (
+        <main className="px-5 py-6">
         {/* User Card */}
         <section className="mb-6">
           <div className="bg-white rounded-2xl shadow-md p-6">
@@ -338,7 +367,8 @@ const Profile = () => {
             </button>
           </div>
         </section>
-      </main>
+        </main>
+      )}
 
       <BottomNav />
       
