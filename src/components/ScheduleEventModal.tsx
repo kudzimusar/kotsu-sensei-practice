@@ -10,9 +10,9 @@ import { Clock, MapPin, User, BookOpen, Car, ClipboardCheck, Brain, Compass, Tro
 import type { DrivingScheduleEvent } from "@/lib/supabase/drivingSchedule";
 
 const TIME_SLOTS = [
-  "08:40-09:30", "09:40-10:30", "10:40-11:30", "11:40-12:30",
-  "13:40-14:30", "14:50-16:20", "16:30-17:20", "17:30-18:20",
-  "18:30-19:20", "19:40-20:30"
+  "08:40", "09:40", "10:40", "11:40",
+  "12:30", "13:30", "14:30", "15:30",
+  "16:30", "17:30", "17:40", "18:40", "19:40"
 ];
 
 const EVENT_TYPES = [
@@ -43,7 +43,7 @@ export function ScheduleEventModal({
   onDelete,
 }: ScheduleEventModalProps) {
   const [eventType, setEventType] = useState<DrivingScheduleEvent['event_type']>(event?.event_type || 'theory');
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState(timeSlot || event?.time_slot || TIME_SLOTS[5]);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState(event?.time_slot || timeSlot || TIME_SLOTS[3]);
   const [lectureNumber, setLectureNumber] = useState(event?.lecture_number?.toString() || '1');
   const [customLabel, setCustomLabel] = useState(event?.custom_label || '');
   const [location, setLocation] = useState(event?.location || '');

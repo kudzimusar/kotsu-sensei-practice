@@ -158,7 +158,7 @@ export function DrivingScheduleGrid() {
     }
     
     setSelectedDate(dateStr);
-    setSelectedTimeSlot(timeSlot + "-" + (parseInt(timeSlot.split(':')[0]) + 1) + ":30");
+    setSelectedTimeSlot(timeSlot);
     setModalOpen(true);
   };
 
