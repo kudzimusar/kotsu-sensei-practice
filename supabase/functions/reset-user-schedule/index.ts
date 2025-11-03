@@ -75,38 +75,50 @@ Deno.serve(async (req) => {
       // November 2025
       { date: '2025-11-08', time_slot: '11:40', event_type: 'theory', lecture_number: 10, custom_label: labels.theory(10), status: 'scheduled' },
       { date: '2025-11-08', time_slot: '13:30', event_type: 'theory', lecture_number: 4, custom_label: labels.theory(4), status: 'scheduled' },
+      
       { date: '2025-11-15', time_slot: '11:40', event_type: 'theory', lecture_number: 8, custom_label: labels.theory(8), status: 'scheduled' },
       { date: '2025-11-15', time_slot: '13:30', event_type: 'theory', lecture_number: 5, custom_label: labels.theory(5), status: 'scheduled' },
       { date: '2025-11-15', time_slot: '14:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      
       { date: '2025-11-22', time_slot: '17:40', event_type: 'theory', lecture_number: 9, custom_label: labels.theory(9), status: 'scheduled' },
+      
       { date: '2025-11-23', time_slot: '13:30', event_type: 'orientation', lecture_number: null, custom_label: labels.orientation, status: 'scheduled' },
       { date: '2025-11-23', time_slot: '14:30', event_type: 'aptitude', lecture_number: 1, custom_label: labels.aptitude, status: 'scheduled' },
+      
       { date: '2025-11-24', time_slot: '16:30', event_type: 'theory', lecture_number: 2, custom_label: labels.theory(2), status: 'scheduled' },
-      { date: '2025-11-24', time_slot: '17:40', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
+      { date: '2025-11-24', time_slot: '17:40', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      
       { date: '2025-11-29', time_slot: '16:30', event_type: 'theory', lecture_number: 3, custom_label: labels.theory(3), status: 'scheduled' },
       { date: '2025-11-29', time_slot: '17:40', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      
       { date: '2025-11-30', time_slot: '14:30', event_type: 'theory', lecture_number: 7, custom_label: labels.theory(7), status: 'scheduled' },
-      { date: '2025-11-30', time_slot: '15:30', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
+      { date: '2025-11-30', time_slot: '15:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
       { date: '2025-11-30', time_slot: '16:30', event_type: 'theory', lecture_number: 6, custom_label: labels.theory(6), status: 'scheduled' },
       
       // December 2025
-      { date: '2025-12-06', time_slot: '11:40', event_type: 'theory', lecture_number: null, custom_label: labels.theory(6), status: 'scheduled' },
+      { date: '2025-12-06', time_slot: '11:40', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
       { date: '2025-12-06', time_slot: '13:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      
       { date: '2025-12-07', time_slot: '12:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
-      { date: '2025-12-07', time_slot: '14:30', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
+      { date: '2025-12-07', time_slot: '14:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      
       { date: '2025-12-13', time_slot: '15:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
-      { date: '2025-12-13', time_slot: '16:30', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
+      { date: '2025-12-13', time_slot: '16:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      
       { date: '2025-12-14', time_slot: '13:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
-      { date: '2025-12-20', time_slot: '15:30', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
-      { date: '2025-12-20', time_slot: '16:30', event_type: 'theory', lecture_number: 2, custom_label: labels.theory(2), status: 'scheduled' },
+      
+      { date: '2025-12-20', time_slot: '15:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      { date: '2025-12-20', time_slot: '16:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
       { date: '2025-12-20', time_slot: '17:40', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      
       { date: '2025-12-27', time_slot: '16:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
-      { date: '2025-12-27', time_slot: '17:30', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
-      { date: '2025-12-27', time_slot: '18:40', event_type: 'test', lecture_number: null, custom_label: labels.practiceTest, status: 'scheduled' },
-      { date: '2025-12-28', time_slot: '11:40', event_type: 'test', lecture_number: null, custom_label: labels.finalDriving, status: 'scheduled' },
+      { date: '2025-12-27', time_slot: '17:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      { date: '2025-12-27', time_slot: '18:40', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      
+      { date: '2025-12-28', time_slot: '11:40', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
       { date: '2025-12-28', time_slot: '13:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
-      { date: '2025-12-28', time_slot: '14:30', event_type: 'test', lecture_number: null, custom_label: labels.writtenTest, status: 'scheduled' },
-      { date: '2025-12-28', time_slot: '15:30', event_type: 'test', lecture_number: null, custom_label: labels.finalWritten, status: 'scheduled' },
+      { date: '2025-12-28', time_slot: '14:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
+      { date: '2025-12-28', time_slot: '15:30', event_type: 'driving', lecture_number: null, custom_label: labels.driving, status: 'scheduled' },
     ];
 
     const eventsWithUser = scheduleData.map(event => ({
