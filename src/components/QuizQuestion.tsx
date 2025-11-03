@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, XCircle, ChevronRight, X, Clock } from "lucide-react";
 import type { Question } from "@/data/questions";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface QuizQuestionProps {
   question: Question;
@@ -26,6 +27,7 @@ const QuizQuestion = ({
   timeLimit,
   onTimeUp,
 }: QuizQuestionProps) => {
+  const { t } = useTranslation();
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(timeLimit);
@@ -88,7 +90,7 @@ const QuizQuestion = ({
               className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-xs md:text-sm"
             >
               <X className="w-4 h-4" />
-              Quit
+              {t('common.close', 'Quit')}
             </button>
             {timeRemaining !== null && (
               <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${
@@ -160,14 +162,14 @@ const QuizQuestion = ({
                 )}
                 <div>
                   <p
-                    className={`font-bold text-sm md:text-base mb-1 md:mb-1.5 ${
+                   className={`font-bold text-sm md:text-base mb-1 md:mb-1.5 ${
                       isCorrect ? "text-success" : "text-error"
                     }`}
                   >
-                    {isCorrect ? "✅ Correct!" : "❌ Incorrect"}
+                    {isCorrect ? "✅ " + t('quiz.correct', 'Correct!') : "❌ " + t('quiz.incorrect', 'Incorrect')}
                   </p>
                   <p className="text-xs md:text-sm text-card-foreground font-medium mb-0.5 md:mb-1">
-                    The correct answer is: <strong>{question.answer ? "TRUE" : "FALSE"}</strong>
+                    {t('quiz.explanation', 'The correct answer is')}: <strong>{question.answer ? "TRUE" : "FALSE"}</strong>
                   </p>
                 </div>
               </div>
@@ -183,7 +185,7 @@ const QuizQuestion = ({
               className="w-full bg-primary hover:bg-primary/90 shadow-button text-sm md:text-base py-5 md:py-6"
               size="lg"
             >
-              Next Question
+              {t('quiz.next_question', 'Next Question')}
               <ChevronRight className="ml-2 w-4 h-4 md:w-5 md:h-5" />
             </Button>
           </div>
