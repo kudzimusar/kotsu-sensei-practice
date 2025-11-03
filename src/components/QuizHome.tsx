@@ -1,4 +1,4 @@
-import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays, Bell, BookOpen, Video, AlertTriangle, Car, ClipboardList } from "lucide-react";
+import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays, Bell, BookOpen, Video, AlertTriangle, Car, ClipboardList, Languages } from "lucide-react";
 import { testCategories } from "@/data/questions";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -30,7 +30,7 @@ interface QuizHomeProps {
 const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
   const { user, guestId, isGuest } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, language, setLanguage } = useTranslation();
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showModes, setShowModes] = useState(false);
@@ -295,6 +295,14 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
             <h1 className="text-lg font-bold">{getGreeting()} {firstName}</h1>
           </div>
           <div className="flex items-center space-x-2">
+            <button 
+              onClick={() => setLanguage(language === 'en' ? 'ja' : 'en')}
+              className="rounded-full p-2 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center gap-1"
+              title={language === 'en' ? 'Switch to Japanese' : 'Switch to English'}
+            >
+              <Languages className="w-4 h-4 text-gray-600" />
+              <span className="text-xs font-medium text-gray-600">{language === 'en' ? 'EN' : 'JA'}</span>
+            </button>
             <button className="rounded-full p-2 bg-gray-100 hover:bg-gray-200 transition-colors">
               <Bell className="w-4 h-4 text-gray-600" />
             </button>
