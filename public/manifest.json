@@ -1,0 +1,214 @@
+{
+  "name": "Kōtsū Sensei - Japan Driving Test Practice",
+  "short_name": "Kōtsū Sensei",
+  "description": "Master Japan's driving test with 250+ practice questions, real road signs, and instant feedback. Free online quiz app for learner's permit and standard license.",
+  "start_url": "/kotsu-sensei-practice/",
+  "scope": "/kotsu-sensei-practice/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1a1a1a",
+  "orientation": "portrait-primary",
+  "categories": ["education", "productivity"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/kotsu-sensei-practice/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/kotsu-sensei-practice/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/kotsu-sensei-practice/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/kotsu-sensei-practice/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/kotsu-sensei-practice/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/kotsu-sensei-practice/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/kotsu-sensei-practice/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/kotsu-sensei-practice/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/kotsu-sensei-practice/icons/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/kotsu-sensei-practice/icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/kotsu-sensei-practice/screenshots/home-mobile.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Home screen with quiz options"
+    },
+    {
+      "src": "/kotsu-sensei-practice/screenshots/quiz-mobile.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Interactive quiz interface"
+    },
+    {
+      "src": "/kotsu-sensei-practice/screenshots/planner-mobile.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Study planner and schedule"
+    },
+    {
+      "src": "/kotsu-sensei-practice/screenshots/home-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop home view"
+    },
+    {
+      "src": "/kotsu-sensei-practice/screenshots/quiz-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop quiz experience"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Practice Quiz",
+      "short_name": "Quiz",
+      "description": "Jump directly to practice questions",
+      "url": "/kotsu-sensei-practice/study",
+      "icons": [
+        {
+          "src": "/kotsu-sensei-practice/icons/shortcut-quiz.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "View Planner",
+      "short_name": "Planner",
+      "description": "Access your study schedule",
+      "url": "/kotsu-sensei-practice/planner",
+      "icons": [
+        {
+          "src": "/kotsu-sensei-practice/icons/shortcut-planner.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Road Signs",
+      "short_name": "Signs",
+      "description": "Study Japanese road signs",
+      "url": "/kotsu-sensei-practice/lectures",
+      "icons": [
+        {
+          "src": "/kotsu-sensei-practice/icons/shortcut-signs.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Mock Tests",
+      "short_name": "Tests",
+      "description": "Take full practice exams",
+      "url": "/kotsu-sensei-practice/tests",
+      "icons": [
+        {
+          "src": "/kotsu-sensei-practice/icons/shortcut-tests.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/kotsu-sensei-practice/study",
+      "accept": {
+        "application/json": [".json"],
+        "text/plain": [".txt"]
+      },
+      "icons": [
+        {
+          "src": "/kotsu-sensei-practice/icons/file-handler.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ],
+      "launch_type": "single-client"
+    }
+  ],
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+kotsusensei",
+      "url": "/kotsu-sensei-practice/?action=%s"
+    }
+  ],
+  "share_target": {
+    "action": "/kotsu-sensei-practice/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "tabbed": true,
+  "note_taking": {
+    "new_note_url": "/kotsu-sensei-practice/study?note=new"
+  },
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7"
+}
