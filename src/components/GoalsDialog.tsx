@@ -7,6 +7,7 @@ import { getGoals, updateGoals } from "@/lib/supabase/goals";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface GoalsDialogProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface GoalsDialogProps {
 export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   
   const [dailyTarget, setDailyTarget] = useState(10);
@@ -45,15 +47,15 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goals", user?.id] });
       toast({
-        title: "Goals updated",
-        description: "Your study goals have been saved.",
+        title: t('goals.updated', 'Goals updated'),
+        description: t('goals.updated', 'Your study goals have been saved.'),
       });
       onOpenChange(false);
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to update goals.",
+        title: t('error.generic', 'Error'),
+        description: t('error.generic', 'Failed to update goals.'),
         variant: "destructive",
       });
     },
@@ -63,11 +65,11 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Study Goals</DialogTitle>
+          <DialogTitle>{t('goals.title', 'Study Goals')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="daily">Daily Questions Target</Label>
+            <Label htmlFor="daily">{t('goals.daily_questions', 'Daily Questions Target')}</Label>
             <Input
               id="daily"
               type="number"
@@ -78,7 +80,7 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="weekly">Weekly Study Hours</Label>
+            <Label htmlFor="weekly">{t('goals.weekly_hours', 'Weekly Study Hours')}</Label>
             <Input
               id="weekly"
               type="number"
@@ -89,7 +91,7 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="prep">Exam Prep Days</Label>
+            <Label htmlFor="prep">{t('goals.exam_prep_days', 'Exam Preparation Days')}</Label>
             <Input
               id="prep"
               type="number"
@@ -104,7 +106,7 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
             className="w-full"
             disabled={updateMutation.isPending}
           >
-            {updateMutation.isPending ? "Saving..." : "Save Goals"}
+            {updateMutation.isPending ? t('common.loading', 'Saving...') : t('goals.update', 'Save Goals')}
           </Button>
         </div>
       </DialogContent>

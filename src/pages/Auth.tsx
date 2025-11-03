@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, GraduationCap } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -16,6 +17,7 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -47,8 +49,8 @@ const Auth = () => {
         if (error) throw error;
 
         toast({
-          title: "Account created!",
-          description: "Please check your email to verify your account.",
+          title: t('auth.signup_success', 'Account created successfully!'),
+          description: t('auth.signup_success', 'Please check your email to verify your account.'),
         });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -59,8 +61,8 @@ const Auth = () => {
         if (error) throw error;
 
         toast({
-          title: "Welcome back!",
-          description: "You have successfully signed in.",
+          title: t('auth.success', 'Welcome back!'),
+          description: t('auth.success', 'You have successfully signed in.'),
         });
         navigate("/");
       }
@@ -83,19 +85,17 @@ const Auth = () => {
             <GraduationCap className="w-10 h-10 text-blue-600" />
           </div>
           <h1 className="text-3xl font-bold mb-2">
-            {isSignUp ? "Create Account" : "Welcome Back"}
+            {isSignUp ? t('auth.sign_up', 'Create Account') : t('auth.sign_in', 'Welcome Back')}
           </h1>
           <p className="text-muted-foreground">
-            {isSignUp
-              ? "Start your driving test preparation journey"
-              : "Sign in to continue your learning"}
+            {t('auth.welcome', 'Welcome to Driving School Hub')}
           </p>
         </div>
 
         <form onSubmit={handleAuth} className="space-y-4">
           {isSignUp && (
             <div>
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName">{t('auth.full_name', 'Full Name')}</Label>
               <Input
                 id="fullName"
                 type="text"
@@ -108,7 +108,7 @@ const Auth = () => {
           )}
 
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('auth.email', 'Email')}</Label>
             <Input
               id="email"
               type="email"
@@ -120,7 +120,7 @@ const Auth = () => {
           </div>
 
           <div>
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('auth.password', 'Password')}</Label>
             <Input
               id="password"
               type="password"
@@ -136,12 +136,12 @@ const Auth = () => {
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Please wait...
+                {isSignUp ? t('auth.creating_account', 'Creating account...') : t('auth.signing_in', 'Signing in...')}
               </>
             ) : isSignUp ? (
-              "Sign Up"
+              t('auth.sign_up', 'Sign Up')
             ) : (
-              "Sign In"
+              t('auth.sign_in', 'Sign In')
             )}
           </Button>
         </form>
@@ -153,7 +153,7 @@ const Auth = () => {
             className="w-full"
             onClick={() => navigate("/")}
           >
-            Continue as Guest
+            {t('auth.continue_as_guest', 'Continue as Guest')}
           </Button>
           <p className="text-xs text-muted-foreground text-center mt-2">
             Limited features • Data expires in 7 days
@@ -167,8 +167,8 @@ const Auth = () => {
             className="text-sm text-blue-600 hover:underline"
           >
             {isSignUp
-              ? "Already have an account? Sign in"
-              : "Don't have an account? Sign up"}
+              ? t('auth.already_have_account', 'Already have an account?') + ' ' + t('auth.sign_in_here', 'Sign in here')
+              : t('auth.no_account', "Don't have an account?") + ' ' + t('auth.sign_up_here', 'Sign up here')}
           </button>
         </div>
       </Card>
