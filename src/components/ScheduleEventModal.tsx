@@ -50,26 +50,34 @@ export function ScheduleEventModal({
   const [instructor, setInstructor] = useState(event?.instructor || '');
   const [notes, setNotes] = useState(event?.notes || '');
   const [status, setStatus] = useState<DrivingScheduleEvent['status']>(event?.status || 'scheduled');
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
-    const eventData: Partial<DrivingScheduleEvent> = {
-      date,
-      time_slot: selectedTimeSlot,
-      event_type: eventType as DrivingScheduleEvent['event_type'],
-      lecture_number: eventType === 'theory' ? parseInt(lectureNumber) : undefined,
-      custom_label: customLabel || undefined,
-      location: location || undefined,
-      instructor: instructor || undefined,
-      notes: notes || undefined,
-      status: status as DrivingScheduleEvent['status'],
-    };
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const eventData: Partial<DrivingScheduleEvent> = {
+        date,
+        time_slot: selectedTimeSlot,
+        event_type: eventType as DrivingScheduleEvent['event_type'],
+        lecture_number: eventType === 'theory' ? parseInt(lectureNumber) : undefined,
+        custom_label: customLabel || undefined,
+        location: location || undefined,
+        instructor: instructor || undefined,
+        notes: notes || undefined,
+        status: status as DrivingScheduleEvent['status'],
+      };
 
-    if (event?.id) {
-      eventData.id = event.id;
+      if (event?.id) {
+        eventData.id = event.id;
+      }
+
+      await onSave(eventData);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error saving event:", error);
+    } finally {
+      setIsSaving(false);
     }
-
-    onSave(eventData);
-    onOpenChange(false);
   };
 
   const handleDelete = () => {
@@ -206,11 +214,18 @@ export function ScheduleEventModal({
               Delete
             </Button>
           )}
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>
-            {event ? 'Update' : 'Create'}
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Saving...
+              </div>
+            ) : (
+              event ? 'Update' : 'Create'
+            )}
           </Button>
         </div>
       </DialogContent>

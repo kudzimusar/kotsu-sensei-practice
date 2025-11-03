@@ -25,6 +25,7 @@ const Index = () => {
   const [score, setScore] = useState(0);
   const [timeLimit, setTimeLimit] = useState<number>(0);
   const [startTime, setStartTime] = useState<number>(Date.now());
+  const [isStartingQuiz, setIsStartingQuiz] = useState(false);
 
   // Check for category or test query parameter and auto-start quiz
   useEffect(() => {
@@ -92,36 +93,42 @@ const Index = () => {
   const handleStartQuiz = async (mode: QuizMode, category?: string, weakAreas?: boolean) => {
     if (!user && !guestId) return;
     
-    setQuizMode(mode);
-    const count = getQuestionCount(mode);
-    const time = getTimeLimit(mode);
-    setTimeLimit(time);
-    setStartTime(Date.now());
+    setIsStartingQuiz(true);
     
-    // Get all questions including AI-generated ones
-    const allQuestions = await getAllQuestionsWithAI(questions, 'en');
-    let filteredQuestions = allQuestions;
-    
-    // Filter by weak areas if requested (only for authenticated users)
-    if (weakAreas && user) {
-      const weakCategories = await getWeakCategories(user.id);
-      if (weakCategories.length > 0) {
-        const weakCategoryNames = weakCategories.map(wc => wc.category);
-        filteredQuestions = allQuestions.filter(q => weakCategoryNames.includes(q.test));
+    try {
+      setQuizMode(mode);
+      const count = getQuestionCount(mode);
+      const time = getTimeLimit(mode);
+      setTimeLimit(time);
+      setStartTime(Date.now());
+      
+      // Get all questions including AI-generated ones
+      const allQuestions = await getAllQuestionsWithAI(questions, 'en');
+      let filteredQuestions = allQuestions;
+      
+      // Filter by weak areas if requested (only for authenticated users)
+      if (weakAreas && user) {
+        const weakCategories = await getWeakCategories(user.id);
+        if (weakCategories.length > 0) {
+          const weakCategoryNames = weakCategories.map(wc => wc.category);
+          filteredQuestions = allQuestions.filter(q => weakCategoryNames.includes(q.test));
+        }
       }
+      // Filter by category if selected
+      else if (category) {
+        filteredQuestions = allQuestions.filter(q => q.test === category);
+      }
+      
+      // Shuffle and select questions
+      const shuffled = [...filteredQuestions].sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, Math.min(count, filteredQuestions.length));
+      setSelectedQuestions(selected);
+      setCurrentQuestionIndex(0);
+      setScore(0);
+      setScreen('quiz');
+    } finally {
+      setIsStartingQuiz(false);
     }
-    // Filter by category if selected
-    else if (category) {
-      filteredQuestions = allQuestions.filter(q => q.test === category);
-    }
-    
-    // Shuffle and select questions
-    const shuffled = [...filteredQuestions].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, Math.min(count, filteredQuestions.length));
-    setSelectedQuestions(selected);
-    setCurrentQuestionIndex(0);
-    setScore(0);
-    setScreen('quiz');
   };
 
   const handleAnswer = async (correct: boolean) => {
@@ -184,6 +191,7 @@ const Index = () => {
         <QuizHome 
           onStartQuiz={handleStartQuiz} 
           onContinueLearning={handleContinueLearning}
+          isStartingQuiz={isStartingQuiz}
         />
       )}
       
