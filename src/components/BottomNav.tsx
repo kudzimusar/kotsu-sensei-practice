@@ -14,7 +14,7 @@ const BottomNav = () => {
     { path: "/study", icon: BookOpen, label: t('nav.study', 'Study') },
     { path: "/tests", icon: ClipboardList, label: t('nav.tests', 'Tests') },
     { path: "/generate", icon: Sparkles, label: t('nav.ai', 'AI') },
-    { path: "/planner", icon: CalendarDays, label: t('nav.planner', 'Planner') },
+    { path: "/planner", icon: CalendarDays, label: t('nav.schedule', 'Schedule') },
     { path: "/profile", icon: User, label: isGuest ? t('nav.sign_up', 'Sign Up') : t('nav.profile', 'Profile') },
   ];
 

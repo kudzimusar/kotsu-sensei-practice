@@ -9,7 +9,7 @@ const Planner = () => {
     <div className="min-h-screen bg-[#F5F7FA] pb-20">
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="px-6 py-4">
-          <h1 className="text-lg font-bold">{t('planner.title', 'Driving Schedule')}</h1>
+          <h1 className="text-lg font-bold">{t('schedule.title', 'Schedule')}</h1>
         </div>
       </header>
       

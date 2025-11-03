@@ -77,10 +77,11 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
     staleTime: 1000 * 60 * 5,
   });
 
-  const { data: detailedReadiness } = useQuery({
+  const { data: detailedReadiness, isLoading: readinessLoading } = useQuery({
     queryKey: ["detailedTestReadiness", user?.id],
     queryFn: () => getDetailedTestReadiness(user!.id),
     enabled: !!user,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
   const testReadiness = detailedReadiness?.overallReadiness || 0;
@@ -184,25 +185,18 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
     setSelectedCategory(null);
   };
 
-  const handleContinueLearning = () => {
-    const progress = loadProgress();
-    if (progress && onContinueLearning) {
+  const handleContinueLearning = async () => {
+    if (onContinueLearning) {
       onContinueLearning();
     } else {
-      // No saved progress, start a quick practice
+      // Start a quick practice if no saved progress handler
       handleQuickStart('quick');
     }
   };
 
-  const handleWeakAreas = () => {
-    const weakCategories = getWeakCategories();
-    if (weakCategories.length > 0) {
-      // Start focused study on weak areas
-      onStartQuiz('focused', undefined, true);
-    } else {
-      // No weak areas detected, start regular focused study
-      handleQuickStart('focused');
-    }
+  const handleWeakAreas = async () => {
+    // Start focused study on weak areas from database
+    onStartQuiz('focused', undefined, true);
   };
 
   const daysRemaining = examDate ? differenceInDays(examDate, new Date()) : null;
@@ -349,10 +343,15 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
           <div className="bg-white rounded-2xl shadow-md p-5">
             <div className="flex justify-between items-center mb-3">
               <div>
-                <h2 className="font-bold text-lg">{t('home.test_ready', 'Test Ready')}: {testReadiness}%</h2>
-                <p className="text-xs text-gray-500 mt-1">
-                  {detailedReadiness?.totalQuestions || 0} {t('quiz.question', 'questions')} · {detailedReadiness?.categoriesMastered || 0}/{detailedReadiness?.totalCategories || 0} mastered
-                </p>
+                <h2 className="font-bold text-lg">{t('home.test_ready', 'Test Ready')}: {readinessLoading ? '...' : testReadiness}%</h2>
+                {!readinessLoading && detailedReadiness && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {detailedReadiness.totalQuestions} {t('quiz.question', 'questions')} · {detailedReadiness.categoriesMastered}/{detailedReadiness.totalCategories} mastered · {detailedReadiness.averageAccuracy}% accuracy
+                  </p>
+                )}
+                {readinessLoading && (
+                  <p className="text-xs text-gray-400 mt-1">Loading stats...</p>
+                )}
               </div>
               {currentStreak > 0 && (
                 <div className="flex items-center bg-amber-100 px-3 py-1.5 rounded-full">
@@ -362,7 +361,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
               )}
             </div>
             <div className="h-2 bg-indigo-100 rounded-full overflow-hidden mb-2">
-              <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${testReadiness}%` }}></div>
+              <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${testReadiness}%` }}></div>
             </div>
             {upcomingTestEvent && daysUntilTest !== null && (
               <div className="flex items-center mt-4">
@@ -381,29 +380,31 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
           <div className="bg-white rounded-2xl shadow-md p-4">
             {/* Top Grid: Quick Practice & Focused Study */}
             <div className="grid grid-cols-2 gap-3 mb-3">
-              <button
-                onClick={() => handleQuickStart('quick')}
-                style={{ background: 'var(--gradient-blue)' }}
-                className="rounded-xl p-4 text-white transform transition active:scale-[0.98]"
-              >
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-2">
-                  <Zap className="text-white" size={20} />
-                </div>
-                <h3 className="font-bold text-base mb-1">{t('home.quick_practice', 'Quick Practice')}</h3>
-                <p className="text-xs text-white/90">10 random questions</p>
-              </button>
-              
-              <button
-                onClick={() => handleQuickStart('focused')}
-                style={{ background: 'var(--gradient-purple)' }}
-                className="rounded-xl p-4 text-white transform transition active:scale-[0.98]"
-              >
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-2">
-                  <Target className="text-white" size={20} />
-                </div>
-                <h3 className="font-bold text-base mb-1">{t('home.focused_study', 'Focused Study')}</h3>
-                <p className="text-xs text-white/90">20 specific questions</p>
-              </button>
+            <button
+              onClick={() => handleQuickStart('quick')}
+              disabled={false}
+              style={{ background: 'var(--gradient-blue)' }}
+              className="rounded-xl p-4 text-white transform transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-2">
+                <Zap className="text-white" size={20} />
+              </div>
+              <h3 className="font-bold text-base mb-1">{t('home.quick_practice', 'Quick Practice')}</h3>
+              <p className="text-xs text-white/90">10 random questions</p>
+            </button>
+            
+            <button
+              onClick={() => handleQuickStart('focused')}
+              disabled={false}
+              style={{ background: 'var(--gradient-purple)' }}
+              className="rounded-xl p-4 text-white transform transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-2">
+                <Target className="text-white" size={20} />
+              </div>
+              <h3 className="font-bold text-base mb-1">{t('home.focused_study', 'Focused Study')}</h3>
+              <p className="text-xs text-white/90">20 specific questions</p>
+            </button>
             </div>
             
             {/* Full Exam Simulation */}
@@ -442,7 +443,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
           <h2 className="font-bold text-lg mb-3">{t('home.study_tools', 'Study Tools')}</h2>
           <div className="grid grid-cols-3 gap-3">
             <button
-              onClick={() => navigate('/study')}
+              onClick={() => navigate('/lectures?tab=textbook')}
               className="bg-white rounded-xl shadow p-3 transform transition active:scale-[0.98]"
             >
               <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mb-2">
