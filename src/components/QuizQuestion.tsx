@@ -37,26 +37,18 @@ const QuizQuestion = ({
   }, [timeLimit]);
 
   useEffect(() => {
-    console.log('Timer useEffect running. timeRemaining:', timeRemaining);
-    if (timeRemaining <= 0) {
-      console.log('Time is up!');
-      onTimeUp();
-      return;
-    }
-
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
-        const newTime = prev <= 1 ? 0 : prev - 1;
-        console.log('Countdown:', prev, '->', newTime);
-        return newTime;
+        if (prev <= 1) {
+          onTimeUp();
+          return 0;
+        }
+        return prev - 1;
       });
     }, 1000);
 
-    return () => {
-      console.log('Clearing interval');
-      clearInterval(timer);
-    };
-  }, [timeRemaining, onTimeUp]);
+    return () => clearInterval(timer);
+  }, [onTimeUp]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
