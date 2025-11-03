@@ -4,7 +4,6 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, XCircle, ChevronRight, X, Clock } from "lucide-react";
 import type { Question } from "@/data/questions";
-import { useTranslation } from "@/hooks/useTranslation";
 
 interface QuizQuestionProps {
   question: Question;
@@ -27,7 +26,6 @@ const QuizQuestion = ({
   timeLimit,
   onTimeUp,
 }: QuizQuestionProps) => {
-  const { t } = useTranslation();
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number>(timeLimit);
@@ -84,7 +82,7 @@ const QuizQuestion = ({
               className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-xs md:text-sm"
             >
               <X className="w-4 h-4" />
-              {t('common.close', 'Quit')}
+              Quit
             </button>
             <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${
               isTimeCritical ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'
@@ -158,10 +156,10 @@ const QuizQuestion = ({
                       isCorrect ? "text-success" : "text-error"
                     }`}
                   >
-                    {isCorrect ? "✅ " + t('quiz.correct', 'Correct!') : "❌ " + t('quiz.incorrect', 'Incorrect')}
+                    {isCorrect ? "✅ Correct!" : "❌ Incorrect"}
                   </p>
                   <p className="text-xs md:text-sm text-card-foreground font-medium mb-0.5 md:mb-1">
-                    {t('quiz.explanation', 'The correct answer is')}: <strong>{question.answer ? "TRUE" : "FALSE"}</strong>
+                    The correct answer is: <strong>{question.answer ? "TRUE" : "FALSE"}</strong>
                   </p>
                 </div>
               </div>
@@ -177,7 +175,7 @@ const QuizQuestion = ({
               className="w-full bg-primary hover:bg-primary/90 shadow-button text-sm md:text-base py-5 md:py-6"
               size="lg"
             >
-              {t('quiz.next_question', 'Next Question')}
+              Next Question
               <ChevronRight className="ml-2 w-4 h-4 md:w-5 md:h-5" />
             </Button>
           </div>

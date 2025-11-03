@@ -1,21 +1,19 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, BookOpen, ClipboardList, User, Sparkles, CalendarDays } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useTranslation } from "@/hooks/useTranslation";
 
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isGuest } = useAuth();
-  const { t } = useTranslation();
   
   const navItems = [
-    { path: "/", icon: Home, label: t('nav.home', 'Home') },
-    { path: "/study", icon: BookOpen, label: t('nav.study', 'Study') },
-    { path: "/tests", icon: ClipboardList, label: t('nav.tests', 'Tests') },
-    { path: "/generate", icon: Sparkles, label: t('nav.ai', 'AI') },
-    { path: "/planner", icon: CalendarDays, label: t('nav.schedule', 'Schedule') },
-    { path: "/profile", icon: User, label: isGuest ? t('nav.sign_up', 'Sign Up') : t('nav.profile', 'Profile') },
+    { path: "/", icon: Home, label: 'Home' },
+    { path: "/study", icon: BookOpen, label: 'Study' },
+    { path: "/tests", icon: ClipboardList, label: 'Tests' },
+    { path: "/generate", icon: Sparkles, label: 'AI' },
+    { path: "/planner", icon: CalendarDays, label: 'Schedule' },
+    { path: "/profile", icon: User, label: isGuest ? 'Sign Up' : 'Profile' },
   ];
 
   // Check if current path starts with any nav item path
