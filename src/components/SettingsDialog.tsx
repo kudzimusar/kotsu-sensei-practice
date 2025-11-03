@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSettings, updateSettings } from "@/lib/supabase/settings";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -15,6 +16,7 @@ interface SettingsDialogProps {
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t, language, setLanguage } = useTranslation();
   const queryClient = useQueryClient();
 
   const { data: settings } = useQuery({
@@ -42,6 +44,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   });
 
   const handleToggle = (field: string, value: boolean | string) => {
+    if (field === 'language') {
+      setLanguage(value as 'en' | 'ja');
+    }
     updateMutation.mutate({ [field]: value });
   };
 
@@ -49,15 +54,15 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle>{t('settings.language', 'Settings')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="space-y-2">
             <Label htmlFor="language" className="text-sm font-medium">
-              Language / 言語
+              {t('settings.language', 'Language')} / 言語
             </Label>
             <Select
-              value={settings?.language ?? 'ja'}
+              value={language}
               onValueChange={(value) => handleToggle("language", value)}
             >
               <SelectTrigger id="language">
@@ -72,7 +77,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
           <div className="flex items-center justify-between">
             <Label htmlFor="email" className="flex flex-col gap-1">
-              <span className="font-medium">Email Notifications</span>
+              <span className="font-medium">{t('settings.email_notifications', 'Email Notifications')}</span>
               <span className="text-xs text-muted-foreground">Receive updates via email</span>
             </Label>
             <Switch
@@ -84,7 +89,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           
           <div className="flex items-center justify-between">
             <Label htmlFor="push" className="flex flex-col gap-1">
-              <span className="font-medium">Push Notifications</span>
+              <span className="font-medium">{t('settings.push_notifications', 'Push Notifications')}</span>
               <span className="text-xs text-muted-foreground">Receive browser notifications</span>
             </Label>
             <Switch
@@ -96,7 +101,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           
           <div className="flex items-center justify-between">
             <Label htmlFor="study" className="flex flex-col gap-1">
-              <span className="font-medium">Study Reminders</span>
+              <span className="font-medium">{t('settings.study_reminders', 'Study Reminders')}</span>
               <span className="text-xs text-muted-foreground">Daily study notifications</span>
             </Label>
             <Switch
@@ -108,7 +113,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           
           <div className="flex items-center justify-between">
             <Label htmlFor="test" className="flex flex-col gap-1">
-              <span className="font-medium">Test Reminders</span>
+              <span className="font-medium">{t('settings.test_reminders', 'Test Reminders')}</span>
               <span className="text-xs text-muted-foreground">Mock test notifications</span>
             </Label>
             <Switch

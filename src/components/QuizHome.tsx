@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type QuizMode = 'quick' | 'focused' | 'permit' | 'license';
 
@@ -29,6 +30,7 @@ interface QuizHomeProps {
 const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
   const { user, guestId, isGuest } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showModes, setShowModes] = useState(false);
@@ -94,6 +96,14 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
 
   // Get user's first name
   const firstName = profile?.full_name?.split(' ')[0] || 'User';
+  
+  // Get Japanese greeting based on time
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return t('greeting.morning', 'おはよう');
+    if (hour < 18) return t('greeting.afternoon', 'こんにちは');
+    return t('greeting.evening', 'こんばんは');
+  };
 
   // Calculate streak
   const calculateStreak = () => {
@@ -282,7 +292,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
       <header className="fixed inset-x-0 top-0 bg-white z-10 shadow-sm">
         <div className="flex justify-between items-center px-5 py-2">
           <div>
-            <h1 className="text-lg font-bold">おはよう {firstName}</h1>
+            <h1 className="text-lg font-bold">{getGreeting()} {firstName}</h1>
           </div>
           <div className="flex items-center space-x-2">
             <button className="rounded-full p-2 bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -331,15 +341,15 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
           <div className="bg-white rounded-2xl shadow-md p-5">
             <div className="flex justify-between items-center mb-3">
               <div>
-                <h2 className="font-bold text-lg">Test Ready: {testReadiness}%</h2>
+                <h2 className="font-bold text-lg">{t('home.test_ready', 'Test Ready')}: {testReadiness}%</h2>
                 <p className="text-xs text-gray-500 mt-1">
-                  {detailedReadiness?.totalQuestions || 0} questions · {detailedReadiness?.categoriesMastered || 0}/{detailedReadiness?.totalCategories || 0} mastered
+                  {detailedReadiness?.totalQuestions || 0} {t('quiz.question', 'questions')} · {detailedReadiness?.categoriesMastered || 0}/{detailedReadiness?.totalCategories || 0} mastered
                 </p>
               </div>
               {currentStreak > 0 && (
                 <div className="flex items-center bg-amber-100 px-3 py-1.5 rounded-full">
                   <Flame className="text-amber-500 mr-1.5" size={16} />
-                  <p className="font-medium text-amber-700 text-xs">{currentStreak} 🔥</p>
+                  <p className="font-medium text-amber-700 text-xs">{currentStreak} {t('home.day_streak', '🔥')}</p>
                 </div>
               )}
             </div>
@@ -350,7 +360,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
               <div className="flex items-center mt-4">
                 <CalendarIcon className="text-blue-600 mr-2" size={16} />
                 <span className="text-sm text-blue-800 font-medium">
-                  Your test is in {daysUntilTest} {daysUntilTest === 1 ? 'day' : 'days'} - {testDate}
+                  {t('home.exam_in', 'Your test is in')} {daysUntilTest} {daysUntilTest === 1 ? t('home.days', 'day') : t('home.days', 'days')} - {testDate}
                 </span>
               </div>
             )}
@@ -359,7 +369,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
 
         {/* Practice Options Card */}
         <section className="mb-6">
-          <h2 className="font-bold text-lg mb-3">Practice Options</h2>
+          <h2 className="font-bold text-lg mb-3">{t('home.practice_options', 'Practice Options')}</h2>
           <div className="bg-white rounded-2xl shadow-md p-4">
             {/* Top Grid: Quick Practice & Focused Study */}
             <div className="grid grid-cols-2 gap-3 mb-3">
@@ -371,7 +381,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-2">
                   <Zap className="text-white" size={20} />
                 </div>
-                <h3 className="font-bold text-base mb-1">Quick Practice</h3>
+                <h3 className="font-bold text-base mb-1">{t('home.quick_practice', 'Quick Practice')}</h3>
                 <p className="text-xs text-white/90">10 random questions</p>
               </button>
               
@@ -383,7 +393,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-2">
                   <Target className="text-white" size={20} />
                 </div>
-                <h3 className="font-bold text-base mb-1">Focused Study</h3>
+                <h3 className="font-bold text-base mb-1">{t('home.focused_study', 'Focused Study')}</h3>
                 <p className="text-xs text-white/90">20 specific questions</p>
               </button>
             </div>
@@ -395,7 +405,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
             >
               <div className="flex justify-between items-center mb-2">
                 <div>
-                  <h3 className="font-bold text-base">Full Exam Simulation</h3>
+                  <h3 className="font-bold text-base">{t('home.full_exam', 'Full Exam Simulation')}</h3>
                 </div>
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                   <FileText className="text-white" size={20} />
@@ -421,7 +431,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
 
         {/* Study Tools Section */}
         <section className="mb-6">
-          <h2 className="font-bold text-lg mb-3">Study Tools</h2>
+          <h2 className="font-bold text-lg mb-3">{t('home.study_tools', 'Study Tools')}</h2>
           <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => navigate('/study')}
@@ -430,7 +440,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
               <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mb-2">
                 <BookOpen className="text-indigo-600" size={20} />
               </div>
-              <h3 className="font-medium text-xs">Digital Textbooks</h3>
+              <h3 className="font-medium text-xs">{t('home.digital_textbooks', 'Digital Textbooks')}</h3>
             </button>
             
             <button
@@ -440,7 +450,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
               <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center mb-2">
                 <Video className="text-amber-600" size={20} />
               </div>
-              <h3 className="font-medium text-xs">Lectures</h3>
+              <h3 className="font-medium text-xs">{t('home.lectures', 'Lectures')}</h3>
             </button>
             
             <button
@@ -450,7 +460,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
               <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mb-2">
                 <CalendarDays className="text-emerald-600" size={20} />
               </div>
-              <h3 className="font-medium text-xs">Driving Schedule</h3>
+              <h3 className="font-medium text-xs">{t('home.driving_schedule', 'Driving Schedule')}</h3>
             </button>
           </div>
         </section>
@@ -466,7 +476,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
                     <BookOpen className="text-blue-600" size={20} />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-base mb-1">Continue Learning</h3>
+                    <h3 className="font-bold text-base mb-1">{t('home.continue_learning', 'Continue Learning')}</h3>
                     <div className="flex items-center">
                       <div className="w-16 h-1.5 bg-gray-100 rounded-full mr-2">
                         <div className="w-1/2 h-1.5 bg-blue-500 rounded-full"></div>
@@ -480,7 +490,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
                   onClick={handleContinueLearning}
                   className="bg-blue-600 hover:bg-blue-700 py-1.5 px-3 rounded-lg text-white text-xs font-medium ml-2"
                 >
-                  Continue
+                  {t('actions.continue', 'Continue')}
                 </Button>
               </div>
             </div>
@@ -493,7 +503,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
                     <AlertTriangle className="text-red-600" size={20} />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-base mb-1">Practice Weak Areas</h3>
+                    <h3 className="font-bold text-base mb-1">{t('home.weak_areas', 'Practice Weak Areas')}</h3>
                     <div className="flex items-center">
                       <div className="w-16 h-1.5 bg-gray-100 rounded-full mr-2">
                         <div className="w-[65%] h-1.5 bg-red-500 rounded-full"></div>
@@ -507,7 +517,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
                   onClick={handleWeakAreas}
                   className="bg-red-600 hover:bg-red-700 py-1.5 px-3 rounded-lg text-white text-xs font-medium ml-2"
                 >
-                  Practice
+                  {t('actions.practice', 'Practice')}
                 </Button>
               </div>
             </div>
@@ -517,12 +527,12 @@ const QuizHome = ({ onStartQuiz, onContinueLearning }: QuizHomeProps) => {
         {/* Planner Preview */}
         <section className="mb-6">
           <div className="flex justify-between items-center mb-3">
-            <h2 className="font-bold text-lg">Upcoming Schedule</h2>
+            <h2 className="font-bold text-lg">{t('home.upcoming_schedule', 'Upcoming Schedule')}</h2>
             <button
               onClick={() => navigate('/lectures?tab=schedule')}
               className="text-blue-600 text-sm font-medium hover:underline"
             >
-              View All
+              {t('actions.view_all', 'View All')}
             </button>
           </div>
           
