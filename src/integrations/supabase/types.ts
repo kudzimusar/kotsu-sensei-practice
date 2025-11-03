@@ -776,36 +776,6 @@ export type Database = {
         }
         Relationships: []
       }
-      translations: {
-        Row: {
-          category: string | null
-          created_at: string | null
-          en: string
-          id: string
-          ja: string | null
-          key: string
-          updated_at: string | null
-        }
-        Insert: {
-          category?: string | null
-          created_at?: string | null
-          en: string
-          id?: string
-          ja?: string | null
-          key: string
-          updated_at?: string | null
-        }
-        Update: {
-          category?: string | null
-          created_at?: string | null
-          en?: string
-          id?: string
-          ja?: string | null
-          key?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       user_earnings: {
         Row: {
           amount: number
@@ -978,7 +948,6 @@ export type Database = {
           created_at: string
           email_notifications: boolean
           id: string
-          language: string
           push_notifications: boolean
           study_reminders: boolean
           test_reminders: boolean
@@ -989,7 +958,6 @@ export type Database = {
           created_at?: string
           email_notifications?: boolean
           id?: string
-          language?: string
           push_notifications?: boolean
           study_reminders?: boolean
           test_reminders?: boolean
@@ -1000,7 +968,6 @@ export type Database = {
           created_at?: string
           email_notifications?: boolean
           id?: string
-          language?: string
           push_notifications?: boolean
           study_reminders?: boolean
           test_reminders?: boolean

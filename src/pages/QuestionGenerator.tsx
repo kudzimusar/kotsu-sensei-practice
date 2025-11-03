@@ -28,19 +28,18 @@ export default function AdminQuestionGenerator() {
   const [category, setCategory] = useState("traffic-rules");
   const [difficulty, setDifficulty] = useState("medium");
   const [count, setCount] = useState("5");
-  const [language, setLanguage] = useState("en");
   const [concept, setConcept] = useState("");
 
   // Fetch AI-generated questions
   const { data: aiQuestions = [], refetch } = useQuery({
-    queryKey: ["ai-questions", category, language],
+    queryKey: ["ai-questions", category],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ai_generated_questions')
         .select('*')
         .eq('status', 'approved')
         .eq('test_category', category)
-        .eq('language', language)
+        .eq('language', 'en')
         .order('created_at', { ascending: false })
         .limit(20);
       
@@ -62,7 +61,7 @@ export default function AdminQuestionGenerator() {
           category,
           difficulty,
           count: parseInt(count),
-          language,
+          language: 'en',
           concept: concept.trim()
         }
       });
@@ -156,18 +155,6 @@ export default function AdminQuestionGenerator() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="language">Language</Label>
-                <Select value={language} onValueChange={setLanguage}>
-                  <SelectTrigger id="language">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="ja">Japanese</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <Button
