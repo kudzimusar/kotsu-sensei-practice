@@ -1,44 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- SEO Meta Tags -->
-    <title>Kōtsū Sensei - Japan Driving Test Practice | Free Online Quiz App</title>
-    <meta name="description" content="Master Japan's driving test with 250+ practice questions, real road signs, and instant feedback. Free online quiz app for learner's permit and standard license.">
-    <meta name="keywords" content="japan driving test, driving license japan, road signs japan, driving practice test, kotsu sensei, japanese driving exam">
-    
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Favicon & Icons -->
+    <link rel="icon" href="/kotsu-sensei-practice/favicon.ico" />
+    <link rel="apple-touch-icon" href="/kotsu-sensei-practice/assets/icon-192.png" />
+
+    <!-- PWA Core: This is the critical line that connects your HTML to your manifest.json -->
+    <link rel="manifest" href="/kotsu-sensei-practice/manifest.json" />
+    <meta name="theme-color" content="#1a5fb4" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Kōtsū Sensei" />
+
+    <!-- SEO & Metadata -->
+    <title>Kōtsū Sensei - Japan Driving Test Practice | 387+ Real Questions</title>
+    <meta
+      name="description"
+      content="Pass Japan's driving test first try. 387+ real exam questions, SVG road signs, offline practice, full exam simulation. Ad-free. Made for foreigners & locals."
+    />
+    <meta
+      name="keywords"
+      content="japan driving test, japanese driving license, road signs japan, driving practice test, kotsu sensei, 交通先生, 運転免許試験, 仮免許"
+    />
+
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://kotsu-sensei-practice.lovable.app/">
-    <meta property="og:title" content="Kōtsū Sensei - Japan Driving Test Practice">
-    <meta property="og:description" content="Master Japan's driving test with 250+ practice questions, real road signs, and instant feedback.">
-    <meta property="og:image" content="/kotsu-sensei-practice/icons/icon-512x512.png">
-    
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://kotsu-sensei-practice.lovable.app/">
-    <meta property="twitter:title" content="Kōtsū Sensei - Japan Driving Test Practice">
-    <meta property="twitter:description" content="Master Japan's driving test with 250+ practice questions, real road signs, and instant feedback.">
-    <meta property="twitter:image" content="/kotsu-sensei-practice/icons/icon-512x512.png">
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/kotsu-sensei-practice/manifest.json">
-    <meta name="theme-color" content="#1a1a1a">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Kōtsū Sensei">
-    
-    <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" href="/kotsu-sensei-practice/icons/icon-192x192.png">
-    
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://kudzimusar.github.io/kotsu-sensei-practice/" />
+    <meta property="og:title" content="Kōtsū Sensei - Japan Driving Test Practice" />
+    <meta
+      property="og:description"
+      content="387+ real questions. Full exam mode. Offline. Pass first try."
+    />
+    <meta property="og:image" content="https://kudzimusar.github.io/kotsu-sensei-practice/assets/icon-512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://kudzimusar.github.io/kotsu-sensei-practice/" />
+    <meta name="twitter:title" content="Kōtsū Sensei - Japan Driving Test Practice" />
+    <meta
+      name="twitter:description"
+      content="387+ real questions. Full exam mode. Offline. Pass first try."
+    />
+    <meta name="twitter:image" content="https://kudzimusar.github.io/kotsu-sensei-practice/assets/icon-512.png" />
+
     <!-- Canonical URL -->
-    <link rel="canonical" href="https://kotsu-sensei-practice.lovable.app/">
+    <link rel="canonical" href="https://kudzimusar.github.io/kotsu-sensei-practice/" />
+
+    <!-- Preload Critical Assets -->
+    <link rel="preload" href="/kotsu-sensei-practice/assets/icon-192.png" as="image" />
+    <link rel="preload" href="/kotsu-sensei-practice/questions.json" as="fetch" crossorigin />
+
+    <!-- Structured Data (Optional, for SEO) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Kōtsū Sensei",
+        "description": "Japan Driving Test Practice App with 387+ real questions and offline support.",
+        "url": "https://kudzimusar.github.io/kotsu-sensei-practice/",
+        "applicationCategory": "Education",
+        "operatingSystem": "Android, iOS, Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "4.99",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Register Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          // This path needs to match the actual location of sw.js on your server.
+          navigator.serviceWorker.register('/kotsu-sensei-practice/sw.js')
+            .then(reg => console.log('SW registered:', reg.scope))
+            .catch(err => console.log('SW registration failed:', err));
+        });
+      }
+    </script>
   </body>
 </html>
