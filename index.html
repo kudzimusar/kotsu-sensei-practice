@@ -83,14 +83,13 @@
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/kotsu-sensei-practice/sw.js')
         .then(reg => {
-          console.log('SW registered');
-          // Request notification permission
+          console.log('SW registered:', reg);
           Notification.requestPermission();
-          // Register periodic sync
           if ('periodicSync' in reg) {
             reg.periodicSync.register('update-content', { minInterval: 24 * 60 * 60 * 1000 });
           }
-        });
+        })
+        .catch(err => console.error('SW registration failed:', err));
     });
   }
 </script>
