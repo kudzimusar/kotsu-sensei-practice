@@ -1,15 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trophy, RotateCcw, Home, ChevronRight, UserPlus } from "lucide-react";
+import { Trophy, RotateCcw, Home, ChevronRight, UserPlus, Target } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
+import type { Question } from "@/data/questions";
 
 interface QuizResultsProps {
   score: number;
   totalQuestions: number;
   onRestart: () => void;
   onHome: () => void;
+  failedQuestions?: Question[];
+  onRetryFailed?: () => void;
 }
 
 const QuizResults = ({
@@ -17,11 +20,14 @@ const QuizResults = ({
   totalQuestions,
   onRestart,
   onHome,
+  failedQuestions = [],
+  onRetryFailed,
 }: QuizResultsProps) => {
   const navigate = useNavigate();
   const { isGuest } = useAuth();
   const percentage = Math.round((score / totalQuestions) * 100);
   const passed = percentage >= 90;
+  const hasFailedQuestions = failedQuestions.length > 0;
 
   return (
     <div className="min-h-screen bg-background p-3 md:p-4 pb-24">
@@ -65,6 +71,30 @@ const QuizResults = ({
               : "Review the questions you missed and practice more to improve your score."}
           </p>
         </div>
+
+        {hasFailedQuestions && (
+          <div className="p-4 rounded-lg mb-6 bg-orange-50 border-2 border-orange-200">
+            <div className="flex items-start gap-3">
+              <Target className="w-5 h-5 text-orange-600 mt-0.5" />
+              <div className="flex-1 text-left">
+                <p className="text-sm font-semibold text-orange-900 mb-1">
+                  Practice Your Weak Areas
+                </p>
+                <p className="text-xs text-orange-700 mb-3">
+                  You missed {failedQuestions.length} question{failedQuestions.length > 1 ? 's' : ''}. Practice them now to improve!
+                </p>
+                <Button
+                  onClick={onRetryFailed}
+                  size="sm"
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  <Target className="mr-2 w-4 h-4" />
+                  Retry Failed Questions
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {isGuest && (
           <div className="p-4 rounded-lg mb-6 bg-blue-50 border-2 border-blue-200">
