@@ -1,4 +1,5 @@
 {
+  "id": "/kotsu-sensei-practice/",
   "name": "Kōtsū Sensei - Japan Driving Test Practice",
   "short_name": "Kōtsū Sensei",
   "description": "Master Japan's driving test with 250+ practice questions, real road signs, and instant feedback. Free online quiz app for learner's permit and standard license.",
@@ -208,7 +209,7 @@
   "note_taking": {
     "new_note_url": "/kotsu-sensei-practice/study?note=new"
   },
-  "prefer_related_applications": false,
+  "prefer_related_applications": true,
   "related_applications": [],
   "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7"
 }
