@@ -12,6 +12,7 @@ import { trackAnswer } from "@/lib/supabase/performance";
 import { getWeakCategories } from "@/lib/supabase/performance";
 import { saveTestHistory } from "@/lib/supabase/tests";
 import { getAllQuestionsWithAI } from "@/lib/supabase/aiQuestions";
+import { toast } from "@/hooks/use-toast";
 type QuizMode = 'quick' | 'focused' | 'permit' | 'license';
 type Screen = 'home' | 'quiz' | 'results';
 
@@ -26,6 +27,7 @@ const Index = () => {
   const [timeLimit, setTimeLimit] = useState<number>(0);
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [isStartingQuiz, setIsStartingQuiz] = useState(false);
+  const [failedQuestions, setFailedQuestions] = useState<Question[]>([]);
 
   // Check for category or test query parameter and auto-start quiz
   useEffect(() => {
@@ -134,6 +136,12 @@ const Index = () => {
   const handleAnswer = async (correct: boolean) => {
     if (correct) {
       setScore(score + 1);
+    } else {
+      // Track failed questions for retry option
+      const currentQuestion = selectedQuestions[currentQuestionIndex];
+      if (currentQuestion && !failedQuestions.find(q => q.id === currentQuestion.id)) {
+        setFailedQuestions(prev => [...prev, currentQuestion]);
+      }
     }
     
     // Track answer for performance analytics (only for authenticated users)
@@ -158,22 +166,53 @@ const Index = () => {
     if (user || guestId) {
       const timeTaken = Math.floor((Date.now() - startTime) / 1000);
       const percentage = (score / selectedQuestions.length) * 100;
+      const passed = percentage >= 90;
+      
       await saveTestHistory({
         user_id: user?.id || null,
         guest_session_id: guestId || null,
         test_type: quizMode,
         date: new Date().toISOString(),
-        passed: percentage >= 90, // 90% pass rate
+        passed,
         score,
         time_taken: timeTaken,
         total_questions: selectedQuestions.length,
+      });
+
+      // Show completion notification
+      toast({
+        title: passed ? "🎉 Test Completed - You Passed!" : "📚 Test Completed",
+        description: passed 
+          ? `Amazing! You scored ${percentage.toFixed(0)}% (${score}/${selectedQuestions.length})` 
+          : `You scored ${percentage.toFixed(0)}% (${score}/${selectedQuestions.length}). Review and try again!`,
+        duration: 5000,
       });
     }
     setScreen('results');
   };
 
   const handleRestart = () => {
+    setFailedQuestions([]);
     handleStartQuiz(quizMode);
+  };
+
+  const handleRetryFailed = () => {
+    if (failedQuestions.length === 0) return;
+    
+    setQuizMode('focused');
+    const time = Math.ceil(failedQuestions.length * 0.6 * 60); // 36 seconds per question
+    setTimeLimit(time);
+    setStartTime(Date.now());
+    setSelectedQuestions(failedQuestions);
+    setCurrentQuestionIndex(0);
+    setScore(0);
+    setFailedQuestions([]);
+    setScreen('quiz');
+    
+    toast({
+      title: "🎯 Practice Mode: Failed Questions",
+      description: `Focusing on ${failedQuestions.length} question${failedQuestions.length > 1 ? 's' : ''} you missed. Good luck!`,
+    });
   };
 
   const handleHome = async () => {
@@ -183,6 +222,7 @@ const Index = () => {
     setScreen('home');
     setCurrentQuestionIndex(0);
     setScore(0);
+    setFailedQuestions([]);
   };
 
   return (
@@ -214,6 +254,8 @@ const Index = () => {
           totalQuestions={selectedQuestions.length}
           onRestart={handleRestart}
           onHome={handleHome}
+          failedQuestions={failedQuestions}
+          onRetryFailed={handleRetryFailed}
         />
       )}
     </>
