@@ -2020,4 +2020,1406 @@ export const questions: Question[] = [
     answer: false,
     explanation: "False. Overtaking prohibited AT crossings and within 30m (not 50m) before them."
   },
+  
+  // === Additional Questions (245-444) ===
+  {
+    id: 245,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When making a right turn at the intersection, you must move over as close as possible to the center of the road and slow down, pass just in front of the center of the intersection.",
+    answer: false,
+    explanation: "False. When turning right, you must move to the **left side** of the road (not center) and pass **behind** the center of the intersection. Article 34-2."
+  },
+  {
+    id: 246,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When turning left at an intersection, you should turn wide to allow oncoming traffic to pass smoothly.",
+    answer: false,
+    explanation: "False. Left turns must be made **close to the center line**, not wide. Wide turns block oncoming traffic."
+  },
+  {
+    id: 247,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "A learner's permit holder may drive alone without a supervising licensed driver.",
+    answer: false,
+    explanation: "False. A supervising driver (3+ years experience) must always be in the front passenger seat."
+  },
+  {
+    id: 248,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "The speed limit on general roads is 60 km/h unless otherwise posted.",
+    answer: true,
+    explanation: "True. Statutory speed limit is 60 km/h on ordinary roads, 100 km/h on expressways."
+  },
+  {
+    id: 249,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You must stop completely before a railroad crossing even if the barrier is up and lights are not flashing.",
+    answer: false,
+    explanation: "False. You must stop only if the barrier is down, lights are flashing, or a train is approaching."
+  },
+  {
+    id: 250,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When a traffic light is yellow, you may proceed if you can safely stop.",
+    answer: false,
+    explanation: "False. Yellow means **stop** unless you are too close to stop safely."
+  },
+  {
+    id: 251,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "Pedestrians always have the right of way at unmarked crosswalks.",
+    answer: true,
+    explanation: "True. Vehicles must yield to pedestrians at all crosswalks, marked or unmarked."
+  },
+  {
+    id: 252,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "It is legal to pass a stopped streetcar on the left side.",
+    answer: false,
+    explanation: "False. You must pass on the **right** side of a stopped streetcar."
+  },
+  {
+    id: 253,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You may use a mobile phone while driving if you use hands-free mode.",
+    answer: false,
+    explanation: "False. Using a phone (even hands-free) while driving is prohibited unless the vehicle is stopped."
+  },
+  {
+    id: 254,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "A provisional license allows you to carry passengers.",
+    answer: false,
+    explanation: "False. Provisional license holders may **not** carry passengers (except supervising driver)."
+  },
+  {
+    id: 255,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You must display a beginner mark (wakaba) on your car for 1 year after getting a full license.",
+    answer: true,
+    explanation: "True. New drivers must display the *shoshinsha* mark for 1 year."
+  },
+  {
+    id: 256,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When two vehicles approach an uncontrolled intersection at the same time, the vehicle on the right has priority.",
+    answer: true,
+    explanation: "True. Right-of-way rule at uncontrolled intersections."
+  },
+  {
+    id: 257,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You may park within 5 meters of a fire hydrant.",
+    answer: false,
+    explanation: "False. No parking within **3 meters** of a fire hydrant or fire station entrance."
+  },
+  {
+    id: 258,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You must wear a seatbelt only when driving on expressways.",
+    answer: false,
+    explanation: "False. Seatbelts are mandatory **at all times** for driver and all passengers."
+  },
+  {
+    id: 259,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "It is legal to overtake a vehicle on the right if there are two lanes in your direction.",
+    answer: true,
+    explanation: "True. Overtaking on the right is allowed on multi-lane roads."
+  },
+  {
+    id: 260,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You may drive with fog lights on during clear weather.",
+    answer: false,
+    explanation: "False. Fog lights are only for fog, heavy rain, or snow."
+  },
+  {
+    id: 261,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "A red arrow signal means you may proceed in that direction if safe.",
+    answer: false,
+    explanation: "False. Red arrow means **stop** in that direction."
+  },
+  {
+    id: 262,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You must give way to emergency vehicles with flashing red lights and siren.",
+    answer: true,
+    explanation: "True. Pull over and stop if necessary to let them pass."
+  },
+  {
+    id: 263,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "Children under 6 years old must use a child seat.",
+    answer: true,
+    explanation: "True. Mandatory by law (Road Traffic Act Article 71-3)."
+  },
+  {
+    id: 264,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You may make a U-turn at any intersection unless prohibited by a sign.",
+    answer: false,
+    explanation: "False. U-turns are only allowed where explicitly permitted."
+  },
+  {
+    id: 265,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "The blood alcohol limit for driving is 0.03%.",
+    answer: true,
+    explanation: "True. 0.03% BAC or 0.15 mg/L breath alcohol is the legal limit."
+  },
+  {
+    id: 266,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You may drive through a yellow flashing light without stopping.",
+    answer: true,
+    explanation: "True. Yellow flashing means **proceed with caution**."
+  },
+  {
+    id: 267,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You must stop behind the stop line at a red light even if no one is crossing.",
+    answer: true,
+    explanation: "True. Stopping behind the line is mandatory."
+  },
+  {
+    id: 268,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "Bicycles are considered vehicles and must follow the same traffic rules.",
+    answer: true,
+    explanation: "True. Bicycles are classified as light vehicles."
+  },
+  {
+    id: 269,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You may park on the sidewalk if there is no yellow line.",
+    answer: false,
+    explanation: "False. Parking on sidewalks is prohibited unless designated."
+  },
+  {
+    id: 270,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "When entering a priority road, you must yield to vehicles already on it.",
+    answer: true,
+    explanation: "True. Priority road (wide road) has right of way."
+  },
+  {
+    id: 271,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You may exceed the speed limit to overtake a slow vehicle.",
+    answer: false,
+    explanation: "False. Speeding is never allowed, even when overtaking."
+  },
+  {
+    id: 272,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "A triangular sign with a red border means 'yield'.",
+    answer: true,
+    explanation: "True. Inverted red triangle = yield."
+  },
+  {
+    id: 273,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You must sound your horn when approaching a blind corner.",
+    answer: false,
+    explanation: "False. Horn use is restricted to danger prevention only."
+  },
+  {
+    id: 274,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You may drive in the bus lane during off-hours if no buses are present.",
+    answer: false,
+    explanation: "False. Bus lanes are for buses only, 24/7 unless signed otherwise."
+  },
+  {
+    id: 275,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You must turn on headlights 30 minutes after sunset.",
+    answer: true,
+    explanation: "True. Headlights required from 30 min after sunset to 30 min before sunrise."
+  },
+  {
+    id: 276,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You may stop temporarily to pick up a passenger in a no-stopping zone.",
+    answer: false,
+    explanation: "False. No stopping means no stopping, even briefly."
+  },
+  {
+    id: 277,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "A blue circular sign means the action is mandatory.",
+    answer: true,
+    explanation: "True. Blue circle = mandatory (e.g., 'go straight')."
+  },
+  {
+    id: 278,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You may cross a double yellow line to avoid an obstacle.",
+    answer: false,
+    explanation: "False. Double yellow lines may never be crossed."
+  },
+  {
+    id: 279,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You must keep a safe distance of at least 2 seconds from the car ahead.",
+    answer: true,
+    explanation: "True. Recommended safe following distance."
+  },
+  {
+    id: 280,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You may drive with only parking lights on at night.",
+    answer: false,
+    explanation: "False. Headlights must be on; parking lights are insufficient."
+  },
+  {
+    id: 281,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "A learner must display a learner mark (gakushinsha) on the vehicle.",
+    answer: true,
+    explanation: "True. Green and yellow arrow mark required."
+  },
+  {
+    id: 282,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You may make a right turn on red after stopping.",
+    answer: false,
+    explanation: "False. No right-on-red in Japan. Red means stop."
+  },
+  {
+    id: 283,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You must yield to vehicles coming from narrow roads when entering a wide road.",
+    answer: false,
+    explanation: "False. Vehicles on the **wide road** have priority."
+  },
+  {
+    id: 284,
+    test: "Learner's Permit Preliminary Written Test 2",
+    question: "You may use hazard lights while driving in heavy rain.",
+    answer: false,
+    explanation: "False. Hazard lights are only for stopped vehicles or emergencies."
+  },
+  {
+    id: 285,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "When a school bus is stopped with flashing lights, you must stop in both directions.",
+    answer: true,
+    explanation: "True. All vehicles must stop when school bus lights are flashing."
+  },
+  {
+    id: 286,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may park within 10 meters of a level crossing.",
+    answer: false,
+    explanation: "False. No parking within **5 meters** of a railroad crossing."
+  },
+  {
+    id: 287,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "A circular red sign with a white bar means 'no entry'.",
+    answer: true,
+    explanation: "True. Standard 'no entry' sign."
+  },
+  {
+    id: 288,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must slow down when approaching a pedestrian crossing.",
+    answer: true,
+    explanation: "True. Reduce speed and be prepared to stop."
+  },
+  {
+    id: 289,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may overtake a vehicle stopped at a crosswalk.",
+    answer: false,
+    explanation: "False. Never pass a stopped vehicle at a crosswalk — pedestrians may be crossing."
+  },
+  {
+    id: 290,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "A dashed white line allows lane changes.",
+    answer: true,
+    explanation: "True. Dashed lines permit crossing; solid lines prohibit."
+  },
+  {
+    id: 291,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must signal at least 3 seconds before changing lanes.",
+    answer: true,
+    explanation: "True. Minimum 3-second signal required."
+  },
+  {
+    id: 292,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may drive with high beams in urban areas if no oncoming traffic.",
+    answer: false,
+    explanation: "False. High beams are prohibited in illuminated urban areas."
+  },
+  {
+    id: 293,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must stop for a school child with a yellow flag.",
+    answer: true,
+    explanation: "True. Children with yellow flags indicate crossing in progress."
+  },
+  {
+    id: 294,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may use the shoulder to overtake slow traffic.",
+    answer: false,
+    explanation: "False. Shoulder is for emergencies only."
+  },
+  {
+    id: 295,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "A triangular sign with a deer means 'watch for animals'.",
+    answer: true,
+    explanation: "True. Wildlife warning sign."
+  },
+  {
+    id: 296,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may park facing against traffic on a one-way street.",
+    answer: false,
+    explanation: "False. All parking must be in the direction of traffic."
+  },
+  {
+    id: 297,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must give way to public buses pulling out from a bus stop.",
+    answer: true,
+    explanation: "True. Buses have priority when re-entering traffic."
+  },
+  {
+    id: 298,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may drive 10 km/h over the speed limit in good conditions.",
+    answer: false,
+    explanation: "False. Speeding is never allowed."
+  },
+  {
+    id: 299,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "A blue rectangular sign gives information or guidance.",
+    answer: true,
+    explanation: "True. Blue rectangles = information (e.g., hospital, parking)."
+  },
+  {
+    id: 300,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must yield to vehicles on your right at a 4-way stop.",
+    answer: true,
+    explanation: "True. Right-of-way rule applies."
+  },
+  {
+    id: 301,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may stop on a bridge to take photos.",
+    answer: false,
+    explanation: "False. No stopping on bridges or in tunnels."
+  },
+  {
+    id: 302,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must use low beams when following another vehicle at night.",
+    answer: true,
+    explanation: "True. High beams blind drivers ahead via mirrors."
+  },
+  {
+    id: 303,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may cross a single yellow line to pass a parked car.",
+    answer: true,
+    explanation: "True. Single yellow line allows crossing when safe."
+  },
+  {
+    id: 304,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must display a senior driver mark if over 75 years old.",
+    answer: true,
+    explanation: "True. Four-leaf clover mark required for drivers 75+."
+  },
+  {
+    id: 305,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may drive with a cracked windshield if it doesn't block vision.",
+    answer: false,
+    explanation: "False. Cracked windshield fails vehicle inspection."
+  },
+  {
+    id: 306,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must stop at a stop sign even if the road is clear.",
+    answer: true,
+    explanation: "True. Full stop required at all stop signs."
+  },
+  {
+    id: 307,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may use a handheld GPS while driving.",
+    answer: false,
+    explanation: "False. Handheld devices are prohibited."
+  },
+  {
+    id: 308,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must yield to pedestrians at a green light if they are crossing.",
+    answer: true,
+    explanation: "True. Pedestrians in crosswalk always have priority."
+  },
+  {
+    id: 309,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may park in a disabled space if you have a passenger with disability.",
+    answer: false,
+    explanation: "False. Only vehicles with official permit may use disabled spaces."
+  },
+  {
+    id: 310,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must slow down near schools during student hours.",
+    answer: true,
+    explanation: "True. Extra caution required in school zones."
+  },
+  {
+    id: 311,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may overtake on a hill if the view is clear.",
+    answer: false,
+    explanation: "False. No overtaking on hills, curves, or near intersections."
+  },
+  {
+    id: 312,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must use turn signals when pulling over to the curb.",
+    answer: true,
+    explanation: "True. Signal required for any lane change or pull-over."
+  },
+  {
+    id: 313,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may drive in the left lane on a 2-lane road to pass slower traffic.",
+    answer: true,
+    explanation: "True. Left lane is for passing on multi-lane roads."
+  },
+  {
+    id: 314,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must keep headlights on in tunnels, day or night.",
+    answer: true,
+    explanation: "True. Mandatory in all tunnels."
+  },
+  {
+    id: 315,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may make a left turn from the right lane if no one is there.",
+    answer: false,
+    explanation: "False. Must turn from the correct lane."
+  },
+  {
+    id: 316,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must stop for a blind person with a white cane.",
+    answer: true,
+    explanation: "True. Absolute priority."
+  },
+  {
+    id: 317,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may drive with one hand if using the other for shifting.",
+    answer: false,
+    explanation: "False. Both hands should be on the wheel except when operating controls."
+  },
+  {
+    id: 318,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must yield to oncoming traffic when turning left.",
+    answer: true,
+    explanation: "True. Oncoming straight traffic has priority."
+  },
+  {
+    id: 319,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may park within 1 meter of another vehicle.",
+    answer: false,
+    explanation: "False. Must allow space for exit (minimum ~50 cm)."
+  },
+  {
+    id: 320,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must check mirrors before braking.",
+    answer: true,
+    explanation: "True. Check rear before slowing or stopping."
+  },
+  {
+    id: 321,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may use a dashcam that records audio.",
+    answer: true,
+    explanation: "True. Legal as long as not used to violate privacy."
+  },
+  {
+    id: 322,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must stop at a flashing red light like a stop sign.",
+    answer: true,
+    explanation: "True. Flashing red = stop, then proceed when safe."
+  },
+  {
+    id: 323,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You may drive barefoot in Japan.",
+    answer: true,
+    explanation: "True. No law prohibits barefoot driving."
+  },
+  {
+    id: 324,
+    test: "Learner's Permit Preliminary Written Test 3",
+    question: "You must display a child seat mark if carrying infants.",
+    answer: false,
+    explanation: "False. No mark required; only the seat is mandatory."
+  },
+  {
+    id: 325,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You may enter a box junction only if your exit is clear.",
+    answer: true,
+    explanation: "True. Do not block the box."
+  },
+  {
+    id: 326,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You must give way to vehicles already in a roundabout.",
+    answer: true,
+    explanation: "True. Traffic in the circle has priority."
+  },
+  {
+    id: 327,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You may use the hard shoulder to rest if tired.",
+    answer: true,
+    explanation: "True. Emergency stopping lane may be used briefly for safety."
+  },
+  {
+    id: 328,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You must not follow an emergency vehicle closely to pass traffic.",
+    answer: true,
+    explanation: "True. 'Drafting' emergency vehicles is illegal."
+  },
+  {
+    id: 329,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You may drive through a puddle to splash pedestrians for fun.",
+    answer: false,
+    explanation: "False. Reckless driving and dangerous behavior."
+  },
+  {
+    id: 330,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You must keep a 2-second gap in good weather, 4 seconds in rain.",
+    answer: true,
+    explanation: "True. Safe following distance rule."
+  },
+  {
+    id: 331,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You may reverse on an expressway to reach an exit.",
+    answer: false,
+    explanation: "False. Reversing on expressways is strictly prohibited."
+  },
+  {
+    id: 332,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You must use the leftmost lane on a 3-lane expressway for passing only.",
+    answer: true,
+    explanation: "True. Left lane is for overtaking."
+  },
+  {
+    id: 333,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You may stop on an expressway to change drivers.",
+    answer: false,
+    explanation: "False. Only in service areas or emergencies."
+  },
+  {
+    id: 334,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You must report an accident involving injury to police immediately.",
+    answer: true,
+    explanation: "True. Mandatory reporting (Article 72)."
+  },
+  {
+    id: 335,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You may drive with expired shaken (inspection).",
+    answer: false,
+    explanation: "False. Vehicle must have valid inspection certificate."
+  },
+  {
+    id: 336,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You must carry your license while driving.",
+    answer: true,
+    explanation: "True. Must present on demand."
+  },
+  {
+    id: 337,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You may lend your license to another person.",
+    answer: false,
+    explanation: "False. License is personal and non-transferable."
+  },
+  {
+    id: 338,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You must renew your license every 3 years if under 70.",
+    answer: true,
+    explanation: "True. Standard renewal cycle."
+  },
+  {
+    id: 339,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You may drive with a foreign license for up to 1 year.",
+    answer: true,
+    explanation: "True. With valid International Driving Permit (IDP)."
+  },
+  {
+    id: 340,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You must take a vision test at license renewal.",
+    answer: true,
+    explanation: "True. Mandatory vision screening."
+  },
+  {
+    id: 341,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You may drive a kei car with a regular license.",
+    answer: true,
+    explanation: "True. Regular license covers kei cars."
+  },
+  {
+    id: 342,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You must take a cognitive test at age 75.",
+    answer: true,
+    explanation: "True. Mandatory for senior renewal."
+  },
+  {
+    id: 343,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You may drive a motorcycle with a car license.",
+    answer: false,
+    explanation: "False. Separate motorcycle license required."
+  },
+  {
+    id: 344,
+    test: "Driver's License Preliminary Final Written Test 1",
+    question: "You must attend a safety lecture if you have 6+ points.",
+    answer: true,
+    explanation: "True. Violation point system triggers course."
+  },
+  {
+    id: 345,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You must stop at least 1 meter from a stopped streetcar to let passengers board.",
+    answer: true,
+    explanation: "True. Safety distance required."
+  },
+  {
+    id: 346,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You may sound your horn to greet a friend.",
+    answer: false,
+    explanation: "False. Horn is for danger warning only."
+  },
+  {
+    id: 347,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You must yield to cyclists on the sidewalk if crossing.",
+    answer: true,
+    explanation: "True. Pedestrians and cyclists have priority."
+  },
+  {
+    id: 348,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You may drive with worn tires as long as tread is above 1.6 mm.",
+    answer: true,
+    explanation: "True. Legal minimum tread depth."
+  },
+  {
+    id: 349,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You must not open your door into traffic without checking.",
+    answer: true,
+    explanation: "True. 'Dutch reach' recommended."
+  },
+  {
+    id: 350,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You may drive with fogged windows if you can see the road.",
+    answer: false,
+    explanation: "False. Must have clear visibility in all directions."
+  },
+  {
+    id: 351,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You must use child safety locks when carrying children.",
+    answer: false,
+    explanation: "False. Recommended but not mandatory."
+  },
+  {
+    id: 352,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You must report a change of address within 14 days.",
+    answer: true,
+    explanation: "True. Legal requirement."
+  },
+  {
+    id: 353,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You may drive with a spare tire as a permanent replacement.",
+    answer: false,
+    explanation: "False. Temporary use only."
+  },
+  {
+    id: 354,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You must not throw trash from the vehicle.",
+    answer: true,
+    explanation: "True. Littering from vehicle is illegal."
+  },
+  {
+    id: 355,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You must maintain a 100-meter distance from the vehicle ahead on expressways.",
+    answer: false,
+    explanation: "False. No fixed distance, but maintain safe following distance based on speed."
+  },
+  {
+    id: 356,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You may tow another vehicle with a rope if it breaks down.",
+    answer: true,
+    explanation: "True. Towing is permitted with proper equipment and markings."
+  },
+  {
+    id: 357,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You must check blind spots before changing lanes.",
+    answer: true,
+    explanation: "True. Mirror checks alone are insufficient."
+  },
+  {
+    id: 358,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You may use engine braking on steep descents.",
+    answer: true,
+    explanation: "True. Recommended to prevent brake fade."
+  },
+  {
+    id: 359,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You must yield to pedestrians when turning at any intersection.",
+    answer: true,
+    explanation: "True. Pedestrians always have priority when crossing."
+  },
+  {
+    id: 360,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You may drive with a muffler that exceeds noise limits.",
+    answer: false,
+    explanation: "False. Excessive noise violates vehicle standards."
+  },
+  {
+    id: 361,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must reduce speed in a tunnel even if the limit is high.",
+    answer: true,
+    explanation: "True. Extra caution due to limited escape."
+  },
+  {
+    id: 362,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may flash headlights to warn of police ahead.",
+    answer: false,
+    explanation: "False. Considered obstruction of enforcement."
+  },
+  {
+    id: 363,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must keep a fire extinguisher in a passenger car.",
+    answer: false,
+    explanation: "False. Mandatory only for commercial vehicles."
+  },
+  {
+    id: 364,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must yield to funeral processions.",
+    answer: true,
+    explanation: "True. Common courtesy and often enforced."
+  },
+  {
+    id: 365,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive with headphones in both ears.",
+    answer: false,
+    explanation: "False. Must be able to hear surroundings."
+  },
+  {
+    id: 366,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must not tailgate to pressure slower drivers.",
+    answer: true,
+    explanation: "True. Aggressive driving is prohibited."
+  },
+  {
+    id: 367,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may park overnight on the street if no signs prohibit it.",
+    answer: false,
+    explanation: "False. Overnight street parking is generally prohibited."
+  },
+  {
+    id: 368,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must check tire pressure before long trips.",
+    answer: true,
+    explanation: "True. Safety requirement."
+  },
+  {
+    id: 369,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive with a pet loose in the car.",
+    answer: false,
+    explanation: "False. Pets must be secured to prevent distraction."
+  },
+  {
+    id: 370,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must always treat other drivers with respect and patience.",
+    answer: true,
+    explanation: "True. Defensive and courteous driving is law."
+  },
+  {
+    id: 371,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may adjust your radio while driving if it takes only a moment.",
+    answer: false,
+    explanation: "False. Any distraction that takes eyes off the road is dangerous."
+  },
+  {
+    id: 372,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must signal when entering or exiting a parking space.",
+    answer: true,
+    explanation: "True. Signal required for any vehicle movement affecting traffic."
+  },
+  {
+    id: 373,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may use winter tires year-round.",
+    answer: true,
+    explanation: "True. No prohibition, but summer tires perform better in warm weather."
+  },
+  {
+    id: 374,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must maintain extra distance in wet conditions.",
+    answer: true,
+    explanation: "True. Stopping distance increases on wet roads."
+  },
+  {
+    id: 375,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may coast in neutral to save fuel.",
+    answer: false,
+    explanation: "False. Reduces vehicle control and engine braking."
+  },
+  {
+    id: 376,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must check weather conditions before driving.",
+    answer: true,
+    explanation: "True. Preparation is part of safe driving."
+  },
+  {
+    id: 377,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive with damaged windshield wipers if not raining.",
+    answer: false,
+    explanation: "False. All safety equipment must be functional."
+  },
+  {
+    id: 378,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must reduce speed near road construction.",
+    answer: true,
+    explanation: "True. Construction zones require extra caution."
+  },
+  {
+    id: 379,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive with low fuel as long as the light hasn't come on.",
+    answer: true,
+    explanation: "True. No legal requirement, but risky for practical reasons."
+  },
+  {
+    id: 380,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must yield to all traffic when merging onto a highway.",
+    answer: true,
+    explanation: "True. Merging vehicles must yield to highway traffic."
+  },
+  {
+    id: 381,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may honk at pedestrians crossing slowly.",
+    answer: false,
+    explanation: "False. Horn is only for danger warning, not to rush people."
+  },
+  {
+    id: 382,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must use parking brake when parked on a hill.",
+    answer: true,
+    explanation: "True. Prevents rollaway."
+  },
+  {
+    id: 383,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive faster than traffic flow to maintain momentum.",
+    answer: false,
+    explanation: "False. Must not exceed speed limits or drive unsafely."
+  },
+  {
+    id: 384,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must have insurance before driving any vehicle.",
+    answer: true,
+    explanation: "True. Mandatory vehicle liability insurance (JCI) required."
+  },
+  {
+    id: 385,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive with a broken mirror if the other one works.",
+    answer: false,
+    explanation: "False. All mirrors must be functional."
+  },
+  {
+    id: 386,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must slow down when passing cyclists.",
+    answer: true,
+    explanation: "True. Leave safe distance and reduce speed."
+  },
+  {
+    id: 387,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive in slippers.",
+    answer: true,
+    explanation: "True. No specific footwear requirement, but proper shoes recommended."
+  },
+  {
+    id: 388,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must stop for emergency vehicles even if you have a green light.",
+    answer: true,
+    explanation: "True. Emergency vehicles have absolute priority."
+  },
+  {
+    id: 389,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may cut corners when turning to save time.",
+    answer: false,
+    explanation: "False. Must stay in proper lane throughout turn."
+  },
+  {
+    id: 390,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must maintain your vehicle in safe operating condition.",
+    answer: true,
+    explanation: "True. Driver's responsibility to ensure vehicle safety."
+  },
+  {
+    id: 391,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive with expired license plates if inspection is valid.",
+    answer: false,
+    explanation: "False. Valid plates required at all times."
+  },
+  {
+    id: 392,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must dim headlights when following within 100 meters.",
+    answer: false,
+    explanation: "False. Dim when within about 30-40 meters to avoid blinding through mirrors."
+  },
+  {
+    id: 393,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may eat while driving if you're careful.",
+    answer: false,
+    explanation: "False. Eating while driving is considered distracted driving."
+  },
+  {
+    id: 394,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must report lost or stolen license within 14 days.",
+    answer: true,
+    explanation: "True. Must report and apply for replacement."
+  },
+  {
+    id: 395,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may block an intersection if traffic ahead is moving slowly.",
+    answer: false,
+    explanation: "False. Never block intersections regardless of traffic conditions."
+  },
+  {
+    id: 396,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must use caution in residential areas even without speed signs.",
+    answer: true,
+    explanation: "True. Extra caution required near homes and pedestrians."
+  },
+  {
+    id: 397,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive with one headlight out temporarily.",
+    answer: false,
+    explanation: "False. Both headlights must function."
+  },
+  {
+    id: 398,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must signal continuously while in a turn, not just before.",
+    answer: true,
+    explanation: "True. Signal must remain active throughout the maneuver."
+  },
+  {
+    id: 399,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive with expired registration if renewal is pending.",
+    answer: false,
+    explanation: "False. Valid registration required to operate vehicle."
+  },
+  {
+    id: 400,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must always drive defensively and anticipate hazards.",
+    answer: true,
+    explanation: "True. Fundamental principle of safe driving."
+  },
+  {
+    id: 401,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive through shallow water if it looks safe.",
+    answer: false,
+    explanation: "False. Water depth is deceptive and can damage vehicle or cause loss of control."
+  },
+  {
+    id: 402,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must never drive under the influence of any impairing substance.",
+    answer: true,
+    explanation: "True. Zero tolerance for impaired driving."
+  },
+  {
+    id: 403,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may change lanes in a tunnel if lane markings permit.",
+    answer: true,
+    explanation: "True. Follow lane marking rules even in tunnels."
+  },
+  {
+    id: 404,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must carry proof of insurance in the vehicle.",
+    answer: true,
+    explanation: "True. Must present insurance certificate on demand."
+  },
+  {
+    id: 405,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive with a suspended license if it's for minor violations.",
+    answer: false,
+    explanation: "False. Suspended means no driving under any circumstances."
+  },
+  {
+    id: 406,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must adapt your driving to road and weather conditions.",
+    answer: true,
+    explanation: "True. Posted limits are maximums; drive slower when necessary."
+  },
+  {
+    id: 407,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may argue with police officers during a traffic stop.",
+    answer: false,
+    explanation: "False. Must comply with lawful orders; disputes handled later."
+  },
+  {
+    id: 408,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must understand and obey all traffic signs.",
+    answer: true,
+    explanation: "True. Ignorance is not an excuse."
+  },
+  {
+    id: 409,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive aggressively if other drivers are too slow.",
+    answer: false,
+    explanation: "False. Aggressive driving is illegal and dangerous."
+  },
+  {
+    id: 410,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must be courteous and patient with learner drivers.",
+    answer: true,
+    explanation: "True. Share the road safely with all drivers."
+  },
+  {
+    id: 411,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may skip vehicle maintenance if the car seems fine.",
+    answer: false,
+    explanation: "False. Regular maintenance prevents failures."
+  },
+  {
+    id: 412,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must stop immediately if involved in any accident.",
+    answer: true,
+    explanation: "True. Leaving an accident scene is illegal."
+  },
+  {
+    id: 413,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may text at red lights since you're stopped.",
+    answer: false,
+    explanation: "False. Phone use prohibited while in driver's seat with engine on."
+  },
+  {
+    id: 414,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must ensure all passengers wear seatbelts.",
+    answer: true,
+    explanation: "True. Driver's responsibility to ensure passenger safety."
+  },
+  {
+    id: 415,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive with a learner's permit alone after 6 months.",
+    answer: false,
+    explanation: "False. Learner must always have supervisor until full license obtained."
+  },
+  {
+    id: 416,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must give extra space to large vehicles and trucks.",
+    answer: true,
+    explanation: "True. Large vehicles have blind spots and need more room."
+  },
+  {
+    id: 417,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may ignore school zone speed limits on weekends.",
+    answer: false,
+    explanation: "False. School zone limits apply at all times unless otherwise posted."
+  },
+  {
+    id: 418,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must never drive when too tired or ill.",
+    answer: true,
+    explanation: "True. Fatigue and illness impair driving ability."
+  },
+  {
+    id: 419,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may modify your vehicle without limit.",
+    answer: false,
+    explanation: "False. Modifications must comply with vehicle standards."
+  },
+  {
+    id: 420,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must understand that driving is a privilege, not a right.",
+    answer: true,
+    explanation: "True. Licenses can be suspended or revoked for violations."
+  },
+  {
+    id: 421,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive in the emergency lane to avoid traffic.",
+    answer: false,
+    explanation: "False. Emergency lane is only for emergencies and authorized vehicles."
+  },
+  {
+    id: 422,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must plan your route before driving to avoid distractions.",
+    answer: true,
+    explanation: "True. Preparation reduces need to check maps while driving."
+  },
+  {
+    id: 423,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may race other vehicles on public roads if both agree.",
+    answer: false,
+    explanation: "False. Street racing is illegal and extremely dangerous."
+  },
+  {
+    id: 424,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must keep your license current with correct information.",
+    answer: true,
+    explanation: "True. Update address, name changes within required time."
+  },
+  {
+    id: 425,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive with worn brake pads if you brake early.",
+    answer: false,
+    explanation: "False. Brakes must meet safety standards."
+  },
+  {
+    id: 426,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must never assume other drivers will follow the rules.",
+    answer: true,
+    explanation: "True. Drive defensively and anticipate errors."
+  },
+  {
+    id: 427,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may coast downhill with engine off to save fuel.",
+    answer: false,
+    explanation: "False. Loses power steering/brakes and engine braking."
+  },
+  {
+    id: 428,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must secure all cargo to prevent it from shifting or falling.",
+    answer: true,
+    explanation: "True. Loose cargo is dangerous and illegal."
+  },
+  {
+    id: 429,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive without side mirrors if you have a rearview mirror.",
+    answer: false,
+    explanation: "False. Vehicles must have mirrors meeting legal requirements."
+  },
+  {
+    id: 430,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must be aware of your vehicle's blind spots at all times.",
+    answer: true,
+    explanation: "True. Check blind spots before maneuvers."
+  },
+  {
+    id: 431,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may follow too closely if the driver ahead is going too slow.",
+    answer: false,
+    explanation: "False. Maintain safe distance regardless of speed."
+  },
+  {
+    id: 432,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must remain calm and patient in heavy traffic.",
+    answer: true,
+    explanation: "True. Frustration leads to poor decisions."
+  },
+  {
+    id: 433,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drink one beer before driving if you wait 30 minutes.",
+    answer: false,
+    explanation: "False. No safe drinking and driving; alcohol takes hours to metabolize."
+  },
+  {
+    id: 434,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must continuously scan your environment while driving.",
+    answer: true,
+    explanation: "True. Situational awareness is key to safety."
+  },
+  {
+    id: 435,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may drive faster in the left lane regardless of speed limit.",
+    answer: false,
+    explanation: "False. Speed limits apply to all lanes."
+  },
+  {
+    id: 436,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must ensure children are properly restrained before driving.",
+    answer: true,
+    explanation: "True. Child safety seats required for young children."
+  },
+  {
+    id: 437,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may ignore traffic signals if no police are present.",
+    answer: false,
+    explanation: "False. Traffic laws must be obeyed at all times."
+  },
+  {
+    id: 438,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must adjust your speed for visibility conditions.",
+    answer: true,
+    explanation: "True. Slower in fog, rain, snow, or darkness."
+  },
+  {
+    id: 439,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may park across multiple spaces if the lot is empty.",
+    answer: false,
+    explanation: "False. Park within marked spaces only."
+  },
+  {
+    id: 440,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must always be prepared for the unexpected while driving.",
+    answer: true,
+    explanation: "True. Defensive driving principle."
+  },
+  {
+    id: 441,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may use your phone for GPS if mounted on dashboard.",
+    answer: true,
+    explanation: "True. Fixed navigation devices are permitted if not handheld."
+  },
+  {
+    id: 442,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must respect all traffic laws even if you disagree with them.",
+    answer: true,
+    explanation: "True. Laws exist for everyone's safety."
+  },
+  {
+    id: 443,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You may pass on the right shoulder if traffic is stopped.",
+    answer: false,
+    explanation: "False. Shoulder passing is illegal except for authorized vehicles."
+  },
+  {
+    id: 444,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "You must never compromise safety for convenience or speed.",
+    answer: true,
+    explanation: "True. Safety is always the top priority in driving."
+  }
 ];
