@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, XCircle, ChevronRight, X, Clock } from "lucide-react";
 import type { Question } from "@/data/questions";
+import { QuestionImage } from "@/components/QuestionImage";
 
 interface QuizQuestionProps {
   question: Question;
@@ -107,15 +108,11 @@ const QuizQuestion = ({
         </div>
 
         {question.figure && (
-          <div className="mb-4 md:mb-5 flex justify-center">
-            <div className="p-3 md:p-4 bg-muted rounded-lg border-2 border-border">
-              <img
-                src={question.figure}
-                alt="Road sign"
-                className="max-w-[140px] md:max-w-[180px] max-h-[140px] md:max-h-[180px] object-contain"
-              />
-            </div>
-          </div>
+          <QuestionImage
+            imageUrl={question.figure}
+            imageType="sign"
+            alt={`Question ${questionNumber} illustration`}
+          />
         )}
 
         {!showFeedback ? (
