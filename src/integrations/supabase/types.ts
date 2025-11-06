@@ -426,6 +426,60 @@ export type Database = {
         }
         Relationships: []
       }
+      questions: {
+        Row: {
+          answer: boolean
+          created_at: string
+          difficulty: string | null
+          explanation: string
+          id: number
+          image_path: string | null
+          image_storage_path: string | null
+          image_type: string | null
+          image_url: string | null
+          question_text: string
+          tags: string[] | null
+          test_category: string
+          times_correct: number | null
+          times_shown: number | null
+          updated_at: string
+        }
+        Insert: {
+          answer: boolean
+          created_at?: string
+          difficulty?: string | null
+          explanation: string
+          id?: never
+          image_path?: string | null
+          image_storage_path?: string | null
+          image_type?: string | null
+          image_url?: string | null
+          question_text: string
+          tags?: string[] | null
+          test_category: string
+          times_correct?: number | null
+          times_shown?: number | null
+          updated_at?: string
+        }
+        Update: {
+          answer?: boolean
+          created_at?: string
+          difficulty?: string | null
+          explanation?: string
+          id?: never
+          image_path?: string | null
+          image_storage_path?: string | null
+          image_type?: string | null
+          image_url?: string | null
+          question_text?: string
+          tags?: string[] | null
+          test_category?: string
+          times_correct?: number | null
+          times_shown?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       quiz_progress: {
         Row: {
           created_at: string
