@@ -157,13 +157,6 @@ const Index = () => {
         await trackAnswer(user.id, currentQuestion.test, correct);
       }
     }
-
-    // If this was the last question, complete the quiz immediately
-    if (currentQuestionIndex + 1 >= selectedQuestions.length) {
-      setTimeout(async () => {
-        await handleQuizComplete();
-      }, 1500); // Short delay to show final answer feedback
-    }
   };
 
   const handleNext = async () => {
