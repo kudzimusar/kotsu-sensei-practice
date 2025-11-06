@@ -172,7 +172,7 @@ const QuizQuestion = ({
               className="w-full bg-primary hover:bg-primary/90 shadow-button text-sm md:text-base py-5 md:py-6"
               size="lg"
             >
-              Next Question
+              {questionNumber === totalQuestions ? "See Results" : "Next Question"}
               <ChevronRight className="ml-2 w-4 h-4 md:w-5 md:h-5" />
             </Button>
           </div>
