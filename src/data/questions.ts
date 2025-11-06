@@ -3421,5 +3421,56 @@ export const questions: Question[] = [
     question: "You must never compromise safety for convenience or speed.",
     answer: true,
     explanation: "True. Safety is always the top priority in driving."
+  },
+  
+  // === Additional 400 Questions (445-844) ===
+  {
+    id: 445,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You may drive with a temporary spare tire at full highway speed.",
+    answer: false,
+    explanation: "False. Temporary spares are limited to 80 km/h max."
+  },
+  {
+    id: 446,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You must stop at least 3 meters from a fire hydrant.",
+    answer: true,
+    explanation: "True. No parking or stopping within 3 meters of a fire hydrant."
+  },
+  {
+    id: 447,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "A green arrow pointing downward means 'go straight only'.",
+    answer: false,
+    explanation: "False. Green downward arrow means 'proceed in this lane' — can be any direction allowed."
+  },
+  {
+    id: 448,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You may overtake on the right in a single-lane road if the vehicle ahead is turning left.",
+    answer: true,
+    explanation: "True. Allowed when safe and the left-turning vehicle is not blocking."
+  },
+  {
+    id: 449,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "You must not use a mobile phone even when stopped at a red light.",
+    answer: true,
+    explanation: "True. 'While driving' includes stopped in traffic. Hands-free only when moving is also banned."
+  },
+  {
+    id: 450,
+    test: "Driver's License Preliminary Final Written Test 2",
+    question: "A 'No U-turn' sign applies only during daytime.",
+    answer: false,
+    explanation: "False. Prohibition signs apply 24 hours unless time-restricted."
+  },
+  {
+    id: 844,
+    test: "Driver's License Preliminary Final Written Test 3",
+    question: "Responsible driving protects everyone on the road.",
+    answer: true,
+    explanation: "True. Every driver's duty under the Road Traffic Act."
   }
 ];
