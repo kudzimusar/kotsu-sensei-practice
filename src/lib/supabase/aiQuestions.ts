@@ -26,5 +26,22 @@ export const getAIQuestions = async (language: string = 'en'): Promise<Question[
 
 export const getAllQuestionsWithAI = async (staticQuestions: Question[], language: string = 'en'): Promise<Question[]> => {
   const aiQuestions = await getAIQuestions(language);
-  return [...staticQuestions, ...aiQuestions];
+  
+  // Fetch questions from database (new image-based questions)
+  const { data: dbQuestions, error } = await supabase
+    .from('questions')
+    .select('*')
+    .order('id', { ascending: true });
+  
+  // Convert database questions to Question format
+  const formattedDbQuestions: Question[] = dbQuestions ? dbQuestions.map(q => ({
+    id: q.id,
+    test: q.test_category,
+    question: q.question_text,
+    answer: q.answer,
+    explanation: q.explanation,
+    figure: q.image_url || undefined
+  })) : [];
+  
+  return [...staticQuestions, ...aiQuestions, ...formattedDbQuestions];
 };
