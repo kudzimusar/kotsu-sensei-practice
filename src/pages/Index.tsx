@@ -138,8 +138,10 @@ const Index = () => {
   };
 
   const handleAnswer = async (correct: boolean) => {
+    const newScore = correct ? score + 1 : score;
+    
     if (correct) {
-      setScore(score + 1);
+      setScore(newScore);
     } else {
       // Track failed questions for retry option
       const currentQuestion = selectedQuestions[currentQuestionIndex];
@@ -154,6 +156,13 @@ const Index = () => {
       if (currentQuestion) {
         await trackAnswer(user.id, currentQuestion.test, correct);
       }
+    }
+
+    // If this was the last question, complete the quiz immediately
+    if (currentQuestionIndex + 1 >= selectedQuestions.length) {
+      setTimeout(async () => {
+        await handleQuizComplete();
+      }, 1500); // Short delay to show final answer feedback
     }
   };
 
