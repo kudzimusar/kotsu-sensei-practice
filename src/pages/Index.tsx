@@ -7,6 +7,7 @@ import { DrivingScheduleGrid } from "@/components/DrivingScheduleGrid";
 import { questions } from "@/data/questions";
 import type { Question } from "@/data/questions";
 import { useAuth } from "@/hooks/useAuth";
+import { useImagePreload } from "@/hooks/useImagePreload";
 import { saveQuizProgress, loadQuizProgress, clearQuizProgress } from "@/lib/supabase/quiz";
 import { trackAnswer } from "@/lib/supabase/performance";
 import { getWeakCategories } from "@/lib/supabase/performance";
@@ -28,6 +29,9 @@ const Index = () => {
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [isStartingQuiz, setIsStartingQuiz] = useState(false);
   const [failedQuestions, setFailedQuestions] = useState<Question[]>([]);
+
+  // Preload next 3 question images for better performance
+  useImagePreload(selectedQuestions, currentQuestionIndex, 3);
 
   // Check for category or test query parameter and auto-start quiz
   useEffect(() => {
