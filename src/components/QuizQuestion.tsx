@@ -36,6 +36,11 @@ const QuizQuestion = ({
     setTimeRemaining(timeLimit);
   }, [timeLimit]);
 
+  // Reset processing state when question changes
+  useEffect(() => {
+    setIsProcessing(false);
+  }, [questionNumber]);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
