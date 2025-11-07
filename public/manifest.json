@@ -13,7 +13,7 @@
   "lang": "en",
   "icons": [
     { "src": "/kotsu-sensei-practice/assets/icon-48.png", "sizes": "48x48", "type": "image/png", "purpose": "any" },
-    { "src": "/kotsu-sensei-practice/assets/icon-72.png", "sizes": "78x78", "type": "image/png", "purpose": "any" },
+    { "src": "/kotsu-sensei-practice/assets/icon-78.png", "sizes": "78x78", "type": "image/png", "purpose": "any" },
     { "src": "/kotsu-sensei-practice/assets/icon-96.png", "sizes": "96x96", "type": "image/png", "purpose": "any" },
     { "src": "/kotsu-sensei-practice/assets/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
     { "src": "/kotsu-sensei-practice/assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable any" },
