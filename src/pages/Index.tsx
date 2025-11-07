@@ -29,6 +29,7 @@ const Index = () => {
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [isStartingQuiz, setIsStartingQuiz] = useState(false);
   const [failedQuestions, setFailedQuestions] = useState<Question[]>([]);
+  const [isCompletingQuiz, setIsCompletingQuiz] = useState(false);
 
   // Preload next 3 question images for better performance
   useImagePreload(selectedQuestions, currentQuestionIndex, 3);
@@ -159,22 +160,28 @@ const Index = () => {
     }
   };
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (currentQuestionIndex + 1 < selectedQuestions.length) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
-      await handleQuizComplete();
+      handleQuizComplete();
     }
   };
 
-  const handleQuizComplete = async () => {
-    // Save test history before showing results
+  const handleQuizComplete = () => {
+    if (isCompletingQuiz) return; // Prevent multiple calls
+    setIsCompletingQuiz(true);
+    
+    // Show results immediately
+    setScreen('results');
+    
+    // Save test history in background (don't await)
     if (user || guestId) {
       const timeTaken = Math.floor((Date.now() - startTime) / 1000);
       const percentage = (score / selectedQuestions.length) * 100;
       const passed = percentage >= 90;
       
-      await saveTestHistory({
+      saveTestHistory({
         user_id: user?.id || null,
         guest_session_id: guestId || null,
         test_type: quizMode,
@@ -183,18 +190,23 @@ const Index = () => {
         score,
         time_taken: timeTaken,
         total_questions: selectedQuestions.length,
+      }).then(() => {
+        // Show completion notification after saving
+        toast({
+          title: passed ? "🎉 Test Completed - You Passed!" : "📚 Test Completed",
+          description: passed 
+            ? `Amazing! You scored ${percentage.toFixed(0)}% (${score}/${selectedQuestions.length})` 
+            : `You scored ${percentage.toFixed(0)}% (${score}/${selectedQuestions.length}). Review and try again!`,
+          duration: 5000,
+        });
+      }).catch(error => {
+        console.error('Error saving test history:', error);
+      }).finally(() => {
+        setIsCompletingQuiz(false);
       });
-
-      // Show completion notification
-      toast({
-        title: passed ? "🎉 Test Completed - You Passed!" : "📚 Test Completed",
-        description: passed 
-          ? `Amazing! You scored ${percentage.toFixed(0)}% (${score}/${selectedQuestions.length})` 
-          : `You scored ${percentage.toFixed(0)}% (${score}/${selectedQuestions.length}). Review and try again!`,
-        duration: 5000,
-      });
+    } else {
+      setIsCompletingQuiz(false);
     }
-    setScreen('results');
   };
 
   const handleRestart = () => {

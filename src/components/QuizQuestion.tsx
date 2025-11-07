@@ -30,6 +30,7 @@ const QuizQuestion = ({
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number>(timeLimit);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     setTimeRemaining(timeLimit);
@@ -56,6 +57,8 @@ const QuizQuestion = ({
   };
 
   const handleAnswer = (answer: boolean) => {
+    if (isProcessing) return; // Prevent multiple clicks
+    setIsProcessing(true);
     setSelectedAnswer(answer);
     setShowFeedback(true);
     const isCorrect = answer === question.answer;
@@ -63,6 +66,8 @@ const QuizQuestion = ({
   };
 
   const handleNext = () => {
+    if (isProcessing) return; // Prevent multiple clicks
+    setIsProcessing(true);
     setSelectedAnswer(null);
     setShowFeedback(false);
     onNext();
@@ -119,6 +124,7 @@ const QuizQuestion = ({
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
             <Button
               onClick={() => handleAnswer(true)}
+              disabled={isProcessing}
               className="flex-1 h-12 md:h-14 text-base md:text-lg font-semibold bg-success hover:bg-success/90 text-success-foreground shadow-button"
               size="lg"
             >
@@ -126,6 +132,7 @@ const QuizQuestion = ({
             </Button>
             <Button
               onClick={() => handleAnswer(false)}
+              disabled={isProcessing}
               className="flex-1 h-12 md:h-14 text-base md:text-lg font-semibold bg-error hover:bg-error/90 text-error-foreground shadow-button"
               size="lg"
             >
@@ -169,6 +176,7 @@ const QuizQuestion = ({
 
             <Button
               onClick={handleNext}
+              disabled={isProcessing}
               className="w-full bg-primary hover:bg-primary/90 shadow-button text-sm md:text-base py-5 md:py-6"
               size="lg"
             >
