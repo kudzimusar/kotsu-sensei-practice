@@ -63,6 +63,8 @@ const QuizQuestion = ({
     setShowFeedback(true);
     const isCorrect = answer === question.answer;
     onAnswer(isCorrect);
+    // Reset immediately after answer is recorded so Next button works
+    setIsProcessing(false);
   };
 
   const handleNext = () => {
