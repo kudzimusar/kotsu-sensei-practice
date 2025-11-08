@@ -3,20 +3,20 @@
 // Has Service Worker | Has Logic | Periodic Sync | Background Sync | Push Notifications | Offline Support
 
 /* -------------------------------------------------------------------------- */
-/*  1. BASIC SETTINGS                                                       */
+/* 1. BASIC SETTINGS */
 /* -------------------------------------------------------------------------- */
-const CACHE_VERSION = 'v1.0.0';
+const CACHE_VERSION = 'v2.0.0'; // BUMPED TO CLEAR CACHES
 const CACHE_NAME = `kotsu-sensei-${CACHE_VERSION}`;
 const OFFLINE_URL = '/kotsu-sensei-practice/offline.html';
 
 // --------------------------------------------------------------------------
-// 2. WORKBOX (for precaching, routing, and advanced strategies)
+// 2. WORKBOX – MUST BE FIRST
 // --------------------------------------------------------------------------
 importScripts(
   'https://storage.googleapis.com/workbox-cdn/releases/6.6.0/workbox-sw.js'
 );
 
-// Precache everything that Vite injects via __WB_MANIFEST
+// CRITICAL: Let Workbox handle precaching FIRST
 workbox.precaching.precacheAndRoute(self.__WB_MANIFEST || []);
 
 // --------------------------------------------------------------------------
@@ -46,7 +46,7 @@ self.addEventListener('activate', (event) => {
 });
 
 /* -------------------------------------------------------------------------- */
-/*  4. FETCH HANDLER – Stale-While-Revalidate + Offline fallback            */
+/* 4. FETCH HANDLER – ONLY IF NOT HANDLED BY WORKBOX */
 /* -------------------------------------------------------------------------- */
 self.addEventListener('fetch', (event) => {
   const { request } = event;
@@ -54,6 +54,9 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-GET / cross-origin
   if (request.method !== 'GET' || url.origin !== location.origin) return;
+
+  // LET WORKBOX HANDLE PRECACHED ASSETS FIRST
+  if (workbox.precaching.getCacheKeyForURL(request.url)) return;
 
   // Navigation → network-first + offline fallback
   if (request.mode === 'navigate') {
@@ -91,11 +94,10 @@ self.addEventListener('fetch', (event) => {
 });
 
 /* -------------------------------------------------------------------------- */
-/*  5. BACKGROUND SYNC (Has Background Sync)                                */
+/* 5. BACKGROUND SYNC (Has Background Sync) */
 /* -------------------------------------------------------------------------- */
 self.addEventListener('sync', (event) => {
   console.log('[SW] Background sync', event.tag);
-
   if (event.tag === 'sync-quiz-results') {
     event.waitUntil(syncQuizResults());
   } else if (event.tag === 'sync-schedule') {
@@ -104,11 +106,10 @@ self.addEventListener('sync', (event) => {
 });
 
 /* -------------------------------------------------------------------------- */
-/*  6. PERIODIC SYNC (Has Periodic Sync)                                    */
+/* 6. PERIODIC SYNC (Has Periodic Sync) */
 /* -------------------------------------------------------------------------- */
 self.addEventListener('periodicsync', (event) => {
   console.log('[SW] Periodic sync', event.tag);
-
   if (event.tag === 'update-content') {
     event.waitUntil(updateContent());
   } else if (event.tag === 'sync-progress') {
@@ -117,7 +118,7 @@ self.addEventListener('periodicsync', (event) => {
 });
 
 /* -------------------------------------------------------------------------- */
-/*  7. PUSH NOTIFICATIONS (Has Push Notifications)                          */
+/* 7. PUSH NOTIFICATIONS (Has Push Notifications) */
 /* -------------------------------------------------------------------------- */
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
@@ -134,21 +135,19 @@ self.addEventListener('push', (event) => {
       { action: 'close', title: 'Close', icon: '/kotsu-sensei-practice/assets/icon-96.png' }
     ]
   };
-
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = event.notification.data?.url || '/kotsu-sensei-practice/';
-
   if (event.action === 'open') {
     event.waitUntil(clients.openWindow(url));
   }
 });
 
 /* -------------------------------------------------------------------------- */
-/*  8. MESSAGE HANDLER (skipWaiting, manual caching, etc.)                */
+/* 8. MESSAGE HANDLER (skipWaiting, manual caching, etc.) */
 /* -------------------------------------------------------------------------- */
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
@@ -162,7 +161,7 @@ self.addEventListener('message', (event) => {
 });
 
 /* -------------------------------------------------------------------------- */
-/*  9. YOUR ORIGINAL SYNC HELPERS (unchanged)                               */
+/* 9. YOUR ORIGINAL SYNC HELPERS (unchanged) */
 /* -------------------------------------------------------------------------- */
 async function syncQuizResults() {
   try {
@@ -181,6 +180,7 @@ async function syncQuizResults() {
     throw e;
   }
 }
+
 async function syncScheduleData() {
   try {
     const db = await openDB();
@@ -198,6 +198,7 @@ async function syncScheduleData() {
     throw e;
   }
 }
+
 async function updateContent() {
   try {
     const resp = await fetch('/kotsu-sensei-practice/api/check-updates');
@@ -214,6 +215,7 @@ async function updateContent() {
     console.error('[SW] updateContent failed', e);
   }
 }
+
 async function syncProgressData() {
   try {
     await fetch('/kotsu-sensei-practice/api/sync-progress', {
@@ -226,7 +228,7 @@ async function syncProgressData() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 10. IndexedDB HELPERS (unchanged)                                        */
+/* 10. IndexedDB HELPERS (unchanged) */
 /* -------------------------------------------------------------------------- */
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -242,6 +244,7 @@ function openDB() {
     };
   });
 }
+
 function getPendingResults(db) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction('pendingResults', 'readonly');
@@ -251,6 +254,7 @@ function getPendingResults(db) {
     req.onsuccess = () => resolve(req.result);
   });
 }
+
 function getPendingSchedule(db) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction('pendingSchedule', 'readonly');
@@ -260,6 +264,7 @@ function getPendingSchedule(db) {
     req.onsuccess = () => resolve(req.result);
   });
 }
+
 function markResultAsSynced(db, id) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction('pendingResults', 'readwrite');
@@ -269,6 +274,7 @@ function markResultAsSynced(db, id) {
     req.onsuccess = () => resolve();
   });
 }
+
 function markScheduleAsSynced(db, id) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction('pendingSchedule', 'readwrite');
@@ -280,5 +286,5 @@ function markScheduleAsSynced(db, id) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  END OF FILE                                                             */
+/* END OF FILE */
 /* -------------------------------------------------------------------------- */
