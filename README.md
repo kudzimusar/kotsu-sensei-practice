@@ -4,7 +4,7 @@
 
 **URL**: https://kudzimusar.github.io/kotsu-sensei-practice/
 
-## How can I edit this code?
+## How can I edit this code? 
 
 **Use your preferred IDE**
 
