@@ -5,7 +5,7 @@
 /* -------------------------------------------------------------------------- */
 /* 1. BASIC SETTINGS */
 /* -------------------------------------------------------------------------- */
-const CACHE_VERSION = 'v2.0.0'; // BUMPED TO CLEAR CACHES
+const CACHE_VERSION = 'v3.0.0'; // BUMPED TO CLEAR CACHES
 const CACHE_NAME = `kotsu-sensei-${CACHE_VERSION}`;
 const OFFLINE_URL = '/kotsu-sensei-practice/offline.html';
 
