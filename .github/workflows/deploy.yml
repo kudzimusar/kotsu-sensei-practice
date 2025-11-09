@@ -20,9 +20,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
 
-      - name: Clean and Regenerate Lockfile
+      - name: Clean and Install (Always Regenerate Lockfile)
         run: |
           rm -f package-lock.json
           npm cache clean --force
