@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useAIChat } from '@/hooks/useAIChat';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const SUGGESTED_QUESTIONS = [
   "What are the speed limits in different areas in Japan?",
@@ -126,8 +128,42 @@ const AIChatbot = () => {
                         : 'bg-white border-gray-200'
                     }`}
                   >
-                    <div className="text-sm whitespace-pre-wrap break-words">
-                      {message.content}
+                    <div className={`text-sm prose prose-sm max-w-none ${
+                      message.role === 'user' 
+                        ? 'prose-invert' 
+                        : 'prose-slate'
+                    }`}>
+                      {message.role === 'user' ? (
+                        <p className="whitespace-pre-wrap break-words m-0">{message.content}</p>
+                      ) : (
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            h1: ({node, ...props}) => <h1 className="text-lg font-bold mt-4 mb-2" {...props} />,
+                            h2: ({node, ...props}) => <h2 className="text-base font-bold mt-3 mb-2" {...props} />,
+                            h3: ({node, ...props}) => <h3 className="text-sm font-bold mt-2 mb-1" {...props} />,
+                            p: ({node, ...props}) => <p className="my-2 leading-relaxed" {...props} />,
+                            ul: ({node, ...props}) => <ul className="my-2 ml-4 list-disc space-y-1" {...props} />,
+                            ol: ({node, ...props}) => <ol className="my-2 ml-4 list-decimal space-y-1" {...props} />,
+                            li: ({node, ...props}) => <li className="leading-relaxed" {...props} />,
+                            strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
+                            em: ({node, ...props}) => <em className="italic" {...props} />,
+                            code: ({node, ...props}) => {
+                              const isInline = !props.className?.includes('language-');
+                              return isInline ? (
+                                <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs" {...props} />
+                              ) : (
+                                <code className="block bg-gray-100 text-gray-800 p-2 rounded text-xs my-2" {...props} />
+                              );
+                            },
+                            blockquote: ({node, ...props}) => (
+                              <blockquote className="border-l-4 border-blue-500 pl-4 my-2 italic" {...props} />
+                            ),
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      )}
                     </div>
                     <div
                       className={`text-xs mt-2 ${
