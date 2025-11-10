@@ -1,0 +1,193 @@
+import { useState, useRef, useEffect } from 'react';
+import { MessageSquare, Send, Trash2, Sparkles } from 'lucide-react';
+import BottomNav from '@/components/BottomNav';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { useAIChat } from '@/hooks/useAIChat';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+const SUGGESTED_QUESTIONS = [
+  "What are the speed limits in different areas in Japan?",
+  "Explain the right-of-way rules at intersections",
+  "What do I need to know about parking regulations?",
+  "How should I handle a pedestrian crossing?",
+  "What are the common road signs I should memorize?",
+];
+
+const AIChatbot = () => {
+  const [input, setInput] = useState('');
+  const { messages, isLoading, sendMessage, clearChat } = useAIChat();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
+    
+    const messageToSend = input;
+    setInput('');
+    await sendMessage(messageToSend);
+    inputRef.current?.focus();
+  };
+
+  const handleSuggestedQuestion = (question: string) => {
+    setInput(question);
+    inputRef.current?.focus();
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white pb-20">
+      {/* Header */}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <MessageSquare className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Kōtsū Sensei AI</h1>
+                <p className="text-sm text-gray-500">Your Japanese Driving Assistant</p>
+              </div>
+            </div>
+            {messages.length > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={clearChat}
+                title="Clear chat"
+              >
+                <Trash2 className="w-5 h-5" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        {/* Welcome Message */}
+        {messages.length === 0 && (
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+              <Sparkles className="w-8 h-8 text-blue-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Welcome to Kōtsū Sensei AI!
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Ask me anything about Japanese traffic rules, road signs, or driving techniques.
+            </p>
+
+            {/* Suggested Questions */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700 mb-3">Try asking:</p>
+              {SUGGESTED_QUESTIONS.map((question, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  className="w-full text-left justify-start h-auto py-3 px-4 whitespace-normal"
+                  onClick={() => handleSuggestedQuestion(question)}
+                >
+                  <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="text-sm">{question}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Messages */}
+        {messages.length > 0 && (
+          <ScrollArea className="h-[calc(100vh-280px)] mb-4" ref={scrollRef}>
+            <div className="space-y-4">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <Card
+                    className={`max-w-[85%] p-4 ${
+                      message.role === 'user'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    <div className="text-sm whitespace-pre-wrap break-words">
+                      {message.content}
+                    </div>
+                    <div
+                      className={`text-xs mt-2 ${
+                        message.role === 'user' ? 'text-blue-100' : 'text-gray-400'
+                      }`}
+                    >
+                      {message.timestamp.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
+                  </Card>
+                </div>
+              ))}
+              
+              {/* Loading indicator */}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <Card className="max-w-[85%] p-4 bg-white border-gray-200">
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                      <span className="text-sm">Thinking...</span>
+                    </div>
+                  </Card>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        )}
+
+        {/* Input Area */}
+        <div className="fixed bottom-20 left-0 right-0 bg-white border-t p-4">
+          <div className="max-w-4xl mx-auto flex gap-2">
+            <Input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask about Japanese driving rules..."
+              disabled={isLoading}
+              className="flex-1"
+            />
+            <Button
+              onClick={handleSend}
+              disabled={!input.trim() || isLoading}
+              size="icon"
+            >
+              <Send className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <BottomNav />
+    </div>
+  );
+};
+
+export default AIChatbot;
