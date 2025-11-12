@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  images?: string[];
   timestamp: Date;
 }
 
@@ -49,6 +50,7 @@ export const useAIChat = () => {
       const aiMessage: ChatMessage = {
         role: 'assistant',
         content: data.message,
+        images: data.images || [],
         timestamp: new Date(),
       };
 
