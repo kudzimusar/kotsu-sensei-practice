@@ -164,6 +164,29 @@ const AIChatbot = () => {
                           {message.content}
                         </ReactMarkdown>
                       )}
+                      
+                      {/* Display images for assistant messages */}
+                      {message.role === 'assistant' && message.images && message.images.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          <p className="text-xs font-medium text-muted-foreground">Related Images:</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {message.images.map((imageUrl, idx) => (
+                              <div key={idx} className="relative group">
+                                <img
+                                  src={imageUrl}
+                                  alt={`Visual reference ${idx + 1}`}
+                                  className="w-full h-32 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition"
+                                  onClick={() => window.open(imageUrl, '_blank')}
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                                <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition rounded-lg pointer-events-none" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div
                       className={`text-xs mt-2 ${

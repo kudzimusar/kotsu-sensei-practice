@@ -1,6 +1,55 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
+// Detect if user question needs visual aid
+function needsVisualAid(userMessage: string): boolean {
+  const visualKeywords = [
+    'sign', 'signal', 'marking', 'symbol', 'arrow',
+    'traffic light', 'pedestrian crossing', 'zebra crossing',
+    'road marking', 'lane', 'intersection marking',
+    'stop sign', 'yield sign', 'speed limit', 'no parking',
+    'what does', 'show me', 'how does', 'looks like', 'look like'
+  ];
+  
+  const lowercaseMessage = userMessage.toLowerCase();
+  return visualKeywords.some(keyword => lowercaseMessage.includes(keyword));
+}
+
+// Fetch relevant images from Serper API
+async function fetchImages(query: string): Promise<string[]> {
+  try {
+    const SERPER_API_KEY = Deno.env.get('SERPER_API_KEY');
+    
+    if (!SERPER_API_KEY) {
+      console.log('SERPER_API_KEY not configured, skipping image search');
+      return [];
+    }
+
+    const response = await fetch('https://google.serper.dev/images', {
+      method: 'POST',
+      headers: {
+        'X-API-KEY': SERPER_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        q: `${query} japan driving traffic road`,
+        num: 3
+      })
+    });
+
+    if (!response.ok) {
+      console.error('Serper API error:', response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    return data.images?.slice(0, 3).map((img: any) => img.imageUrl) || [];
+  } catch (error) {
+    console.error('Error fetching images:', error);
+    return [];
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -18,9 +67,12 @@ serve(async (req) => {
 
     const systemPrompt = `You are a friendly and knowledgeable Japanese driving instructor assistant named "Kōtsū Sensei" (交通先生). Your role is to help students understand Japanese traffic laws, road signs, driving techniques, and test preparation.
 
+IMPORTANT: When users ask about visual elements (signs, markings, signals, traffic lights), relevant images will be automatically provided alongside your explanation. You can reference these images in your response by saying things like "As you can see in the images below..." or "The images show examples of..."
+
 Guidelines:
 - Provide clear, accurate, and helpful explanations
 - Reference specific Japanese traffic rules and regulations when applicable
+- When images are provided, describe what students should look for in them
 - Use real-world examples to illustrate concepts
 - Break down complex topics into easy-to-understand steps
 - Be encouraging and supportive - learning to drive can be stressful
@@ -88,8 +140,21 @@ Topics you can help with:
 
     console.log('AI Chat response generated successfully');
 
+    // Check if we need to fetch images
+    const userMessage = messages[messages.length - 1]?.content || '';
+    let imageUrls: string[] = [];
+    
+    if (needsVisualAid(userMessage)) {
+      console.log('Visual aid detected, fetching images...');
+      imageUrls = await fetchImages(userMessage);
+      console.log(`Fetched ${imageUrls.length} images`);
+    }
+
     return new Response(
-      JSON.stringify({ message: assistantMessage }), 
+      JSON.stringify({ 
+        message: assistantMessage,
+        images: imageUrls
+      }), 
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
