@@ -15,14 +15,14 @@ function needsVisualAid(userMessage: string): boolean {
   return visualKeywords.some(keyword => lowercaseMessage.includes(keyword));
 }
 
-// Fetch relevant images from Serper API
-async function fetchImages(query: string): Promise<string[]> {
+// Fetch a single image for a specific query
+async function fetchImage(query: string): Promise<string | null> {
   try {
     const SERPER_API_KEY = Deno.env.get('SERPER_API_KEY');
     
     if (!SERPER_API_KEY) {
       console.log('SERPER_API_KEY not configured, skipping image search');
-      return [];
+      return null;
     }
 
     const response = await fetch('https://google.serper.dev/images', {
@@ -33,21 +33,34 @@ async function fetchImages(query: string): Promise<string[]> {
       },
       body: JSON.stringify({
         q: `${query} japan driving traffic road`,
-        num: 3
+        num: 1
       })
     });
 
     if (!response.ok) {
       console.error('Serper API error:', response.status);
-      return [];
+      return null;
     }
 
     const data = await response.json();
-    return data.images?.slice(0, 3).map((img: any) => img.imageUrl) || [];
+    return data.images?.[0]?.imageUrl || null;
   } catch (error) {
-    console.error('Error fetching images:', error);
-    return [];
+    console.error('Error fetching image:', error);
+    return null;
   }
+}
+
+// Fetch images for multiple sections
+async function fetchImagesForSections(sections: any[]): Promise<any[]> {
+  const promises = sections.map(async (section) => {
+    if (section.imageQuery) {
+      const imageUrl = await fetchImage(section.imageQuery);
+      return { ...section, image: imageUrl };
+    }
+    return section;
+  });
+  
+  return await Promise.all(promises);
 }
 
 serve(async (req) => {
@@ -67,19 +80,35 @@ serve(async (req) => {
 
     const systemPrompt = `You are a friendly and knowledgeable Japanese driving instructor assistant named "Kōtsū Sensei" (交通先生). Your role is to help students understand Japanese traffic laws, road signs, driving techniques, and test preparation.
 
-IMPORTANT: When users ask about visual elements (signs, markings, signals, traffic lights), relevant images will be automatically provided alongside your explanation. You can reference these images in your response by saying things like "As you can see in the images below..." or "The images show examples of..."
+CRITICAL RESPONSE FORMAT:
+When users ask about visual topics (signs, markings, signals), you MUST respond with a JSON structure containing sections. Each section should have:
+- heading: A clear H3-level heading for the topic
+- imageQuery: A specific search term for fetching a relevant image (e.g., "stop sign japan", "speed limit 50 sign japan")
+- content: The explanation in markdown format
+- summary: (optional) A key takeaway or tip
+
+Example JSON structure:
+{
+  "sections": [
+    {
+      "heading": "Stop Sign (一時停止 - Ichiji Teishi)",
+      "imageQuery": "stop sign japan road",
+      "content": "The stop sign is red and octagonal with white text...\\n\\n**Key Points:**\\n- Must come to complete stop\\n- Check all directions",
+      "summary": "Always stop completely at stop signs, even if the road appears clear."
+    }
+  ]
+}
+
+For non-visual topics, you can respond with plain text as normal.
 
 Guidelines:
-- Provide clear, accurate, and helpful explanations
-- Reference specific Japanese traffic rules and regulations when applicable
-- When images are provided, describe what students should look for in them
-- Use real-world examples to illustrate concepts
-- Break down complex topics into easy-to-understand steps
-- Be encouraging and supportive - learning to drive can be stressful
-- When discussing road signs, describe them clearly
-- Provide study tips and memory techniques
-- Keep responses concise but thorough
-- Use markdown formatting for better readability (bold, lists, etc.)
+- Structure responses into clear sections with specific image queries
+- Each section should cover one main topic
+- Use descriptive imageQuery terms (include "japan" and specific sign/marking names)
+- Keep content concise but thorough with markdown formatting
+- Add summaries for important safety tips or key takeaways
+- Be encouraging and supportive
+- Reference specific Japanese traffic rules
 
 Topics you can help with:
 - Japanese traffic laws and regulations
@@ -140,21 +169,34 @@ Topics you can help with:
 
     console.log('AI Chat response generated successfully');
 
-    // Check if we need to fetch images
-    const userMessage = messages[messages.length - 1]?.content || '';
-    let imageUrls: string[] = [];
-    
-    if (needsVisualAid(userMessage)) {
-      console.log('Visual aid detected, fetching images...');
-      imageUrls = await fetchImages(userMessage);
-      console.log(`Fetched ${imageUrls.length} images`);
+    // Try to parse as structured JSON response
+    let parsedResponse: any = null;
+    try {
+      parsedResponse = JSON.parse(assistantMessage);
+    } catch (e) {
+      console.log('Response is plain text, not JSON structured');
     }
 
+    // If structured response with sections, fetch images for each section
+    if (parsedResponse && parsedResponse.sections && Array.isArray(parsedResponse.sections)) {
+      console.log(`Processing ${parsedResponse.sections.length} sections with images...`);
+      const sectionsWithImages = await fetchImagesForSections(parsedResponse.sections);
+      
+      return new Response(
+        JSON.stringify({ 
+          sections: sectionsWithImages
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Plain text response (backward compatibility)
     return new Response(
       JSON.stringify({ 
-        message: assistantMessage,
-        images: imageUrls
-      }), 
+        message: assistantMessage
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }

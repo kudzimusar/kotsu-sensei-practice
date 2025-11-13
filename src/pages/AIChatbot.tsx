@@ -135,7 +135,63 @@ const AIChatbot = () => {
                     }`}>
                       {message.role === 'user' ? (
                         <p className="whitespace-pre-wrap break-words m-0">{message.content}</p>
+                      ) : message.sections ? (
+                        // Structured section-based response
+                        <div className="space-y-6">
+                          {message.sections.map((section, sectionIdx) => (
+                            <div key={sectionIdx} className="border-l-4 border-blue-500 pl-4">
+                              {/* Heading */}
+                              <h3 className="text-base font-bold text-gray-900 mb-3">
+                                {section.heading}
+                              </h3>
+                              
+                              {/* Image */}
+                              {section.image && (
+                                <div className="mb-3">
+                                  <img
+                                    src={section.image}
+                                    alt={section.heading}
+                                    className="w-full max-w-md h-48 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-90 transition"
+                                    onClick={() => window.open(section.image, '_blank')}
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                              )}
+                              
+                              {/* Content */}
+                              <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  p: ({node, ...props}) => <p className="my-2 leading-relaxed text-gray-700" {...props} />,
+                                  ul: ({node, ...props}) => <ul className="my-2 ml-4 list-disc space-y-1" {...props} />,
+                                  ol: ({node, ...props}) => <ol className="my-2 ml-4 list-decimal space-y-1" {...props} />,
+                                  li: ({node, ...props}) => <li className="leading-relaxed" {...props} />,
+                                  strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
+                                  em: ({node, ...props}) => <em className="italic" {...props} />,
+                                  code: ({node, ...props}) => (
+                                    <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs" {...props} />
+                                  ),
+                                }}
+                              >
+                                {section.content}
+                              </ReactMarkdown>
+                              
+                              {/* Summary */}
+                              {section.summary && (
+                                <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                  <p className="text-sm text-blue-900 flex items-start gap-2">
+                                    <span className="text-base">💡</span>
+                                    <span className="font-medium">{section.summary}</span>
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       ) : (
+                        // Fallback to plain markdown for backward compatibility
                         <ReactMarkdown 
                           remarkPlugins={[remarkGfm]}
                           components={{
@@ -161,31 +217,8 @@ const AIChatbot = () => {
                             ),
                           }}
                         >
-                          {message.content}
+                          {message.content || ''}
                         </ReactMarkdown>
-                      )}
-                      
-                      {/* Display images for assistant messages */}
-                      {message.role === 'assistant' && message.images && message.images.length > 0 && (
-                        <div className="mt-3 space-y-2">
-                          <p className="text-xs font-medium text-muted-foreground">Related Images:</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {message.images.map((imageUrl, idx) => (
-                              <div key={idx} className="relative group">
-                                <img
-                                  src={imageUrl}
-                                  alt={`Visual reference ${idx + 1}`}
-                                  className="w-full h-32 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition"
-                                  onClick={() => window.open(imageUrl, '_blank')}
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
-                                  }}
-                                />
-                                <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition rounded-lg pointer-events-none" />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
                       )}
                     </div>
                     <div
