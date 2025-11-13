@@ -28,7 +28,8 @@ export default defineConfig(({ mode }) => ({
         enabled: false, // Disable in development to avoid conflicts
         type: 'module'
       },
-      injectRegister: 'auto',
+      // Use inline registration so PWABuilder can detect it in HTML
+      injectRegister: 'inline',
     })
   ].filter(Boolean),
   resolve: {
