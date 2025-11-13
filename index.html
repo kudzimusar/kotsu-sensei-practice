@@ -78,21 +78,6 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-
-    <!-- Register Service Worker -->
-    <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/kotsu-sensei-practice/sw.js')
-        .then(reg => {
-          console.log('SW registered');
-          if ('periodicSync' in reg) {
-            reg.periodicSync.register('update-content', { minInterval: 24 * 60 * 60 * 1000 });
-          }
-        })
-        .catch(err => console.error('SW failed:', err));
-    });
-  }
-</script>
+    <!-- Service Worker registration is handled by VitePWA plugin -->
   </body>
 </html>

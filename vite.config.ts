@@ -14,28 +14,24 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'robots.txt', 'assets/**/*'],
-      manifest: {
-        name: 'Kōtsū Sensei - Japanese Driving Test Practice',
-        short_name: 'Kōtsū Sensei',
-        description: 'Practice for Japanese driving license tests with comprehensive questions and images',
-        theme_color: '#0F172A',
-        background_color: '#0F172A',
-        display: 'standalone',
-        icons: [
-          {
-            src: '/assets/icon-192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: '/assets/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
+      includeAssets: ['favicon.ico', 'robots.txt', 'manifest.json', 'assets/**/*'],
+      strategies: 'generateSW',
+      injectRegister: 'auto',
+      // Use existing manifest.json from public folder instead of generating one
+      manifest: false,
+      useCredentials: false,
+      devOptions: {
+        enabled: false // Disable in development to avoid conflicts
       },
       workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
+        // Use offline.html as fallback for navigation requests
+        offlineGoogleAnalytics: false,
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/ndulrvfwcqyvutcviebk\.supabase\.co\/storage\/v1\/object\/public\/driving-scenarios\/.*/,
