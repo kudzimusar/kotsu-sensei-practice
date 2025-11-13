@@ -26,62 +26,78 @@ workbox.core.clientsClaim();
 /* -------------------------------------------------------------------------- */
 const OFFLINE_FALLBACK_PAGE = 'offline.html';
 
-// Cache offline page during install
+// Ensure offline page is cached during install
 self.addEventListener('install', async (event) => {
   event.waitUntil(
     caches.open(workbox.core.cacheNames.precache).then((cache) => {
-      return cache.add(OFFLINE_FALLBACK_PAGE);
+      return cache.add(OFFLINE_FALLBACK_PAGE).catch((err) => {
+        console.log('[SW] Failed to cache offline page:', err);
+      });
     })
   );
 });
 
-// Register navigation route with offline fallback
+// Enable navigation preload if supported
 if (workbox.navigationPreload.isSupported()) {
   workbox.navigationPreload.enable();
 }
 
-// Handle navigation requests with offline fallback
-self.addEventListener('fetch', (event) => {
-  if (event.request.mode === 'navigate') {
-    event.respondWith((async () => {
-      try {
-        // Try preload response first
-        const preloadResp = await event.preloadResponse;
-        if (preloadResp) {
-          return preloadResp;
-        }
-        
-        // Try network request
-        const networkResp = await fetch(event.request);
-        return networkResp;
-      } catch (error) {
-        // Network failed - serve offline page
-        const cache = await caches.open(workbox.core.cacheNames.precache);
-        const cachedResp = await cache.match(OFFLINE_FALLBACK_PAGE);
-        if (cachedResp) {
-          return cachedResp;
-        }
-        // If offline page not found, try all caches
-        const cacheNames = await caches.keys();
-        for (const cacheName of cacheNames) {
-          const cache = await caches.open(cacheName);
-          const response = await cache.match(OFFLINE_FALLBACK_PAGE);
-          if (response) {
-            return response;
-          }
-        }
-        // Fallback response
-        return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+// Register navigation route with offline fallback
+// Use a custom handler that works with Workbox precaching and provides offline fallback
+// This ensures PWABuilder can detect offline capability
+const navigationHandler = async ({ event }) => {
+  try {
+    // Try preload response first
+    const preloadResponse = await event.preloadResponse;
+    if (preloadResponse) {
+      return preloadResponse;
+    }
+    
+    // Try network request
+    const networkResponse = await fetch(event.request);
+    if (networkResponse && networkResponse.status === 200) {
+      return networkResponse;
+    }
+    throw new Error('Network response not OK');
+  } catch (error) {
+    // Network failed - try to serve from cache
+    const precache = await caches.open(workbox.core.cacheNames.precache);
+    
+    // First try to match the request URL (for index.html)
+    let response = await precache.match(event.request);
+    
+    // If not found, try offline.html
+    if (!response) {
+      response = await precache.match(OFFLINE_FALLBACK_PAGE);
+    }
+    
+    // If still not found, try all caches for offline.html
+    if (!response) {
+      const cacheNames = await caches.keys();
+      for (const cacheName of cacheNames) {
+        const cache = await caches.open(cacheName);
+        response = await cache.match(OFFLINE_FALLBACK_PAGE);
+        if (response) break;
       }
-    })());
+    }
+    
+    // Return the response if found
+    if (response) {
+      return response;
+    }
+    
+    // Last resort: return a basic offline response
+    return new Response('Offline', { 
+      status: 200,
+      statusText: 'OK',
+      headers: { 'Content-Type': 'text/html' }
+    });
   }
-});
+};
 
-// Also use Workbox routing for non-navigation requests
 workbox.routing.registerRoute(
-  ({ request }) => request.mode !== 'navigate',
-  new workbox.strategies.NetworkFirst({
-    cacheName: 'dynamic-cache',
+  new workbox.routing.NavigationRoute(navigationHandler, {
+    denylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
   })
 );
 
