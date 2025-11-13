@@ -24,39 +24,64 @@ workbox.core.clientsClaim();
 /* -------------------------------------------------------------------------- */
 /* 3. OFFLINE FALLBACK CONFIGURATION */
 /* -------------------------------------------------------------------------- */
-// Note: VitePWA will resolve the base path, so we use relative paths
-const OFFLINE_FALLBACK_URL = 'offline.html';
 const OFFLINE_FALLBACK_PAGE = 'offline.html';
 
-// Register navigation route with offline fallback using NetworkFirst strategy
+// Cache offline page during install
+self.addEventListener('install', async (event) => {
+  event.waitUntil(
+    caches.open(workbox.core.cacheNames.precache).then((cache) => {
+      return cache.add(OFFLINE_FALLBACK_PAGE);
+    })
+  );
+});
+
+// Register navigation route with offline fallback
+if (workbox.navigationPreload.isSupported()) {
+  workbox.navigationPreload.enable();
+}
+
+// Handle navigation requests with offline fallback
+self.addEventListener('fetch', (event) => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        // Try preload response first
+        const preloadResp = await event.preloadResponse;
+        if (preloadResp) {
+          return preloadResp;
+        }
+        
+        // Try network request
+        const networkResp = await fetch(event.request);
+        return networkResp;
+      } catch (error) {
+        // Network failed - serve offline page
+        const cache = await caches.open(workbox.core.cacheNames.precache);
+        const cachedResp = await cache.match(OFFLINE_FALLBACK_PAGE);
+        if (cachedResp) {
+          return cachedResp;
+        }
+        // If offline page not found, try all caches
+        const cacheNames = await caches.keys();
+        for (const cacheName of cacheNames) {
+          const cache = await caches.open(cacheName);
+          const response = await cache.match(OFFLINE_FALLBACK_PAGE);
+          if (response) {
+            return response;
+          }
+        }
+        // Fallback response
+        return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+      }
+    })());
+  }
+});
+
+// Also use Workbox routing for non-navigation requests
 workbox.routing.registerRoute(
-  ({ request }) => request.mode === 'navigate',
+  ({ request }) => request.mode !== 'navigate',
   new workbox.strategies.NetworkFirst({
-    cacheName: 'navigations',
-    plugins: [
-      {
-        fetchDidFail: async ({ request }) => {
-          // When network fails, try to serve offline.html
-          const cache = await caches.open(workbox.core.cacheNames.precache);
-          const offlineFallback = await cache.match(OFFLINE_FALLBACK_URL) || 
-                                  await cache.match(OFFLINE_FALLBACK_PAGE);
-          if (offlineFallback) {
-            return offlineFallback;
-          }
-          // If still not found, try all caches
-          const cacheNames = await caches.keys();
-          for (const cacheName of cacheNames) {
-            const cache = await caches.open(cacheName);
-            const response = await cache.match(OFFLINE_FALLBACK_URL) || 
-                            await cache.match(OFFLINE_FALLBACK_PAGE);
-            if (response) {
-              return response;
-            }
-          }
-          return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
-        },
-      },
-    ],
+    cacheName: 'dynamic-cache',
   })
 );
 
