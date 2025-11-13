@@ -21,12 +21,15 @@ import AIChatbot from "./pages/AIChatbot";
 
 const queryClient = new QueryClient();
 
+// Use basename in production to match GitHub Pages subdirectory
+const basename = import.meta.env.MODE === 'production' ? '/kotsu-sensei-practice' : undefined;
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Index />} />
