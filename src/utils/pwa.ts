@@ -158,6 +158,169 @@ export function setupOfflineDetection(
 }
 
 /**
+ * Register periodic background sync
+ */
+export async function registerPeriodicSync(
+  tag: string,
+  minInterval?: number
+): Promise<boolean> {
+  if (!('serviceWorker' in navigator)) {
+    console.log('Service worker not supported');
+    return false;
+  }
+  
+  try {
+    const registration = await getServiceWorkerRegistration();
+    if (!registration) {
+      return false;
+    }
+    
+    // Check if periodic sync is supported
+    if (!('periodicSync' in registration)) {
+      console.log('Periodic sync not supported');
+      return false;
+    }
+    
+    // Request periodic sync permission
+    try {
+      const status = await (navigator as any).permissions.query({
+        name: 'periodic-background-sync' as PermissionName,
+      });
+      
+      if (status.state !== 'granted') {
+        console.log('Periodic sync permission not granted');
+        return false;
+      }
+    } catch (error) {
+      // Permission API might not be available
+      console.log('Periodic sync permission API not available');
+      return false;
+    }
+    
+    // Register periodic sync
+    await (registration as any).periodicSync.register(tag, {
+      minInterval: minInterval || 24 * 60 * 60 * 1000, // 24 hours default
+    });
+    
+    console.log(`Periodic sync registered: ${tag}`);
+    return true;
+  } catch (error) {
+    console.error('Error registering periodic sync:', error);
+    return false;
+  }
+}
+
+/**
+ * Register background sync
+ */
+export async function registerBackgroundSync(tag: string): Promise<boolean> {
+  if (!('serviceWorker' in navigator)) {
+    console.log('Service worker not supported');
+    return false;
+  }
+  
+  try {
+    const registration = await getServiceWorkerRegistration();
+    if (!registration) {
+      return false;
+    }
+    
+    // Check if background sync is supported
+    if (!('sync' in registration)) {
+      console.log('Background sync not supported');
+      return false;
+    }
+    
+    await (registration as any).sync.register(tag);
+    console.log(`Background sync registered: ${tag}`);
+    return true;
+  } catch (error) {
+    console.error('Error registering background sync:', error);
+    return false;
+  }
+}
+
+/**
+ * Request push notification permission
+ */
+export async function requestNotificationPermission(): Promise<NotificationPermission> {
+  if (!('Notification' in window)) {
+    console.log('Notifications not supported');
+    return 'denied';
+  }
+  
+  if (Notification.permission === 'granted') {
+    return 'granted';
+  }
+  
+  if (Notification.permission === 'denied') {
+    return 'denied';
+  }
+  
+  try {
+    const permission = await Notification.requestPermission();
+    return permission;
+  } catch (error) {
+    console.error('Error requesting notification permission:', error);
+    return 'denied';
+  }
+}
+
+/**
+ * Subscribe to push notifications
+ */
+export async function subscribeToPushNotifications(): Promise<PushSubscription | null> {
+  try {
+    const registration = await getServiceWorkerRegistration();
+    if (!registration) {
+      return null;
+    }
+    
+    const permission = await requestNotificationPermission();
+    if (permission !== 'granted') {
+      console.log('Notification permission not granted');
+      return null;
+    }
+    
+    // Check if push manager is available
+    if (!registration.pushManager) {
+      console.log('Push manager not available');
+      return null;
+    }
+    
+    // Get existing subscription or create new one
+    let subscription = await registration.pushManager.getSubscription();
+    
+    if (!subscription) {
+      // Create new subscription
+      // Note: In production, you would need a VAPID public key
+      // For now, we'll just return null if no subscription exists
+      console.log('Push subscription not available (VAPID key required)');
+      return null;
+    }
+    
+    return subscription;
+  } catch (error) {
+    console.error('Error subscribing to push notifications:', error);
+    return null;
+  }
+}
+
+/**
+ * Sync quiz results (client-side trigger for background sync)
+ */
+export async function syncQuizResults(): Promise<boolean> {
+  return await registerBackgroundSync('sync-quiz-results');
+}
+
+/**
+ * Sync schedule data (client-side trigger for background sync)
+ */
+export async function syncScheduleData(): Promise<boolean> {
+  return await registerBackgroundSync('sync-schedule');
+}
+
+/**
  * Initialize PWA features
  */
 export function initializePWA(): void {
@@ -185,9 +348,20 @@ export function initializePWA(): void {
   
   // Log service worker status
   if (isServiceWorkerSupported()) {
-    getServiceWorkerRegistration().then(registration => {
+    getServiceWorkerRegistration().then(async (registration) => {
       if (registration) {
         console.log('Service worker is registered and ready');
+        
+        // Register periodic sync for content updates
+        // Note: This requires user permission and may not work in all browsers
+        registerPeriodicSync('update-content', 24 * 60 * 60 * 1000).catch((error) => {
+          console.log('Periodic sync registration failed:', error);
+        });
+        
+        // Register periodic sync for progress sync
+        registerPeriodicSync('sync-progress', 6 * 60 * 60 * 1000).catch((error) => {
+          console.log('Periodic sync registration failed:', error);
+        });
       } else {
         console.log('Service worker is not registered');
       }
