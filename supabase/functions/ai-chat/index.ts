@@ -172,9 +172,25 @@ Topics you can help with:
     // Try to parse as structured JSON response
     let parsedResponse: any = null;
     try {
-      parsedResponse = JSON.parse(assistantMessage);
+      // First, try to extract JSON from markdown code blocks if present
+      let jsonString = assistantMessage;
+      
+      // Remove markdown code blocks (```json ... ``` or ``` ... ```)
+      const codeBlockMatch = assistantMessage.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (codeBlockMatch) {
+        jsonString = codeBlockMatch[1];
+      }
+      
+      // Try to find JSON object even if there's text before/after
+      const jsonMatch = jsonString.match(/\{[\s\S]*"sections"[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonString = jsonMatch[0];
+      }
+      
+      parsedResponse = JSON.parse(jsonString.trim());
+      console.log('Successfully parsed structured JSON response');
     } catch (e) {
-      console.log('Response is plain text, not JSON structured');
+      console.log('Response is plain text, not JSON structured:', e instanceof Error ? e.message : 'Parse error');
     }
 
     // If structured response with sections, fetch images for each section
