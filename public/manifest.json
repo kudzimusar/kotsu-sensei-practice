@@ -5,12 +5,14 @@
   "description": "Master Japan's driving test with 250+ practice questions, real road signs, and instant feedback. Free online quiz app for learner's permit and standard license.",
   "start_url": "/kotsu-sensei-practice/",
   "scope": "/kotsu-sensei-practice/",
+  "scope_extensions": [],
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1a5fb4",
   "orientation": "portrait-primary",
   "categories": ["education", "productivity"],
   "lang": "en",
+  "dir": "ltr",
   "icons": [
     { "src": "/kotsu-sensei-practice/assets/icon-48.png", "sizes": "48x48", "type": "image/png", "purpose": "any" },
     { "src": "/kotsu-sensei-practice/assets/icon-78.png", "sizes": "72x72", "type": "image/png", "purpose": "any" },
@@ -45,7 +47,58 @@
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "tabbed": true,
   "note_taking": { "new_note_url": "/kotsu-sensei-practice/study?note=new" },
-  "prefer_related_applications": true,
+  "shortcuts": [
+    {
+      "name": "Start Practice Quiz",
+      "short_name": "Quiz",
+      "description": "Jump directly to practice questions",
+      "url": "/kotsu-sensei-practice/study",
+      "icons": [
+        { "src": "/kotsu-sensei-practice/assets/shortcut-quiz.png", "sizes": "96x96", "type": "image/png" }
+      ]
+    },
+    {
+      "name": "View Planner",
+      "short_name": "Planner",
+      "description": "Access your study schedule",
+      "url": "/kotsu-sensei-practice/planner",
+      "icons": [
+        { "src": "/kotsu-sensei-practice/assets/shortcut-planner.png", "sizes": "96x96", "type": "image/png" }
+      ]
+    },
+    {
+      "name": "Road Signs",
+      "short_name": "Signs",
+      "description": "Study Japanese road signs",
+      "url": "/kotsu-sensei-practice/lectures",
+      "icons": [
+        { "src": "/kotsu-sensei-practice/assets/shortcut-signs.png", "sizes": "96x96", "type": "image/png" }
+      ]
+    },
+    {
+      "name": "Mock Tests",
+      "short_name": "Tests",
+      "description": "Take full practice exams",
+      "url": "/kotsu-sensei-practice/tests",
+      "icons": [
+        { "src": "/kotsu-sensei-practice/assets/shortcut-tests.png", "sizes": "96x96", "type": "image/png" }
+      ]
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/kotsu-sensei-practice/study",
+      "accept": {
+        "application/json": [".json"],
+        "text/plain": [".txt"]
+      },
+      "icons": [
+        { "src": "/kotsu-sensei-practice/assets/file-handler.png", "sizes": "96x96", "type": "image/png" }
+      ],
+      "launch_type": "single-client"
+    }
+  ],
+  "prefer_related_applications": false,
   "related_applications": [],
   "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7"
 }
