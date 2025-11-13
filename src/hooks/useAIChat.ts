@@ -2,10 +2,18 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export interface ChatSection {
+  heading: string;
+  imageQuery: string;
+  content: string;
+  summary?: string;
+  image?: string;
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant';
-  content: string;
-  images?: string[];
+  content?: string;
+  sections?: ChatSection[];
   timestamp: Date;
 }
 
@@ -42,19 +50,26 @@ export const useAIChat = () => {
         throw error;
       }
 
-      if (!data?.message) {
+      // Handle structured or plain response
+      if (data?.sections) {
+        // Structured response with sections
+        const aiMessage: ChatMessage = {
+          role: 'assistant',
+          sections: data.sections,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+      } else if (data?.message) {
+        // Plain text response (backward compatibility)
+        const aiMessage: ChatMessage = {
+          role: 'assistant',
+          content: data.message,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+      } else {
         throw new Error('No response from AI');
       }
-
-      // Add AI response to chat
-      const aiMessage: ChatMessage = {
-        role: 'assistant',
-        content: data.message,
-        images: data.images || [],
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to get AI response. Please try again.');
