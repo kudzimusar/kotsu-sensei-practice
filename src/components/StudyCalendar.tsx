@@ -9,13 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, Plus, Edit2, Car, BookOpen, FileCheck, MapPin, Bell, CalendarDays, Grid3x3, List } from "lucide-react";
-import { format, isSameDay, parseISO } from "date-fns";
+import { Trash2, Plus, Edit2, Car, BookOpen, FileCheck, MapPin, Bell, CalendarDays, Grid3x3, List, ChevronLeft, ChevronRight } from "lucide-react";
+import { format, isSameDay, parseISO, startOfWeek, endOfWeek, eachDayOfInterval, addDays, isToday, isSameWeek, addWeeks, subWeeks } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getEvents, createEvent, updateEvent, deleteEvent } from "@/lib/supabase/events";
-import { getMonthEvents, getCombinedEvents, type CombinedCalendarEvent } from "@/lib/supabase/calendar";
+import { getMonthEvents, getWeekEvents, getDayEvents, getCombinedEvents, type CombinedCalendarEvent } from "@/lib/supabase/calendar";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -69,6 +69,13 @@ const getEventTypeConfig = (type: EventType) => {
   return eventTypes.find(t => t.value === type) || eventTypes[0];
 };
 
+// Time slots for week view
+const TIME_SLOTS = [
+  "08:40", "09:40", "10:40", "11:40",
+  "12:30", "13:30", "14:30", "15:30",
+  "16:30", "17:30", "17:40", "18:40", "19:40"
+];
+
 const StudyCalendar = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -112,14 +119,36 @@ const StudyCalendar = () => {
     instructor: ''
   });
 
-  // Get combined events for current month using unified API (parallel fetching)
-  const currentMonth = selectedDate || new Date();
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth() + 1;
+  // Get combined events based on view mode
+  const currentDate = selectedDate || new Date();
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth() + 1;
+  
+  // Determine query key and function based on view mode
+  const getQueryKey = () => {
+    if (viewMode === 'week') {
+      const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
+      return ["combinedEvents", user?.id, "week", weekStart.toISOString().split('T')[0]];
+    } else if (viewMode === 'day') {
+      return ["combinedEvents", user?.id, "day", currentDate.toISOString().split('T')[0]];
+    } else {
+      return ["combinedEvents", user?.id, year, month];
+    }
+  };
+
+  const getQueryFn = () => {
+    if (viewMode === 'week') {
+      return () => getWeekEvents(user!.id, currentDate);
+    } else if (viewMode === 'day') {
+      return () => getDayEvents(user!.id, currentDate);
+    } else {
+      return () => getMonthEvents(user!.id, year, month);
+    }
+  };
   
   const { data: combinedEvents = [], isLoading: isLoadingEvents } = useQuery<CombinedCalendarEvent[]>({
-    queryKey: ["combinedEvents", user?.id, year, month],
-    queryFn: () => getMonthEvents(user!.id, year, month),
+    queryKey: getQueryKey(),
+    queryFn: getQueryFn(),
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // 5 minutes - data doesn't change often
     gcTime: 30 * 60 * 1000, // 30 minutes - keep in cache longer (formerly cacheTime in v4)
@@ -275,16 +304,22 @@ const StudyCalendar = () => {
 
   const modifiersClassNames = {
     hasEvent: cn(
-      'relative border-2',
-      'after:content-[""] after:absolute after:bottom-0.5 sm:after:bottom-1 after:left-1/2 after:-translate-x-1/2',
+      'relative',
+      'after:content-[""] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2',
       isMobile 
-        ? 'after:w-1.5 after:h-1.5 after:bg-primary after:rounded-full border-primary/30 bg-primary/5' 
-        : 'after:w-2 after:h-2 after:bg-primary after:rounded-full border-primary/40 bg-primary/10'
+        ? 'after:w-1.5 after:h-1.5 after:bg-primary after:rounded-full' 
+        : 'after:w-2 after:h-2 after:bg-primary after:rounded-full'
     ),
-    hasMultipleEvents: 'border-2 border-primary/50 bg-primary/10 after:w-2 after:h-2 sm:after:w-2.5 sm:after:h-2.5',
-    hasTest: 'border-red-300/50 bg-red-50/50',
-    hasDriving: 'border-blue-300/50 bg-blue-50/50',
-    isToday: 'ring-2 ring-primary ring-offset-1 font-bold bg-accent',
+    hasMultipleEvents: cn(
+      'relative',
+      'after:content-[""] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2',
+      isMobile 
+        ? 'after:w-2 after:h-2 after:bg-primary after:rounded-full' 
+        : 'after:w-2.5 after:h-2.5 after:bg-primary after:rounded-full'
+    ),
+    hasTest: 'bg-red-50/70 border-red-300/60 border',
+    hasDriving: 'bg-blue-50/70 border-blue-300/60 border',
+    isToday: 'ring-2 ring-primary ring-offset-2 font-bold bg-primary/10',
   };
 
   const handleMonthChange = (date: Date | undefined) => {
@@ -303,6 +338,68 @@ const StudyCalendar = () => {
     newParams.set('month', month.toString());
     newParams.set('year', year.toString());
     setSearchParams(newParams, { replace: true });
+  };
+
+  // Week navigation
+  const goToNextWeek = () => {
+    if (selectedDate) {
+      const nextWeek = addWeeks(selectedDate, 1);
+      setSelectedDate(nextWeek);
+      const year = nextWeek.getFullYear();
+      const month = nextWeek.getMonth() + 1;
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('month', month.toString());
+      newParams.set('year', year.toString());
+      setSearchParams(newParams, { replace: true });
+    }
+  };
+
+  const goToPreviousWeek = () => {
+    if (selectedDate) {
+      const prevWeek = subWeeks(selectedDate, 1);
+      setSelectedDate(prevWeek);
+      const year = prevWeek.getFullYear();
+      const month = prevWeek.getMonth() + 1;
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('month', month.toString());
+      newParams.set('year', year.toString());
+      setSearchParams(newParams, { replace: true });
+    }
+  };
+
+  // Day navigation
+  const goToNextDay = () => {
+    if (selectedDate) {
+      const nextDay = addDays(selectedDate, 1);
+      setSelectedDate(nextDay);
+      const year = nextDay.getFullYear();
+      const month = nextDay.getMonth() + 1;
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('month', month.toString());
+      newParams.set('year', year.toString());
+      setSearchParams(newParams, { replace: true });
+    }
+  };
+
+  const goToPreviousDay = () => {
+    if (selectedDate) {
+      const prevDay = addDays(selectedDate, -1);
+      setSelectedDate(prevDay);
+      const year = prevDay.getFullYear();
+      const month = prevDay.getMonth() + 1;
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('month', month.toString());
+      newParams.set('year', year.toString());
+      setSearchParams(newParams, { replace: true });
+    }
+  };
+
+  // Get week dates for week view
+  const getWeekDates = () => {
+    if (!selectedDate) return [];
+    const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 });
+    const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 0 });
+    return eachDayOfInterval({ start: weekStart, end: weekEnd });
   };
 
   // Render event form (used in both Dialog and Sheet)
@@ -400,8 +497,43 @@ const StudyCalendar = () => {
       {/* Navigation Header - Compact on Mobile */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 w-full">
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 w-full sm:w-auto">
+          {/* Navigation arrows for week and day views */}
+          {(viewMode === 'week' || viewMode === 'day') && (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={viewMode === 'week' ? goToPreviousWeek : goToPreviousDay}
+                className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={viewMode === 'week' ? goToNextWeek : goToNextDay}
+                className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
           <h2 className="text-base sm:text-lg font-bold truncate">
-            {selectedDate && format(selectedDate, isMobile ? 'MMM yyyy' : 'MMMM yyyy')}
+            {selectedDate && (() => {
+              if (viewMode === 'week') {
+                const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 });
+                const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 0 });
+                if (weekStart.getMonth() === weekEnd.getMonth()) {
+                  return format(weekStart, isMobile ? 'MMM d' : 'MMM d') + ' - ' + format(weekEnd, isMobile ? 'd, yyyy' : 'd, yyyy');
+                } else {
+                  return format(weekStart, isMobile ? 'MMM d' : 'MMM d') + ' - ' + format(weekEnd, isMobile ? 'MMM d, yyyy' : 'MMM d, yyyy');
+                }
+              } else if (viewMode === 'day') {
+                return format(selectedDate, isMobile ? 'MMM d, yyyy' : 'EEEE, MMMM d, yyyy');
+              } else {
+                return format(selectedDate, isMobile ? 'MMM yyyy' : 'MMMM yyyy');
+              }
+            })()}
           </h2>
           <Button variant="outline" size="sm" onClick={goToToday} className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm shrink-0">
             <span className="hidden sm:inline">Today</span>
@@ -521,27 +653,323 @@ const StudyCalendar = () => {
       )}
 
       {viewMode === 'week' && (
-        <Card className="p-3 sm:p-4 w-full">
-          <div className="text-center py-8 text-muted-foreground">
-            <Grid3x3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Week view coming soon</p>
-            <p className="text-xs mt-1">This view will show a weekly calendar grid</p>
-          </div>
+        <Card className="p-2 sm:p-3 w-full max-w-full overflow-hidden">
+          {isLoadingEvents ? (
+            <div className="space-y-2">
+              <div className="grid grid-cols-8 gap-1">
+                <Skeleton className="h-8 w-full" />
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <Skeleton key={i} className="h-8 w-full" />
+                ))}
+              </div>
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="grid grid-cols-8 gap-1">
+                  <Skeleton className="h-12 w-full" />
+                  {Array.from({ length: 7 }).map((_, j) => (
+                    <Skeleton key={j} className="h-12 w-full" />
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="w-full overflow-x-auto">
+              <div className="min-w-[600px]">
+                {/* Week header */}
+                <div className="grid grid-cols-8 gap-1 mb-1 border-b pb-2">
+                  <div className="text-xs sm:text-sm font-medium text-muted-foreground p-2"></div>
+                  {getWeekDates().map((date, idx) => {
+                    const dayEvents = combinedEvents.filter(e => isSameDay(parseISO(e.date), date));
+                    const isCurrentDay = isToday(date);
+                    return (
+                      <div
+                        key={idx}
+                        className={cn(
+                          "text-center p-2 rounded-md",
+                          isCurrentDay && "bg-primary/10 ring-2 ring-primary"
+                        )}
+                        onClick={() => setSelectedDate(date)}
+                      >
+                        <div className="text-[10px] sm:text-xs font-medium text-muted-foreground">
+                          {format(date, 'EEE')}
+                        </div>
+                        <div className={cn(
+                          "text-xs sm:text-sm font-bold mt-1",
+                          isCurrentDay && "text-primary"
+                        )}>
+                          {format(date, 'd')}
+                        </div>
+                        {dayEvents.length > 0 && (
+                          <div className="mt-1 flex justify-center gap-0.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                            {dayEvents.length > 1 && (
+                              <span className="text-[8px] text-muted-foreground">+{dayEvents.length - 1}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Time slots */}
+                <div className="space-y-1">
+                  {TIME_SLOTS.map((timeSlot, timeIdx) => (
+                    <div key={timeIdx} className="grid grid-cols-8 gap-1">
+                      <div className="text-[10px] sm:text-xs text-muted-foreground p-2 font-medium text-right">
+                        {timeSlot}
+                      </div>
+                      {getWeekDates().map((date, dayIdx) => {
+                        const dayEvents = combinedEvents.filter(e => {
+                          const eventDate = parseISO(e.date);
+                          if (!isSameDay(eventDate, date)) return false;
+                          if (!e.time) return false;
+                          // Extract start time from event time (e.g., "08:40-09:40" -> "08:40", or "08:40" -> "08:40")
+                          const eventTime = e.time.includes('-') 
+                            ? e.time.split('-')[0].trim() 
+                            : e.time.trim();
+                          // Match exact time slot
+                          return eventTime === timeSlot || eventTime.substring(0, 5) === timeSlot.substring(0, 5);
+                        });
+                        return (
+                          <div
+                            key={dayIdx}
+                            className={cn(
+                              "min-h-[3rem] sm:min-h-[4rem] border rounded-md p-1 sm:p-2 cursor-pointer transition-colors",
+                              dayEvents.length > 0 
+                                ? "bg-blue-50/50 border-blue-300/50 hover:bg-blue-50" 
+                                : "border-gray-200 hover:bg-gray-50/50"
+                            )}
+                                onClick={() => {
+                              setSelectedDate(date);
+                              if (!editingEvent) {
+                                if (dayEvents.length === 0) {
+                                  setIsDialogOpen(true);
+                                }
+                              }
+                            }}
+                          >
+                            {dayEvents.map((event, eventIdx) => {
+                              const config = getEventTypeConfig(event.type as EventType);
+                              const Icon = config.icon;
+                              const isDriving = event.source === 'driving_school_schedule';
+                              return (
+                                <div
+                                  key={eventIdx}
+                                  className={cn(
+                                    "text-[9px] sm:text-xs p-1 rounded mb-1 truncate",
+                                    config.color,
+                                    isDriving && "opacity-80"
+                                  )}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!isDriving) {
+                                      handleEditEvent(event);
+                                    }
+                                  }}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    <Icon className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+                                    <span className="truncate font-medium">{event.title}</span>
+                                  </div>
+                                  {event.location && (
+                                    <div className="text-[8px] opacity-75 truncate mt-0.5">
+                                      {event.location}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </Card>
       )}
 
       {viewMode === 'day' && (
-        <Card className="p-3 sm:p-4 w-full">
-          <div className="text-center py-8 text-muted-foreground">
-            <List className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Day view coming soon</p>
-            <p className="text-xs mt-1">This view will show detailed daily schedule</p>
+        <Card className="p-3 sm:p-4 w-full max-w-full overflow-hidden">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h3 className="font-bold text-base sm:text-lg">
+                {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')}
+              </h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                {selectedDate && (() => {
+                  const dayEvents = combinedEvents.filter(e => isSameDay(parseISO(e.date), selectedDate));
+                  return `${dayEvents.length} event${dayEvents.length !== 1 ? 's' : ''}`;
+                })()}
+              </p>
+            </div>
+            {isMobile ? (
+              <Sheet open={isDialogOpen} onOpenChange={handleDialogChange}>
+                <SheetTrigger asChild>
+                  <Button size="sm" className="h-8 px-2 shrink-0">
+                    <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline ml-1">Add</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[90vh] overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>{editingEvent ? 'Edit Event' : 'Add New Event'}</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-4">
+                    {renderEventForm()}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            ) : (
+              <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="shrink-0">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Event
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingEvent ? 'Edit Event' : 'Add New Event'}
+                    </DialogTitle>
+                  </DialogHeader>
+                  {renderEventForm()}
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
+          {isLoadingEvents ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-20 w-full" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2 sm:space-y-3">
+              {selectedDate && (() => {
+                const dayEvents = combinedEvents
+                  .filter(e => isSameDay(parseISO(e.date), selectedDate))
+                  .sort((a, b) => {
+                    if (a.time && b.time) {
+                      const aTime = a.time.split('-')[0] || a.time;
+                      const bTime = b.time.split('-')[0] || b.time;
+                      return aTime.localeCompare(bTime);
+                    }
+                    if (a.time) return -1;
+                    if (b.time) return 1;
+                    return 0;
+                  });
+                
+                if (dayEvents.length === 0) {
+                  return (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <CalendarDays className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm font-medium">No events scheduled</p>
+                      <p className="text-xs mt-1">Click "Add Event" to schedule something</p>
+                    </div>
+                  );
+                }
+                
+                return dayEvents.map((event) => {
+                  const config = getEventTypeConfig(event.type as EventType);
+                  const Icon = config.icon;
+                  const isDrivingSchedule = event.source === 'driving_school_schedule';
+                  const isCompleted = event.status === 'completed';
+                  return (
+                    <div
+                      key={event.id}
+                      className={cn(
+                        "p-3 sm:p-4 rounded-lg border-l-4 shadow-sm",
+                        config.color,
+                        isCompleted && "opacity-70"
+                      )}
+                    >
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                          <div className="p-2 rounded-lg shrink-0 bg-white/80 border flex items-center justify-center">
+                            <Icon className={cn(
+                              "w-4 h-4 sm:w-5 sm:h-5",
+                              config.badgeColor === 'bg-blue-500' && 'text-blue-600',
+                              config.badgeColor === 'bg-red-500' && 'text-red-600',
+                              config.badgeColor === 'bg-purple-500' && 'text-purple-600',
+                              config.badgeColor === 'bg-green-500' && 'text-green-600'
+                            )} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                              <h4 className="font-bold text-sm sm:text-base truncate">{event.title}</h4>
+                              {isDrivingSchedule && (
+                                <Badge variant="outline" className="text-[10px] sm:text-xs shrink-0">
+                                  Schedule
+                                </Badge>
+                              )}
+                              {isCompleted && (
+                                <Badge variant="outline" className="text-[10px] sm:text-xs bg-green-50 shrink-0">
+                                  ✓ Completed
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="space-y-1.5">
+                              {event.time && (
+                                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                                  <span className="font-semibold">🕐</span>
+                                  <span>{event.time}</span>
+                                </div>
+                              )}
+                              {event.location && (
+                                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                                  <MapPin className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                                  <span className="truncate">{event.location}</span>
+                                </div>
+                              )}
+                              {event.instructor && (
+                                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                                  <span>👤</span>
+                                  <span className="truncate">{event.instructor}</span>
+                                </div>
+                              )}
+                              {event.description && (
+                                <div className="mt-2 text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap">
+                                  {event.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {!isDrivingSchedule && (
+                          <div className="flex gap-1 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditEvent(event)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteEvent(event.id)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          )}
         </Card>
       )}
 
-      {/* Selected Date Events - Compact on Mobile */}
-      {selectedDate && (
+      {/* Selected Date Events - Only show in month view */}
+      {selectedDate && viewMode === 'month' && (
         <Card className="p-3 sm:p-5">
           <div className="flex justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2">
             <div className="min-w-0 flex-1">
