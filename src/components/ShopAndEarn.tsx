@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,7 @@ import {
 import bookCover from "@/assets/book-cover.jpg";
 
 export const ShopAndEarn = () => {
+  const navigate = useNavigate();
   const affiliateProducts = [
     {
       title: "Rules of the Road - Official Textbook",
@@ -114,7 +116,11 @@ export const ShopAndEarn = () => {
             <span className="text-3xl font-bold text-purple-600">¥980</span>
             <span className="text-muted-foreground">/month</span>
           </div>
-          <Button size="lg" className="w-full bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700">
+          <Button 
+            size="lg" 
+            className="w-full bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700"
+            onClick={() => navigate("/payment")}
+          >
             Upgrade to Premium <Crown className="ml-2 h-4 w-4" />
           </Button>
         </CardContent>
