@@ -67,7 +67,7 @@ export const getCombinedEvents = async (
       location: event.location || null,
       instructor: event.instructor || null,
       source: 'driving_school_schedule' as const,
-      status: event.status,
+      status: event.status as 'scheduled' | 'completed' | 'cancelled' | undefined,
       time_slot: event.time_slot,
       event_type: event.event_type,
       lecture_number: event.lecture_number,
@@ -100,6 +100,49 @@ export const getMonthEvents = async (
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
   const daysInMonth = new Date(year, month, 0).getDate();
   const endDate = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+
+  return getCombinedEvents(userId, startDate, endDate);
+};
+
+/**
+ * Get events for a specific week (optimized for week view)
+ */
+export const getWeekEvents = async (
+  userId: string,
+  date: Date
+): Promise<CombinedCalendarEvent[]> => {
+  // Get start of week (Sunday) and end of week (Saturday)
+  const startOfWeek = new Date(date);
+  const day = startOfWeek.getDay();
+  const diff = startOfWeek.getDate() - day; // Get Sunday
+  startOfWeek.setDate(diff);
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  const startDate = startOfWeek.toISOString().split('T')[0];
+  const endDate = endOfWeek.toISOString().split('T')[0];
+
+  return getCombinedEvents(userId, startDate, endDate);
+};
+
+/**
+ * Get events for a specific day (optimized for day view)
+ */
+export const getDayEvents = async (
+  userId: string,
+  date: Date
+): Promise<CombinedCalendarEvent[]> => {
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const startDate = startOfDay.toISOString().split('T')[0];
+  const endDate = endOfDay.toISOString().split('T')[0];
 
   return getCombinedEvents(userId, startDate, endDate);
 };
