@@ -18,6 +18,9 @@ import Lectures from "./pages/Lectures";
 import Planner from "./pages/Planner";
 import NotFound from "./pages/NotFound";
 import AIChatbot from "./pages/AIChatbot";
+import Flashcards from "./pages/Flashcards";
+import Payment from "./pages/Payment";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 const queryClient = new QueryClient();
 
@@ -38,12 +41,15 @@ const App = () => (
           <Route path="/tests" element={<Tests />} />
           <Route path="/planner" element={<Planner />} />
           <Route path="/ai-chat" element={<AIChatbot />} />
+          <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/generate" element={<ProtectedRoute><QuestionGenerator /></ProtectedRoute>} />
           <Route path="/about" element={<About />} />
           <Route path="/support" element={<Support />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
+          <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

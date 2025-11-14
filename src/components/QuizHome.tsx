@@ -1,4 +1,4 @@
-import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays, Bell, BookOpen, Video, AlertTriangle, Car, ClipboardList } from "lucide-react";
+import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays, Bell, BookOpen, Video, AlertTriangle, Car, ClipboardList, CreditCard } from "lucide-react";
 import { testCategories } from "@/data/questions";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -444,7 +444,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: Q
         {/* Study Tools Section */}
         <section className="mb-6">
           <h2 className="font-bold text-lg sm:text-xl mb-3 sm:mb-4">Study Tools</h2>
-          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <button
               onClick={() => navigate('/lectures?tab=textbook')}
               className="bg-white rounded-xl shadow p-3 sm:p-4 transform transition active:scale-[0.98] hover:scale-[1.02] min-h-[100px] sm:min-h-[120px]"
@@ -473,6 +473,16 @@ const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: Q
                 <CalendarDays className="text-emerald-600" size={20} />
               </div>
               <h3 className="font-medium text-xs sm:text-sm text-center">Driving Schedule</h3>
+            </button>
+            
+            <button
+              onClick={() => navigate('/flashcards')}
+              className="bg-white rounded-xl shadow p-3 sm:p-4 transform transition active:scale-[0.98] hover:scale-[1.02] min-h-[100px] sm:min-h-[120px]"
+            >
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-full flex items-center justify-center mb-2 mx-auto">
+                <CreditCard className="text-orange-600" size={20} />
+              </div>
+              <h3 className="font-medium text-xs sm:text-sm text-center">Flashcards</h3>
             </button>
           </div>
         </section>
