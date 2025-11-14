@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, Link } from "react-router-dom";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,33 @@ const getEventTypeConfig = (type: EventType) => {
 const StudyCalendar = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get month/year from URL params or default to current month
+  const urlMonth = searchParams.get('month');
+  const urlYear = searchParams.get('year');
+  const initialDate = urlYear && urlMonth 
+    ? new Date(parseInt(urlYear), parseInt(urlMonth) - 1, 1)
+    : new Date();
+  
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialDate);
+  
+  // Update URL params when date changes
+  useEffect(() => {
+    if (selectedDate) {
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth() + 1;
+      const currentMonth = searchParams.get('month');
+      const currentYear = searchParams.get('year');
+      
+      if (currentMonth !== month.toString() || currentYear !== year.toString()) {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('month', month.toString());
+        newParams.set('year', year.toString());
+        setSearchParams(newParams, { replace: true });
+      }
+    }
+  }, [selectedDate, searchParams, setSearchParams]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [newEvent, setNewEvent] = useState({
@@ -218,8 +245,37 @@ const StudyCalendar = () => {
     hasEvent: 'relative after:content-[""] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-primary after:rounded-full',
   };
 
+  const handleMonthChange = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+    }
+  };
+
+  const goToToday = () => {
+    const today = new Date();
+    setSelectedDate(today);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Navigation Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-bold">
+            {selectedDate && format(selectedDate, 'MMMM yyyy')}
+          </h2>
+          <Button variant="outline" size="sm" onClick={goToToday} className="h-8 px-3">
+            Today
+          </Button>
+        </div>
+        <Link to={`/planner${searchParams.toString() ? `?${searchParams.toString()}` : ''}`}>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Calendar className="w-4 h-4" />
+            <span className="hidden sm:inline">Grid View</span>
+          </Button>
+        </Link>
+      </div>
+
       {/* Upcoming Events Summary */}
       {allUpcomingEvents.length > 0 && (
         <Card className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
@@ -263,7 +319,8 @@ const StudyCalendar = () => {
           <Calendar
             mode="single"
             selected={selectedDate}
-            onSelect={setSelectedDate}
+            onSelect={handleMonthChange}
+            onMonthChange={handleMonthChange}
             modifiers={modifiers}
             modifiersClassNames={modifiersClassNames}
             className="rounded-md border w-full pointer-events-auto"

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,11 +45,44 @@ const EVENT_COLORS = {
   orientation: "bg-orange-100 dark:bg-orange-900/30 border-orange-500 text-orange-700 dark:text-orange-300",
 };
 
-export function DrivingScheduleGrid() {
+interface DrivingScheduleGridProps {
+  initialMonth?: number;
+  initialYear?: number;
+}
+
+export function DrivingScheduleGrid({ initialMonth, initialYear }: DrivingScheduleGridProps = {}) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isOfficialUser = user?.id === '63908300-f3df-4fff-ab25-cc268e00a45b';
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 10, 1)); // November 2025
+  
+  // Use initial month/year from props, URL params, or default to November 2025
+  const [currentDate, setCurrentDate] = useState(() => {
+    const urlMonth = searchParams.get('month');
+    const urlYear = searchParams.get('year');
+    if (urlYear && urlMonth) {
+      return new Date(parseInt(urlYear), parseInt(urlMonth) - 1, 1);
+    }
+    if (initialYear && initialMonth) {
+      return new Date(initialYear, initialMonth - 1, 1);
+    }
+    return new Date(2025, 10, 1); // November 2025
+  });
+
+  // Update URL params when date changes
+  useEffect(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    const currentMonth = searchParams.get('month');
+    const currentYear = searchParams.get('year');
+    
+    if (currentMonth !== month.toString() || currentYear !== year.toString()) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('month', month.toString());
+      newParams.set('year', year.toString());
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [currentDate, searchParams, setSearchParams]);
   const [selectedEvent, setSelectedEvent] = useState<DrivingScheduleEvent | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -215,11 +249,18 @@ export function DrivingScheduleGrid() {
   };
 
   const nextMonth = () => {
-    setCurrentDate(new Date(year, month, 1));
+    const newDate = new Date(year, month, 1);
+    setCurrentDate(newDate);
   };
 
   const prevMonth = () => {
-    setCurrentDate(new Date(year, month - 2, 1));
+    const newDate = new Date(year, month - 2, 1);
+    setCurrentDate(newDate);
+  };
+
+  const goToToday = () => {
+    const today = new Date();
+    setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1));
   };
 
   const handleResetSchedule = async () => {
@@ -282,6 +323,9 @@ export function DrivingScheduleGrid() {
               <span className="hidden sm:inline">Reset to Template</span>
             </Button>
           )}
+          <Button variant="outline" size="sm" onClick={goToToday} className="h-7 w-7 sm:h-9 sm:w-auto sm:px-3 p-0 sm:p-2 hidden sm:flex">
+            <span className="hidden sm:inline">Today</span>
+          </Button>
           <Button variant="outline" size="sm" onClick={prevMonth} className="h-7 w-7 sm:h-9 sm:w-9 p-0">
             <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </Button>

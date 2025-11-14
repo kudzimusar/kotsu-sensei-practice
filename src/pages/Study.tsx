@@ -10,10 +10,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { getAllPerformance } from "@/lib/supabase/performance";
 import { getTestHistory } from "@/lib/supabase/tests";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 
 const Study = () => {
   const today = new Date();
   const { user, guestId, isGuest } = useAuth();
+  const [searchParams] = useSearchParams();
+  const tab = searchParams.get('tab') || 'materials';
 
   const { data: performance = [] } = useQuery({
     queryKey: ["performance", user?.id],
@@ -92,7 +95,7 @@ const Study = () => {
       </header>
 
       <main className="px-5 py-6">
-        <Tabs defaultValue="materials" className="w-full">
+        <Tabs defaultValue={tab} value={tab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="materials">
               <BookOpen className="w-4 h-4 mr-2" />
