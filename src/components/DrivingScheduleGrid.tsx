@@ -19,6 +19,8 @@ import { resetUserSchedule } from "@/lib/supabase/scheduleReset";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ScheduleTemplateLoader } from "./ScheduleTemplateLoader";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TIME_SLOTS = [
   "08:40", "09:40", "10:40", "11:40",
@@ -44,15 +46,13 @@ const EVENT_COLORS = {
 
 export function DrivingScheduleGrid() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const isOfficialUser = user?.id === '63908300-f3df-4fff-ab25-cc268e00a45b';
   const [currentDate, setCurrentDate] = useState(new Date(2025, 10, 1)); // November 2025
-  const [events, setEvents] = useState<DrivingScheduleEvent[]>([]);
-  const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<DrivingScheduleEvent | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
-  const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
 
   const year = currentDate.getFullYear();
@@ -61,15 +61,56 @@ export function DrivingScheduleGrid() {
 
   const [hasAutoReset, setHasAutoReset] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      loadSchedule();
-    }
-  }, [user, currentDate]);
+  // Use React Query for optimized data fetching with caching
+  const { data: events = [], isLoading: isLoadingEvents, refetch: refetchEvents } = useQuery({
+    queryKey: ["drivingSchedule", user?.id, year, month],
+    queryFn: async () => {
+      // Auto-complete past events first
+      if (user) {
+        await autoCompletePastEvents();
+      }
+      const data = await getMonthSchedule(user!.id, year, month);
+      return data as DrivingScheduleEvent[];
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes - data doesn't change often
+    gcTime: 30 * 60 * 1000, // 30 minutes - keep in cache longer (formerly cacheTime in v4)
+  });
+
+  const { data: holidays = [] } = useQuery<Holiday[]>({
+    queryKey: ["holidays", year, month],
+    queryFn: () => getHolidays(year, month),
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - holidays don't change
+    gcTime: 7 * 24 * 60 * 60 * 1000, // 7 days - keep holiday cache long (formerly cacheTime in v4)
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async ({ eventData, isUpdate, eventId }: { eventData: Partial<DrivingScheduleEvent>; isUpdate: boolean; eventId?: string }) => {
+      if (isUpdate && eventId) {
+        return updateScheduleEvent(eventId, eventData);
+      } else if (user) {
+        return createScheduleEvent({ ...eventData, user_id: user.id } as any);
+      }
+      throw new Error("User not authenticated");
+    },
+    onSuccess: () => {
+      // Invalidate queries to refetch
+      queryClient.invalidateQueries({ queryKey: ["drivingSchedule", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["combinedEvents", user?.id] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteScheduleEvent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["drivingSchedule", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["combinedEvents", user?.id] });
+    },
+  });
 
   // Auto-reset for official user ONLY ONCE on first load
   useEffect(() => {
-    if (!isOfficialUser || loading || events.length === 0 || hasAutoReset) return;
+    if (!isOfficialUser || isLoadingEvents || events.length === 0 || hasAutoReset) return;
     
     // Check if schedule has old data (Japanese labels or incorrect 14:50 time slot)
     const hasOldData = events.some(e => 
@@ -86,7 +127,7 @@ export function DrivingScheduleGrid() {
       resetUserSchedule()
         .then(() => {
           toast.success("Schedule updated to latest template");
-          return loadSchedule();
+          return refetchEvents();
         })
         .catch((error) => {
           console.error("Auto-reset failed:", error);
@@ -95,32 +136,7 @@ export function DrivingScheduleGrid() {
           setResetting(false);
         });
     }
-  }, [isOfficialUser, loading, events.length, hasAutoReset]);
-
-  const loadSchedule = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      // Auto-complete past events first
-      await autoCompletePastEvents();
-      
-      const [scheduleData, holidaysData] = await Promise.all([
-        getMonthSchedule(user.id, year, month),
-        getHolidays(year, month),
-      ]);
-      setEvents(scheduleData as DrivingScheduleEvent[]);
-      setHolidays(holidaysData as Holiday[]);
-    } catch (error) {
-      console.error("Error loading schedule:", error);
-      toast.error("Failed to load schedule");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [isOfficialUser, isLoadingEvents, events.length, hasAutoReset, refetchEvents]);
 
   const isHoliday = (day: number) => {
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -175,14 +191,13 @@ export function DrivingScheduleGrid() {
     if (!user) return;
 
     try {
-      if (selectedEvent?.id) {
-        await updateScheduleEvent(selectedEvent.id, eventData);
-        toast.success("Event updated successfully");
-      } else {
-        await createScheduleEvent({ ...eventData, user_id: user.id } as any);
-        toast.success("Event created successfully");
-      }
-      await loadSchedule();
+      const isUpdate = !!selectedEvent?.id;
+      await saveMutation.mutateAsync({
+        eventData,
+        isUpdate,
+        eventId: selectedEvent?.id,
+      });
+      toast.success(isUpdate ? "Event updated successfully" : "Event created successfully");
     } catch (error) {
       console.error("Error saving event:", error);
       toast.error("Failed to save event");
@@ -191,9 +206,8 @@ export function DrivingScheduleGrid() {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteScheduleEvent(id);
+      await deleteMutation.mutateAsync(id);
       toast.success("Event deleted successfully");
-      await loadSchedule();
     } catch (error) {
       console.error("Error deleting event:", error);
       toast.error("Failed to delete event");
@@ -217,7 +231,7 @@ export function DrivingScheduleGrid() {
     try {
       await resetUserSchedule();
       toast.success("Schedule reset successfully");
-      await loadSchedule();
+      await refetchEvents();
     } catch (error) {
       console.error("Error resetting schedule:", error);
       toast.error("Failed to reset schedule");
@@ -242,8 +256,8 @@ export function DrivingScheduleGrid() {
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* Template Loader for Non-Official Users */}
-      {events.length === 0 && !loading && !isOfficialUser && (
-        <ScheduleTemplateLoader onLoadComplete={loadSchedule} />
+      {events.length === 0 && !isLoadingEvents && !isOfficialUser && (
+        <ScheduleTemplateLoader onLoadComplete={() => refetchEvents()} />
       )}
 
       <div className="flex items-center justify-between gap-2">
@@ -293,7 +307,19 @@ export function DrivingScheduleGrid() {
         </div>
       </div>
 
-      <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+      {isLoadingEvents ? (
+        <Card className="p-4">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-full" />
+            <div className="grid grid-cols-7 gap-2">
+              {Array.from({ length: 91 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          </div>
+        </Card>
+      ) : (
+        <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
           <div className="min-w-[1400px]">
             <div className="grid grid-cols-[60px_repeat(13,1fr)] sm:grid-cols-[80px_repeat(13,1fr)] gap-1">
             <div className="sticky left-0 bg-background z-10 font-semibold p-1 sm:p-2 text-xs sm:text-sm">Day</div>
@@ -351,7 +377,8 @@ export function DrivingScheduleGrid() {
             ))}
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
       <ScheduleEventModal
         open={modalOpen}

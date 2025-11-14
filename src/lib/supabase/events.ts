@@ -13,12 +13,31 @@ export interface StudyEvent {
   instructor?: string | null;
 }
 
-export const getEvents = async (userId: string) => {
-  const { data, error } = await supabase
+export const getEvents = async (userId: string, options?: { startDate?: string; endDate?: string; limit?: number }) => {
+  let query = supabase
     .from("study_events")
     .select("*")
-    .eq("user_id", userId)
-    .order("date", { ascending: true });
+    .eq("user_id", userId);
+
+  // Add date range filters if provided
+  if (options?.startDate) {
+    query = query.gte("date", options.startDate);
+  }
+  if (options?.endDate) {
+    query = query.lte("date", options.endDate);
+  }
+
+  query = query.order("date", { ascending: true });
+
+  // Add limit to prevent fetching all records
+  if (options?.limit) {
+    query = query.limit(options.limit);
+  } else if (!options?.startDate && !options?.endDate) {
+    // Default limit if no date range specified (prevent loading all historical events)
+    query = query.limit(100);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return data || [];
