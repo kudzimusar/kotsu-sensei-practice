@@ -5,11 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Crown, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import BottomNav from "@/components/BottomNav";
+import { usePremium } from "@/hooks/usePremium";
+import { useAuth } from "@/hooks/useAuth";
+import { checkAndIncrementUsage } from "@/lib/subscription/usageTracker";
+import { Paywall } from "@/components/Paywall";
 
 interface AIQuestion {
   id: string;
@@ -24,11 +29,14 @@ interface AIQuestion {
 }
 
 export default function AdminQuestionGenerator() {
+  const { user } = useAuth();
+  const { isPremium, usageLimits, isLoading: premiumLoading } = usePremium();
   const [isGenerating, setIsGenerating] = useState(false);
   const [category, setCategory] = useState("traffic-rules");
   const [difficulty, setDifficulty] = useState("medium");
   const [count, setCount] = useState("5");
   const [concept, setConcept] = useState("");
+  const [showPaywall, setShowPaywall] = useState(false);
 
   // Fetch AI-generated questions
   const { data: aiQuestions = [], refetch } = useQuery({
@@ -54,13 +62,36 @@ export default function AdminQuestionGenerator() {
       return;
     }
 
+    if (!user) {
+      toast.error("Please sign in to generate questions");
+      return;
+    }
+
+    const questionCount = parseInt(count);
+    
+    // Check usage limits before generating
+    if (!isPremium) {
+      const usageCheck = await checkAndIncrementUsage(user.id, "ai_questions", questionCount);
+      
+      if (!usageCheck.allowed) {
+        toast.error(`You've reached your daily limit of ${usageCheck.limit} questions. Upgrade to Premium for unlimited questions!`);
+        setShowPaywall(true);
+        return;
+      }
+    }
+
     setIsGenerating(true);
     try {
+      // Track usage for premium users too (for analytics)
+      if (isPremium) {
+        await checkAndIncrementUsage(user.id, "ai_questions", questionCount);
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-questions', {
         body: {
           category,
           difficulty,
-          count: parseInt(count),
+          count: questionCount,
           language: 'en',
           concept: concept.trim()
         }
@@ -90,10 +121,55 @@ export default function AdminQuestionGenerator() {
       </header>
 
       <div className="max-w-2xl mx-auto space-y-6 p-4 pt-6">
+        {/* Usage Status Banner */}
+        {user && !premiumLoading && (
+          <Card className={isPremium ? "border-purple-300 bg-purple-50 dark:border-purple-700 dark:bg-purple-900/20" : ""}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {isPremium ? (
+                    <>
+                      <Crown className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                      <span className="font-medium">Premium: Unlimited Questions</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="h-5 w-5 text-amber-600" />
+                      <span className="font-medium">Free Tier: {usageLimits.ai_questions.remaining} questions remaining today</span>
+                    </>
+                  )}
+                </div>
+                {!isPremium && (
+                  <Badge variant="outline" className="text-xs">
+                    {usageLimits.ai_questions.current} / {usageLimits.ai_questions.limit}
+                  </Badge>
+                )}
+              </div>
+              {!isPremium && usageLimits.ai_questions.remaining === 0 && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  You've reached your daily limit. Upgrade to Premium for unlimited questions!
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Paywall */}
+        {showPaywall && (
+          <Paywall feature="ai_questions" usageLimits={usageLimits} />
+        )}
 
         <Card>
           <CardHeader>
-            <CardTitle>Generation Settings</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Generation Settings</CardTitle>
+              {isPremium && (
+                <Badge className="bg-purple-600">
+                  <Crown className="mr-1 h-3 w-3" />
+                  Premium
+                </Badge>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -159,7 +235,7 @@ export default function AdminQuestionGenerator() {
 
             <Button
               onClick={handleGenerate}
-              disabled={isGenerating || !concept.trim()}
+              disabled={isGenerating || !concept.trim() || !user || (showPaywall && !isPremium)}
               className="w-full"
               size="lg"
             >
@@ -168,10 +244,20 @@ export default function AdminQuestionGenerator() {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Generating...
                 </>
+              ) : !user ? (
+                "Sign In to Generate"
+              ) : showPaywall && !isPremium ? (
+                "Upgrade to Generate More"
               ) : (
                 "Generate Questions"
               )}
             </Button>
+            
+            {!user && (
+              <p className="text-center text-xs text-muted-foreground">
+                Sign in to generate AI questions
+              </p>
+            )}
           </CardContent>
         </Card>
 
