@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, Plus, Edit2, Car, BookOpen, FileCheck, MapPin, Bell } from "lucide-react";
+import { Trash2, Plus, Edit2, Car, BookOpen, FileCheck, MapPin, Bell, CalendarDays, Grid3x3, List } from "lucide-react";
 import { format, isSameDay, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
@@ -418,7 +418,7 @@ const StudyCalendar = () => {
               onClick={() => setViewMode('month')}
               className="h-7 px-2 sm:px-3 text-xs flex-1 sm:flex-none"
             >
-              <CalendarIcon className="w-3 h-3 sm:mr-1" />
+              <CalendarDays className="w-3 h-3 sm:mr-1" />
               <span className="hidden sm:inline">Month</span>
             </Button>
             <Button
@@ -442,7 +442,7 @@ const StudyCalendar = () => {
           </div>
           <Link to={`/planner?${searchParams.toString()}`} className="shrink-0">
             <Button variant="outline" size="sm" className="gap-1 sm:gap-2 h-7 sm:h-8 px-2 sm:px-3">
-              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <Grid3x3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Grid</span>
             </Button>
           </Link>
