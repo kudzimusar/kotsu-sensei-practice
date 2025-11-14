@@ -426,8 +426,19 @@ const StudyCalendar = () => {
             modifiersClassNames={modifiersClassNames}
             className={cn(
               "rounded-md border w-full pointer-events-auto",
-              isMobile && "text-sm [&_td]:p-1 [&_th]:p-1.5 [&_button]:h-8 [&_button]:text-xs"
+              isMobile && "text-xs [&_.rdp-head_cell]:text-[10px] [&_.rdp-head_cell]:w-7 [&_.rdp-cell]:w-8 [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 [&_.rdp-day]:text-xs [&_.rdp-nav_button]:h-6 [&_.rdp-nav_button]:w-6"
             )}
+            classNames={
+              isMobile
+                ? {
+                    head_cell: "text-[10px] w-7 h-7 p-1 font-medium",
+                    cell: "h-8 w-8 p-0.5",
+                    day: "h-8 w-8 text-xs p-0 font-normal touch-manipulation",
+                    nav_button: "h-6 w-6 p-0",
+                    caption_label: "text-xs",
+                  }
+                : undefined
+            }
           />
         )}
       </Card>
