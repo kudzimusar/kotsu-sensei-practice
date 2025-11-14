@@ -365,10 +365,10 @@ export function DrivingScheduleGrid({ initialMonth, initialYear }: DrivingSchedu
       ) : (
         <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
           <div className="min-w-[1400px]">
-            <div className="grid grid-cols-[60px_repeat(13,1fr)] sm:grid-cols-[80px_repeat(13,1fr)] gap-1">
-            <div className="sticky left-0 bg-background z-10 font-semibold p-1 sm:p-2 text-xs sm:text-sm">Day</div>
+            <div className="grid grid-cols-[50px_repeat(13,1fr)] sm:grid-cols-[80px_repeat(13,1fr)] gap-0.5 sm:gap-1">
+            <div className="sticky left-0 bg-background z-10 font-semibold p-1 sm:p-2 text-[10px] sm:text-xs border-r pr-1 sm:pr-2">Day</div>
             {TIME_SLOTS.map(slot => (
-              <div key={slot} className="text-[10px] sm:text-xs font-semibold p-1 sm:p-2 text-center">{slot}</div>
+              <div key={slot} className="text-[9px] sm:text-xs font-semibold p-0.5 sm:p-1 sm:p-2 text-center truncate">{slot}</div>
             ))}
 
             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
@@ -392,24 +392,25 @@ export function DrivingScheduleGrid({ initialMonth, initialYear }: DrivingSchedu
                       key={`${day}-${slot}`}
                       onClick={() => handleCellClick(day, slot)}
                       className={cn(
-                        "min-h-[50px] sm:min-h-[60px] p-0.5 sm:p-1 border rounded cursor-pointer transition-colors",
+                        "min-h-[44px] sm:min-h-[60px] p-0.5 sm:p-1 border rounded cursor-pointer transition-colors touch-manipulation",
                         blocked && "bg-muted/50 border-dashed cursor-not-allowed",
-                        !blocked && !hasEvent && "hover:bg-accent",
+                        !blocked && !hasEvent && "hover:bg-accent active:bg-accent/80",
                         hasEvent && EVENT_COLORS[event.event_type],
                         event?.status === 'completed' && "opacity-70"
                       )}
+                      style={{ minHeight: '44px' }} // Ensure minimum touch target
                     >
                       {hasEvent && (
-                        <div className="flex flex-col items-center justify-center h-full gap-0.5 sm:gap-1">
+                        <div className="flex flex-col items-center justify-center h-full gap-0.5 sm:gap-1 min-h-[44px]">
                           {event.status === 'completed' && (
-                            <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                            <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
                           )}
                           {event.symbol && (
-                            <Badge variant="outline" className="text-[8px] sm:text-[10px] px-0.5 sm:px-1 py-0 leading-tight">
+                            <Badge variant="outline" className="text-[8px] sm:text-[10px] px-0.5 sm:px-1 py-0 leading-tight shrink-0">
                               {event.symbol}
                             </Badge>
                           )}
-                          <div className="text-[8px] sm:text-[10px] text-center font-medium leading-tight px-0.5">
+                          <div className="text-[8px] sm:text-[10px] text-center font-medium leading-tight px-0.5 break-words line-clamp-2">
                             {event.custom_label || (event.event_type === 'theory' ? `学科${event.lecture_number}` : event.event_type)}
                           </div>
                         </div>
