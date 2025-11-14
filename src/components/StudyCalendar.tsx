@@ -12,9 +12,10 @@ import { format, isSameDay, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { getEvents, createEvent, updateEvent, deleteEvent } from "@/lib/supabase/events";
-import { getMonthSchedule } from "@/lib/supabase/drivingSchedule";
+import { getMonthEvents, getCombinedEvents, type CombinedCalendarEvent } from "@/lib/supabase/calendar";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export type EventType = 'lesson' | 'test' | 'class' | 'practice';
 
@@ -79,24 +80,29 @@ const StudyCalendar = () => {
     instructor: ''
   });
 
-  const { data: events = [] } = useQuery({
-    queryKey: ["events", user?.id],
-    queryFn: () => getEvents(user!.id),
+  // Get combined events for current month using unified API (parallel fetching)
+  const currentMonth = selectedDate || new Date();
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth() + 1;
+  
+  const { data: combinedEvents = [], isLoading: isLoadingEvents } = useQuery<CombinedCalendarEvent[]>({
+    queryKey: ["combinedEvents", user?.id, year, month],
+    queryFn: () => getMonthEvents(user!.id, year, month),
     enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes - data doesn't change often
+    gcTime: 30 * 60 * 1000, // 30 minutes - keep in cache longer (formerly cacheTime in v4)
   });
 
-  // Get driving schedule events for current month
-  const currentMonth = selectedDate || new Date();
-  const { data: drivingEvents = [] } = useQuery({
-    queryKey: ["drivingSchedule", user?.id, currentMonth.getFullYear(), currentMonth.getMonth() + 1],
-    queryFn: () => getMonthSchedule(user!.id, currentMonth.getFullYear(), currentMonth.getMonth() + 1),
-    enabled: !!user,
-  });
+  // Separate study_events and driving_school_schedule for backward compatibility
+  const events = combinedEvents.filter(e => e.source === 'study_events');
+  const drivingEvents = combinedEvents.filter(e => e.source === 'driving_school_schedule');
 
   const createMutation = useMutation({
     mutationFn: createEvent,
     onSuccess: () => {
+      // Invalidate both individual and combined queries
       queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["combinedEvents", user?.id] });
       toast.success("Event added successfully!");
     },
   });
@@ -104,7 +110,9 @@ const StudyCalendar = () => {
   const updateMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: any }) => updateEvent(id, updates),
     onSuccess: () => {
+      // Invalidate both individual and combined queries
       queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["combinedEvents", user?.id] });
       toast.success("Event updated successfully!");
     },
   });
@@ -112,7 +120,9 @@ const StudyCalendar = () => {
   const deleteMutation = useMutation({
     mutationFn: deleteEvent,
     onSuccess: () => {
+      // Invalidate both individual and combined queries
       queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["combinedEvents", user?.id] });
       toast.success("Event deleted successfully!");
     },
   });
@@ -176,63 +186,28 @@ const StudyCalendar = () => {
     }
   };
 
-  // Combine regular events with driving schedule events
-  const eventsOnSelectedDate = events.filter(
-    e => selectedDate && isSameDay(parseISO(e.date), selectedDate)
-  ).sort((a, b) => {
-    if (!a.time && !b.time) return 0;
-    if (!a.time) return 1;
-    if (!b.time) return -1;
-    return a.time.localeCompare(b.time);
-  });
-
-  const drivingEventsOnSelectedDate = drivingEvents.filter(
+  // Filter events for selected date (already sorted by combined API)
+  const allEventsOnSelectedDate = combinedEvents.filter(
     e => selectedDate && isSameDay(parseISO(e.date), selectedDate)
   ).map(e => ({
-    id: e.id,
-    date: e.date,
-    title: e.custom_label || (e.event_type === 'theory' ? `学科${e.lecture_number}` : e.event_type),
-    type: e.event_type,
-    time: e.time_slot.split('-')[0], // Get start time
-    description: e.notes || '',
-    location: e.location || '',
-    instructor: e.instructor || '',
-    isDrivingSchedule: true,
-    status: e.status
+    ...e,
+    isDrivingSchedule: e.source === 'driving_school_schedule',
   }));
 
-  const allEventsOnSelectedDate = [...eventsOnSelectedDate, ...drivingEventsOnSelectedDate]
-    .sort((a, b) => {
-      if (!a.time && !b.time) return 0;
-      if (!a.time) return 1;
-      if (!b.time) return -1;
-      return a.time.localeCompare(b.time);
-    });
-
-  const upcomingEvents = events
-    .filter(e => parseISO(e.date) >= new Date())
-    .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())
-    .slice(0, 3);
-
-  const upcomingDrivingEvents = drivingEvents
-    .filter(e => parseISO(e.date) >= new Date() && e.status === 'scheduled')
+  // Get upcoming events (already sorted by combined API)
+  const allUpcomingEvents = combinedEvents
+    .filter(e => {
+      const eventDate = parseISO(e.date);
+      return eventDate >= new Date() && e.status !== 'completed';
+    })
+    .slice(0, 3)
     .map(e => ({
-      id: e.id,
-      date: e.date,
-      title: e.custom_label || (e.event_type === 'theory' ? `学科${e.lecture_number}` : e.event_type),
-      type: e.event_type,
-      time: e.time_slot.split('-')[0],
-      isDrivingSchedule: true
-    }))
-    .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())
-    .slice(0, 3);
-
-  const allUpcomingEvents = [...upcomingEvents, ...upcomingDrivingEvents]
-    .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())
-    .slice(0, 3);
+      ...e,
+      isDrivingSchedule: e.source === 'driving_school_schedule',
+    }));
 
   // Get dates that have events for visual indicators
-  const eventDates = [...events.map(e => parseISO(e.date)), ...drivingEvents.map(e => parseISO(e.date))];
+  const eventDates = combinedEvents.map(e => parseISO(e.date));
   
   // Custom day content to show event indicators
   const modifiers = {
@@ -275,14 +250,25 @@ const StudyCalendar = () => {
 
       {/* Calendar */}
       <Card className="p-4">
-        <Calendar
-          mode="single"
-          selected={selectedDate}
-          onSelect={setSelectedDate}
-          modifiers={modifiers}
-          modifiersClassNames={modifiersClassNames}
-          className="rounded-md border w-full pointer-events-auto"
-        />
+        {isLoadingEvents ? (
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <div className="grid grid-cols-7 gap-2">
+              {Array.from({ length: 35 }).map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full" />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={setSelectedDate}
+            modifiers={modifiers}
+            modifiersClassNames={modifiersClassNames}
+            className="rounded-md border w-full pointer-events-auto"
+          />
+        )}
       </Card>
 
       {/* Selected Date Events */}
