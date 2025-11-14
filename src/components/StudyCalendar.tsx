@@ -240,14 +240,51 @@ const StudyCalendar = () => {
 
   // Get dates that have events for visual indicators
   const eventDates = combinedEvents.map(e => parseISO(e.date));
+  
+  // Helper to get events for a specific date
+  const getEventsForDate = (date: Date) => {
+    return combinedEvents.filter(event => {
+      const eventDate = parseISO(event.date);
+      return isSameDay(eventDate, date);
+    });
+  };
+
+  // Enhanced modifiers for better visual indicators
+  const modifiers = {
+    hasEvent: eventDates,
+    hasMultipleEvents: eventDates.filter(date => {
+      const events = getEventsForDate(date);
+      return events.length > 1;
+    }),
+    hasTest: eventDates.filter(date => {
+      const events = getEventsForDate(date);
+      return events.some(e => {
+        const eventType = (e as any).type || (e as any).event_type;
+        return eventType === 'test';
+      });
+    }),
+    hasDriving: eventDates.filter(date => {
+      const events = getEventsForDate(date);
+      return events.some(e => {
+        const eventType = (e as any).type || (e as any).event_type;
+        return eventType === 'lesson' || eventType === 'driving';
+      });
+    }),
+    isToday: [new Date()],
+  };
 
   const modifiersClassNames = {
     hasEvent: cn(
-      'relative after:content-[""] after:absolute after:bottom-0.5 sm:after:bottom-1 after:left-1/2 after:-translate-x-1/2',
+      'relative border-2',
+      'after:content-[""] after:absolute after:bottom-0.5 sm:after:bottom-1 after:left-1/2 after:-translate-x-1/2',
       isMobile 
-        ? 'after:w-1 after:h-1 after:bg-primary after:rounded-full' 
-        : 'after:w-1.5 after:h-1.5 after:bg-primary after:rounded-full'
+        ? 'after:w-1.5 after:h-1.5 after:bg-primary after:rounded-full border-primary/30 bg-primary/5' 
+        : 'after:w-2 after:h-2 after:bg-primary after:rounded-full border-primary/40 bg-primary/10'
     ),
+    hasMultipleEvents: 'border-2 border-primary/50 bg-primary/10 after:w-2 after:h-2 sm:after:w-2.5 sm:after:h-2.5',
+    hasTest: 'border-red-300/50 bg-red-50/50',
+    hasDriving: 'border-blue-300/50 bg-blue-50/50',
+    isToday: 'ring-2 ring-primary ring-offset-1 font-bold bg-accent',
   };
 
   const handleMonthChange = (date: Date | undefined) => {
@@ -408,45 +445,67 @@ const StudyCalendar = () => {
         </Card>
       )}
 
-      {/* Calendar - Compact on Mobile */}
-      <Card className="p-2 sm:p-3 w-full max-w-full overflow-hidden">
-        {isLoadingEvents ? (
-          <div className="space-y-2 sm:space-y-4 w-full">
-            <Skeleton className="h-8 sm:h-10 w-full" />
-            <div className="grid grid-cols-7 gap-1 sm:gap-2 w-full">
-              {Array.from({ length: 35 }).map((_, i) => (
-                <Skeleton key={i} className="h-8 sm:h-10 w-full" />
-              ))}
+      {/* Calendar Views - Conditional Rendering */}
+      {viewMode === 'month' && (
+        <Card className="p-2 sm:p-3 w-full max-w-full overflow-hidden">
+          {isLoadingEvents ? (
+            <div className="space-y-2 sm:space-y-4 w-full">
+              <Skeleton className="h-8 sm:h-10 w-full" />
+              <div className="grid grid-cols-7 gap-1 sm:gap-2 w-full">
+                {Array.from({ length: 35 }).map((_, i) => (
+                  <Skeleton key={i} className="h-8 sm:h-10 w-full" />
+                ))}
+              </div>
             </div>
+          ) : (
+            <div className="w-full max-w-full overflow-x-hidden">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleMonthChange}
+                onMonthChange={handleMonthChange}
+                modifiers={modifiers}
+                modifiersClassNames={modifiersClassNames}
+                className={cn(
+                  "rounded-md border w-full max-w-full",
+                  isMobile && "text-xs [&_.rdp-head_cell]:text-[10px] [&_.rdp-cell]:h-8 [&_.rdp-day]:h-8 [&_.rdp-day]:text-xs [&_.rdp-nav_button]:h-6 [&_.rdp-nav_button]:w-6"
+                )}
+                classNames={
+                  isMobile
+                    ? {
+                        head_cell: "text-[10px] h-7 p-1 font-medium",
+                        cell: "h-8 p-0.5",
+                        day: "h-8 text-xs p-0 font-normal touch-manipulation",
+                        nav_button: "h-6 w-6 p-0",
+                        caption_label: "text-xs",
+                      }
+                    : undefined
+                }
+              />
+            </div>
+          )}
+        </Card>
+      )}
+
+      {viewMode === 'week' && (
+        <Card className="p-3 sm:p-4 w-full">
+          <div className="text-center py-8 text-muted-foreground">
+            <Grid3x3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">Week view coming soon</p>
+            <p className="text-xs mt-1">This view will show a weekly calendar grid</p>
           </div>
-        ) : (
-          <div className="w-full max-w-full overflow-x-hidden">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleMonthChange}
-              onMonthChange={handleMonthChange}
-              modifiers={modifiers}
-              modifiersClassNames={modifiersClassNames}
-              className={cn(
-                "rounded-md border w-full max-w-full",
-                isMobile && "text-xs [&_.rdp-head_cell]:text-[10px] [&_.rdp-cell]:h-8 [&_.rdp-day]:h-8 [&_.rdp-day]:text-xs [&_.rdp-nav_button]:h-6 [&_.rdp-nav_button]:w-6"
-              )}
-              classNames={
-                isMobile
-                  ? {
-                      head_cell: "text-[10px] h-7 p-1 font-medium",
-                      cell: "h-8 p-0.5",
-                      day: "h-8 text-xs p-0 font-normal touch-manipulation",
-                      nav_button: "h-6 w-6 p-0",
-                      caption_label: "text-xs",
-                    }
-                  : undefined
-              }
-            />
+        </Card>
+      )}
+
+      {viewMode === 'day' && (
+        <Card className="p-3 sm:p-4 w-full">
+          <div className="text-center py-8 text-muted-foreground">
+            <List className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">Day view coming soon</p>
+            <p className="text-xs mt-1">This view will show detailed daily schedule</p>
           </div>
-        )}
-      </Card>
+        </Card>
+      )}
 
       {/* Selected Date Events - Compact on Mobile */}
       {selectedDate && (
