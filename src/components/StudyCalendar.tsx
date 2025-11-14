@@ -493,32 +493,32 @@ const StudyCalendar = () => {
   );
 
   return (
-    <div className="space-y-3 sm:space-y-6 w-full max-w-full overflow-hidden">
-      {/* Navigation Header - Compact on Mobile */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 w-full">
-        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 w-full sm:w-auto">
+    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
+      {/* Navigation Header - Modern & Compact */}
+      <div className="flex flex-col gap-3 w-full">
+        <div className="flex items-center justify-between w-full">
           {/* Navigation arrows for week and day views */}
           {(viewMode === 'week' || viewMode === 'day') && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={viewMode === 'week' ? goToPreviousWeek : goToPreviousDay}
-                className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                className="h-8 w-8 p-0 hover:bg-primary/10"
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={viewMode === 'week' ? goToNextWeek : goToNextDay}
-                className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                className="h-8 w-8 p-0 hover:bg-primary/10"
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
           )}
-          <h2 className="text-base sm:text-lg font-bold truncate">
+          <h2 className="text-lg sm:text-xl font-bold truncate flex-1 text-center">
             {selectedDate && (() => {
               if (viewMode === 'week') {
                 const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 });
@@ -535,74 +535,99 @@ const StudyCalendar = () => {
               }
             })()}
           </h2>
-          <Button variant="outline" size="sm" onClick={goToToday} className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm shrink-0">
-            <span className="hidden sm:inline">Today</span>
-            <span className="sm:hidden">Now</span>
+          <Button variant="outline" size="sm" onClick={goToToday} className="h-8 px-3 text-xs font-medium border-primary/20 hover:bg-primary/5">
+            Today
           </Button>
         </div>
         
         {/* View Switcher */}
-        <div className="flex items-center gap-1.5 w-full sm:w-auto">
-          <div className="flex rounded-md border p-0.5 bg-muted/50 flex-1 sm:flex-none">
+        <div className="flex items-center gap-2 w-full">
+          <div className="flex rounded-lg border bg-muted/30 p-1 flex-1 shadow-sm">
             <Button
               variant={viewMode === 'month' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('month')}
-              className="h-7 px-2 sm:px-3 text-xs flex-1 sm:flex-none"
+              className={cn(
+                "h-9 px-4 text-xs font-medium flex-1 transition-all",
+                viewMode === 'month' ? 'shadow-sm' : 'hover:bg-background/80'
+              )}
             >
-              <CalendarDays className="w-3 h-3 sm:mr-1" />
-              <span className="hidden sm:inline">Month</span>
+              <CalendarDays className="w-4 h-4 mr-2" />
+              Month
             </Button>
             <Button
               variant={viewMode === 'week' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('week')}
-              className="h-7 px-2 sm:px-3 text-xs flex-1 sm:flex-none"
+              className={cn(
+                "h-9 px-4 text-xs font-medium flex-1 transition-all",
+                viewMode === 'week' ? 'shadow-sm' : 'hover:bg-background/80'
+              )}
             >
-              <Grid3x3 className="w-3 h-3 sm:mr-1" />
-              <span className="hidden sm:inline">Week</span>
+              <Grid3x3 className="w-4 h-4 mr-2" />
+              Week
             </Button>
             <Button
               variant={viewMode === 'day' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('day')}
-              className="h-7 px-2 sm:px-3 text-xs flex-1 sm:flex-none"
+              className={cn(
+                "h-9 px-4 text-xs font-medium flex-1 transition-all",
+                viewMode === 'day' ? 'shadow-sm' : 'hover:bg-background/80'
+              )}
             >
-              <List className="w-3 h-3 sm:mr-1" />
-              <span className="hidden sm:inline">Day</span>
+              <List className="w-4 h-4 mr-2" />
+              Day
             </Button>
           </div>
           <Link to={`/planner?${searchParams.toString()}`} className="shrink-0">
-            <Button variant="outline" size="sm" className="gap-1 sm:gap-2 h-7 sm:h-8 px-2 sm:px-3">
-              <Grid3x3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <Button variant="outline" size="sm" className="gap-2 h-9 px-3 border-primary/20 hover:bg-primary/5">
+              <Grid3x3 className="w-4 h-4" />
               <span className="hidden sm:inline">Grid</span>
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* Upcoming Events Summary - Compact on Mobile */}
+      {/* Upcoming Events - Improved Mobile Design */}
       {allUpcomingEvents.length > 0 && (
-        <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
-          <h3 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3 flex items-center gap-1.5 sm:gap-2">
-            <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
-            <span className="hidden sm:inline">Upcoming Events</span>
-            <span className="sm:hidden">Upcoming</span>
-          </h3>
-          <div className="space-y-1.5 sm:space-y-2">
-            {allUpcomingEvents.map(event => {
-              const config = getEventTypeConfig(event.type as EventType);
-              const Icon = config.icon;
-              const isDriving = 'isDrivingSchedule' in event && event.isDrivingSchedule;
+        <Card className="p-4 sm:p-5 w-full max-w-full shadow-sm border-primary/10">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
+              <Bell className="w-4 h-4 text-primary" />
+            </div>
+            <h3 className="text-base sm:text-lg font-bold">Upcoming Events</h3>
+          </div>
+          <div className="space-y-3 w-full max-w-full">
+            {allUpcomingEvents.map((event) => {
+              const eventType = (event as any).type || (event as any).event_type || 'lesson';
+              const typeConfig = getEventTypeConfig(eventType);
+              const Icon = typeConfig.icon;
+              const isDriving = event.source === 'driving_school_schedule';
+              
               return (
-                <div key={event.id} className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm bg-white/80 rounded-lg p-1.5 sm:p-2">
-                  <Badge className={cn(`${config.badgeColor} text-white text-[10px] sm:text-xs px-1.5 sm:px-2 shrink-0`)}>
-                    {format(parseISO(event.date), isMobile ? 'M/d' : 'MMM d')}
+                <div
+                  key={event.id}
+                  className="group flex items-center gap-3 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-muted/30 to-muted/10 hover:from-primary/5 hover:to-primary/10 transition-all duration-200 w-full min-w-0 border border-transparent hover:border-primary/20"
+                >
+                  <Badge className={cn(
+                    "flex flex-col items-center justify-center min-w-[52px] h-14 rounded-lg font-bold shadow-sm",
+                    typeConfig.badgeColor,
+                    "text-white"
+                  )}>
+                    <span className="text-xs opacity-90">{format(parseISO(event.date), 'MMM')}</span>
+                    <span className="text-lg leading-none">{format(parseISO(event.date), 'd')}</span>
                   </Badge>
-                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
-                  <span className="flex-1 font-medium truncate min-w-0">{event.title}</span>
-                  {isDriving && <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 shrink-0 hidden sm:inline-flex">Schedule</Badge>}
-                  {event.time && <span className="text-[10px] sm:text-xs text-muted-foreground font-semibold shrink-0">{event.time}</span>}
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span className="font-semibold text-sm sm:text-base truncate">{event.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {isDriving && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Schedule</Badge>}
+                      {event.time && <span className="font-medium">{event.time}</span>}
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -610,15 +635,15 @@ const StudyCalendar = () => {
         </Card>
       )}
 
-      {/* Calendar Views - Conditional Rendering */}
+      {/* Calendar Views - Modern Design */}
       {viewMode === 'month' && (
-        <Card className="p-2 sm:p-3 w-full max-w-full overflow-hidden">
+        <Card className="p-3 sm:p-4 w-full max-w-full overflow-hidden shadow-sm border-primary/10">
           {isLoadingEvents ? (
-            <div className="space-y-2 sm:space-y-4 w-full">
-              <Skeleton className="h-8 sm:h-10 w-full" />
-              <div className="grid grid-cols-7 gap-1 sm:gap-2 w-full">
+            <div className="space-y-3 sm:space-y-4 w-full">
+              <Skeleton className="h-10 w-full rounded-lg" />
+              <div className="grid grid-cols-7 gap-2 w-full">
                 {Array.from({ length: 35 }).map((_, i) => (
-                  <Skeleton key={i} className="h-8 sm:h-10 w-full" />
+                  <Skeleton key={i} className="h-10 sm:h-12 w-full rounded-lg" />
                 ))}
               </div>
             </div>
@@ -632,17 +657,17 @@ const StudyCalendar = () => {
                 modifiers={modifiers}
                 modifiersClassNames={modifiersClassNames}
                 className={cn(
-                  "rounded-md border w-full max-w-full",
-                  isMobile && "text-xs [&_.rdp-head_cell]:text-[10px] [&_.rdp-cell]:h-8 [&_.rdp-day]:h-8 [&_.rdp-day]:text-xs [&_.rdp-nav_button]:h-6 [&_.rdp-nav_button]:w-6"
+                  "rounded-lg w-full max-w-full",
+                  isMobile && "text-sm [&_.rdp-head_cell]:text-xs [&_.rdp-cell]:h-10 [&_.rdp-day]:h-10 [&_.rdp-day]:text-sm [&_.rdp-nav_button]:h-8 [&_.rdp-nav_button]:w-8"
                 )}
                 classNames={
                   isMobile
                     ? {
-                        head_cell: "text-[10px] h-7 p-1 font-medium",
-                        cell: "h-8 p-0.5",
-                        day: "h-8 text-xs p-0 font-normal touch-manipulation",
-                        nav_button: "h-6 w-6 p-0",
-                        caption_label: "text-xs",
+                        head_cell: "text-xs h-8 p-1 font-semibold text-muted-foreground",
+                        cell: "h-10 p-0.5",
+                        day: "h-10 text-sm p-0 font-medium touch-manipulation hover:bg-primary/10 transition-colors rounded-lg",
+                        nav_button: "h-8 w-8 p-0 hover:bg-primary/10",
+                        caption_label: "text-sm font-bold",
                       }
                     : undefined
                 }
