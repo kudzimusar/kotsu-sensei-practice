@@ -15,8 +15,15 @@ import { useSearchParams } from "react-router-dom";
 const Study = () => {
   const today = new Date();
   const { user, guestId, isGuest } = useAuth();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') || 'materials';
+
+  // Handle tab changes and update URL
+  const handleTabChange = (newTab: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('tab', newTab);
+    setSearchParams(newParams, { replace: true });
+  };
 
   const { data: performance = [] } = useQuery({
     queryKey: ["performance", user?.id],
@@ -95,7 +102,7 @@ const Study = () => {
       </header>
 
       <main className="px-5 py-6">
-        <Tabs defaultValue={tab} value={tab} className="w-full">
+        <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="materials">
               <BookOpen className="w-4 h-4 mr-2" />
