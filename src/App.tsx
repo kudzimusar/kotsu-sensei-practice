@@ -19,8 +19,6 @@ import Planner from "./pages/Planner";
 import NotFound from "./pages/NotFound";
 import AIChatbot from "./pages/AIChatbot";
 import Flashcards from "./pages/Flashcards";
-import Payment from "./pages/Payment";
-import PaymentSuccess from "./pages/PaymentSuccess";
 
 const queryClient = new QueryClient();
 
@@ -48,8 +46,6 @@ const App = () => (
           <Route path="/support" element={<Support />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
-          <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
-          <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
