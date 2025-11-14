@@ -11,6 +11,7 @@ import { getAllPerformance } from "@/lib/supabase/performance";
 import { getTestHistory } from "@/lib/supabase/tests";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
+import { TTSButton } from "@/components/ui/tts-button";
 
 const Study = () => {
   const today = new Date();
@@ -122,8 +123,15 @@ const Study = () => {
                   <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
                     <TrendingUp className="text-blue-600" size={24} />
                   </div>
-                  <div>
-                    <h2 className="font-bold text-sm">Your Progress</h2>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-bold text-sm">Your Progress</h2>
+                      <TTSButton 
+                        text={`Your progress: ${totalQuestions} questions studied, ${avgScore}% average score, ${calculateStreak()} day streak. Keep up the great work!`}
+                        size="sm" 
+                        variant="ghost" 
+                      />
+                    </div>
                     <p className="text-xs text-muted-foreground">Keep up the great work!</p>
                   </div>
                 </div>
@@ -196,7 +204,7 @@ const Study = () => {
                   >
                     <Card className="p-4 hover:shadow-lg transition-shadow cursor-pointer">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-1">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                             idx % 3 === 0 ? 'bg-blue-100' : idx % 3 === 1 ? 'bg-purple-100' : 'bg-green-100'
                           }`}>
@@ -204,8 +212,17 @@ const Study = () => {
                               idx % 3 === 0 ? 'text-blue-600' : idx % 3 === 1 ? 'text-purple-600' : 'text-green-600'
                             }`} />
                           </div>
-                          <div>
-                            <h3 className="font-semibold text-sm line-clamp-1">{category}</h3>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-sm line-clamp-1">{category}</h3>
+                              <div onClick={(e) => e.stopPropagation()}>
+                                <TTSButton 
+                                  text={`Study ${category}. Practice questions in this category.`}
+                                  size="sm" 
+                                  variant="ghost" 
+                                />
+                              </div>
+                            </div>
                             <p className="text-xs text-muted-foreground">
                               {Math.floor(Math.random() * 50) + 10} questions
                             </p>

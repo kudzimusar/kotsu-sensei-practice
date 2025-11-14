@@ -5,6 +5,7 @@ import { Trophy, RotateCcw, Home, ChevronRight, UserPlus, Target } from "lucide-
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import type { Question } from "@/data/questions";
+import { TTSButton } from "@/components/ui/tts-button";
 
 interface QuizResultsProps {
   score: number;
@@ -65,11 +66,20 @@ const QuizResults = ({
         <div className={`p-3 md:p-4 rounded-lg mb-6 md:mb-8 ${
           passed ? "bg-success/10 border-2 border-success" : "bg-error/10 border-2 border-error"
         }`}>
-          <p className={`text-xs md:text-sm font-semibold ${passed ? "text-success" : "text-error"}`}>
-            {passed
-              ? "Excellent work! You demonstrated strong knowledge of Japanese traffic laws."
-              : "Review the questions you missed and practice more to improve your score."}
-          </p>
+          <div className="flex items-start gap-2">
+            <p className={`text-xs md:text-sm font-semibold flex-1 ${passed ? "text-success" : "text-error"}`}>
+              {passed
+                ? "Excellent work! You demonstrated strong knowledge of Japanese traffic laws."
+                : "Review the questions you missed and practice more to improve your score."}
+            </p>
+            <TTSButton 
+              text={passed
+                ? "Excellent work! You demonstrated strong knowledge of Japanese traffic laws."
+                : "Review the questions you missed and practice more to improve your score."}
+              size="sm" 
+              variant="ghost" 
+            />
+          </div>
         </div>
 
         {hasFailedQuestions && (
