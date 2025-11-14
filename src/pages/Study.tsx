@@ -220,8 +220,10 @@ const Study = () => {
             </section>
           </TabsContent>
 
-          <TabsContent value="calendar">
-            <StudyCalendar />
+          <TabsContent value="calendar" className="mt-0">
+            <div className="w-full overflow-hidden">
+              <StudyCalendar />
+            </div>
           </TabsContent>
         </Tabs>
       </main>

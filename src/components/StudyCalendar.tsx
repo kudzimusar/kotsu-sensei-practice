@@ -356,9 +356,9 @@ const StudyCalendar = () => {
   );
 
   return (
-    <div className="space-y-3 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-6 w-full max-w-full overflow-hidden">
       {/* Navigation Header - Compact on Mobile */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 w-full">
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
           <h2 className="text-base sm:text-lg font-bold truncate">
             {selectedDate && format(selectedDate, isMobile ? 'MMM yyyy' : 'MMMM yyyy')}
@@ -406,40 +406,42 @@ const StudyCalendar = () => {
       )}
 
       {/* Calendar - Compact on Mobile */}
-      <Card className="p-2 sm:p-4">
+      <Card className="p-2 sm:p-4 w-full max-w-full overflow-hidden">
         {isLoadingEvents ? (
-          <div className="space-y-2 sm:space-y-4">
+          <div className="space-y-2 sm:space-y-4 w-full">
             <Skeleton className="h-8 sm:h-10 w-full" />
-            <div className="grid grid-cols-7 gap-1 sm:gap-2">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2 w-full">
               {Array.from({ length: 35 }).map((_, i) => (
                 <Skeleton key={i} className="h-8 sm:h-10 w-full" />
               ))}
             </div>
           </div>
         ) : (
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={handleMonthChange}
-            onMonthChange={handleMonthChange}
-            modifiers={modifiers}
-            modifiersClassNames={modifiersClassNames}
-            className={cn(
-              "rounded-md border w-full pointer-events-auto",
-              isMobile && "text-xs [&_.rdp-head_cell]:text-[10px] [&_.rdp-head_cell]:w-7 [&_.rdp-cell]:w-8 [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 [&_.rdp-day]:text-xs [&_.rdp-nav_button]:h-6 [&_.rdp-nav_button]:w-6"
-            )}
-            classNames={
-              isMobile
-                ? {
-                    head_cell: "text-[10px] w-7 h-7 p-1 font-medium",
-                    cell: "h-8 w-8 p-0.5",
-                    day: "h-8 w-8 text-xs p-0 font-normal touch-manipulation",
-                    nav_button: "h-6 w-6 p-0",
-                    caption_label: "text-xs",
-                  }
-                : undefined
-            }
-          />
+          <div className="w-full max-w-full overflow-hidden">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={handleMonthChange}
+              onMonthChange={handleMonthChange}
+              modifiers={modifiers}
+              modifiersClassNames={modifiersClassNames}
+              className={cn(
+                "rounded-md border w-full max-w-full",
+                isMobile && "text-xs [&_.rdp-head_cell]:text-[10px] [&_.rdp-head_cell]:w-7 [&_.rdp-cell]:w-8 [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 [&_.rdp-day]:text-xs [&_.rdp-nav_button]:h-6 [&_.rdp-nav_button]:w-6"
+              )}
+              classNames={
+                isMobile
+                  ? {
+                      head_cell: "text-[10px] w-7 h-7 p-1 font-medium",
+                      cell: "h-8 w-8 p-0.5",
+                      day: "h-8 w-8 text-xs p-0 font-normal touch-manipulation",
+                      nav_button: "h-6 w-6 p-0",
+                      caption_label: "text-xs",
+                    }
+                  : undefined
+              }
+            />
+          </div>
         )}
       </Card>
 
