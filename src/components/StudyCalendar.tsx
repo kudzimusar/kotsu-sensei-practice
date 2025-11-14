@@ -83,6 +83,7 @@ const StudyCalendar = () => {
     : new Date();
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialDate);
+  const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
   
   // Update URL params when date changes
   useEffect(() => {
@@ -239,11 +240,6 @@ const StudyCalendar = () => {
 
   // Get dates that have events for visual indicators
   const eventDates = combinedEvents.map(e => parseISO(e.date));
-  
-  // Custom day content to show event indicators
-  const modifiers = {
-    hasEvent: eventDates,
-  };
 
   const modifiersClassNames = {
     hasEvent: cn(
@@ -263,6 +259,13 @@ const StudyCalendar = () => {
   const goToToday = () => {
     const today = new Date();
     setSelectedDate(today);
+    // Update URL params immediately
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1;
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('month', month.toString());
+    newParams.set('year', year.toString());
+    setSearchParams(newParams, { replace: true });
   };
 
   // Render event form (used in both Dialog and Sheet)
@@ -406,7 +409,7 @@ const StudyCalendar = () => {
       )}
 
       {/* Calendar - Compact on Mobile */}
-      <Card className="p-2 sm:p-4 w-full max-w-full overflow-hidden">
+      <Card className="p-2 sm:p-3 w-full max-w-full overflow-hidden">
         {isLoadingEvents ? (
           <div className="space-y-2 sm:space-y-4 w-full">
             <Skeleton className="h-8 sm:h-10 w-full" />
@@ -417,7 +420,7 @@ const StudyCalendar = () => {
             </div>
           </div>
         ) : (
-          <div className="w-full max-w-full overflow-hidden">
+          <div className="w-full max-w-full overflow-x-hidden">
             <Calendar
               mode="single"
               selected={selectedDate}
@@ -427,14 +430,14 @@ const StudyCalendar = () => {
               modifiersClassNames={modifiersClassNames}
               className={cn(
                 "rounded-md border w-full max-w-full",
-                isMobile && "text-xs [&_.rdp-head_cell]:text-[10px] [&_.rdp-head_cell]:w-7 [&_.rdp-cell]:w-8 [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 [&_.rdp-day]:text-xs [&_.rdp-nav_button]:h-6 [&_.rdp-nav_button]:w-6"
+                isMobile && "text-xs [&_.rdp-head_cell]:text-[10px] [&_.rdp-cell]:h-8 [&_.rdp-day]:h-8 [&_.rdp-day]:text-xs [&_.rdp-nav_button]:h-6 [&_.rdp-nav_button]:w-6"
               )}
               classNames={
                 isMobile
                   ? {
-                      head_cell: "text-[10px] w-7 h-7 p-1 font-medium",
-                      cell: "h-8 w-8 p-0.5",
-                      day: "h-8 w-8 text-xs p-0 font-normal touch-manipulation",
+                      head_cell: "text-[10px] h-7 p-1 font-medium",
+                      cell: "h-8 p-0.5",
+                      day: "h-8 text-xs p-0 font-normal touch-manipulation",
                       nav_button: "h-6 w-6 p-0",
                       caption_label: "text-xs",
                     }
