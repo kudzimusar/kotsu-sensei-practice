@@ -14,6 +14,7 @@ serve(async (req) => {
     const HUME_API_KEY = Deno.env.get('HUME_API_KEY');
     
     if (!HUME_API_KEY) {
+      console.error('HUME_API_KEY is not configured');
       throw new Error('HUME_API_KEY is not configured');
     }
 
@@ -44,7 +45,7 @@ serve(async (req) => {
 
     console.log(`Generating TTS for ${text.length} characters with voice ${voiceId}`);
 
-    // Call Hume AI TTS API
+    // Call Hume AI TTS API - using stream/json endpoint
     const response = await fetch(HUME_API_URL, {
       method: 'POST',
       headers: {
@@ -92,12 +93,45 @@ serve(async (req) => {
       throw new Error(`Hume AI TTS error: ${response.status} - ${errorText}`);
     }
 
-    const audioBlob = await response.blob();
-    const arrayBuffer = await audioBlob.arrayBuffer();
-    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-    const audioDataUrl = `data:audio/mpeg;base64,${base64Audio}`;
-
+    // Get the audio response - Hume AI returns audio directly or in a specific format
+    // Try to get as blob first
+    const contentType = response.headers.get('content-type') || '';
+    console.log('Response content-type:', contentType);
+    
+    let audioDataUrl: string;
+    
+    if (contentType.includes('application/json')) {
+      // If JSON response, parse it
+      const jsonData = await response.json();
+      console.log('JSON response keys:', Object.keys(jsonData));
+      
+      if (jsonData.audio_base64) {
+        audioDataUrl = `data:audio/mpeg;base64,${jsonData.audio_base64}`;
+      } else if (jsonData.audio) {
+        audioDataUrl = `data:audio/mpeg;base64,${jsonData.audio}`;
+      } else if (jsonData.url) {
+        audioDataUrl = jsonData.url;
+      } else {
+        // Try to find any base64 audio field
+        const audioField = Object.values(jsonData).find((v: any) => 
+          typeof v === 'string' && v.length > 100
+        );
+        if (audioField) {
+          audioDataUrl = `data:audio/mpeg;base64,${audioField}`;
+        } else {
+          throw new Error('No audio data found in JSON response: ' + JSON.stringify(jsonData));
+        }
+      }
+    } else {
+      // Assume it's binary audio data
+      const audioBlob = await response.blob();
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      audioDataUrl = `data:audio/mpeg;base64,${base64Audio}`;
+    }
     const charactersUsed = text.length;
+
+    console.log(`Successfully generated TTS audio for ${charactersUsed} characters`);
 
     return new Response(
       JSON.stringify({
@@ -111,9 +145,11 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in text-to-speech function:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Error details:', errorMessage);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: errorMessage,
         characters_used: 0,
       }),
       {
