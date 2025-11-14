@@ -4,6 +4,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,11 +13,13 @@ import { Trash2, Plus, Edit2, Car, BookOpen, FileCheck, MapPin, Bell } from "luc
 import { format, isSameDay, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { getEvents, createEvent, updateEvent, deleteEvent } from "@/lib/supabase/events";
 import { getMonthEvents, getCombinedEvents, type CombinedCalendarEvent } from "@/lib/supabase/calendar";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 export type EventType = 'lesson' | 'test' | 'class' | 'practice';
 
@@ -70,6 +73,7 @@ const StudyCalendar = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  const isMobile = useIsMobile();
   
   // Get month/year from URL params or default to current month
   const urlMonth = searchParams.get('month');
@@ -242,7 +246,12 @@ const StudyCalendar = () => {
   };
 
   const modifiersClassNames = {
-    hasEvent: 'relative after:content-[""] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-primary after:rounded-full',
+    hasEvent: cn(
+      'relative after:content-[""] after:absolute after:bottom-0.5 sm:after:bottom-1 after:left-1/2 after:-translate-x-1/2',
+      isMobile 
+        ? 'after:w-1 after:h-1 after:bg-primary after:rounded-full' 
+        : 'after:w-1.5 after:h-1.5 after:bg-primary after:rounded-full'
+    ),
   };
 
   const handleMonthChange = (date: Date | undefined) => {
@@ -256,47 +265,139 @@ const StudyCalendar = () => {
     setSelectedDate(today);
   };
 
+  // Render event form (used in both Dialog and Sheet)
+  const renderEventForm = () => (
+    <div className="space-y-4 py-4">
+      <div>
+        <Label htmlFor="type">Event Type</Label>
+        <Select
+          value={newEvent.type}
+          onValueChange={(value) => setNewEvent({ ...newEvent, type: value as EventType })}
+        >
+          <SelectTrigger id="type">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {eventTypes.map(type => {
+              const Icon = type.icon;
+              return (
+                <SelectItem key={type.value} value={type.value}>
+                  <div className="flex items-center gap-2">
+                    <Icon className="w-4 h-4" />
+                    {type.label}
+                  </div>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label htmlFor="title">Event Title *</Label>
+        <Input
+          id="title"
+          placeholder="e.g., Highway driving practice"
+          value={newEvent.title}
+          onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="time">Time</Label>
+        <Input
+          id="time"
+          type="time"
+          value={newEvent.time}
+          onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="location">Location</Label>
+        <Input
+          id="location"
+          placeholder="e.g., Driving School HQ"
+          value={newEvent.location}
+          onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="instructor">Instructor/Contact</Label>
+        <Input
+          id="instructor"
+          placeholder="e.g., John Smith"
+          value={newEvent.instructor}
+          onChange={(e) => setNewEvent({ ...newEvent, instructor: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="description">Notes</Label>
+        <Textarea
+          id="description"
+          placeholder="Additional details..."
+          value={newEvent.description}
+          onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+          rows={3}
+        />
+      </div>
+
+      <div className="flex gap-2 pt-2">
+        <Button variant="outline" onClick={() => handleDialogChange(false)} className="flex-1">
+          Cancel
+        </Button>
+        <Button onClick={handleSaveEvent} className="flex-1">
+          {editingEvent ? 'Update Event' : 'Add Event'}
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
-      {/* Navigation Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-bold">
-            {selectedDate && format(selectedDate, 'MMMM yyyy')}
+    <div className="space-y-3 sm:space-y-6">
+      {/* Navigation Header - Compact on Mobile */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+          <h2 className="text-base sm:text-lg font-bold truncate">
+            {selectedDate && format(selectedDate, isMobile ? 'MMM yyyy' : 'MMMM yyyy')}
           </h2>
-          <Button variant="outline" size="sm" onClick={goToToday} className="h-8 px-3">
-            Today
+          <Button variant="outline" size="sm" onClick={goToToday} className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm shrink-0">
+            <span className="hidden sm:inline">Today</span>
+            <span className="sm:hidden">Now</span>
           </Button>
         </div>
-        <Link to={`/planner?${searchParams.toString()}`}>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Calendar className="w-4 h-4" />
-            <span className="hidden sm:inline">Grid View</span>
+        <Link to={`/planner?${searchParams.toString()}`} className="shrink-0">
+          <Button variant="outline" size="sm" className="gap-1 sm:gap-2 h-7 sm:h-8 px-2 sm:px-3">
+            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Grid</span>
           </Button>
         </Link>
       </div>
 
-      {/* Upcoming Events Summary */}
+      {/* Upcoming Events Summary - Compact on Mobile */}
       {allUpcomingEvents.length > 0 && (
-        <Card className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
-          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-            <Bell className="w-4 h-4 text-blue-600" />
-            Upcoming Events
+        <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
+          <h3 className="font-semibold text-xs sm:text-sm mb-2 sm:mb-3 flex items-center gap-1.5 sm:gap-2">
+            <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
+            <span className="hidden sm:inline">Upcoming Events</span>
+            <span className="sm:hidden">Upcoming</span>
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             {allUpcomingEvents.map(event => {
               const config = getEventTypeConfig(event.type as EventType);
               const Icon = config.icon;
               const isDriving = 'isDrivingSchedule' in event && event.isDrivingSchedule;
               return (
-                <div key={event.id} className="flex items-center gap-3 text-sm bg-white/80 rounded-lg p-2">
-                  <Badge className={`${config.badgeColor} text-white`}>
-                    {format(parseISO(event.date), 'MMM d')}
+                <div key={event.id} className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm bg-white/80 rounded-lg p-1.5 sm:p-2">
+                  <Badge className={cn(`${config.badgeColor} text-white text-[10px] sm:text-xs px-1.5 sm:px-2 shrink-0`)}>
+                    {format(parseISO(event.date), isMobile ? 'M/d' : 'MMM d')}
                   </Badge>
-                  <Icon className="w-4 h-4 text-muted-foreground" />
-                  <span className="flex-1 font-medium">{event.title}</span>
-                  {isDriving && <Badge variant="outline" className="text-[10px]">Schedule</Badge>}
-                  {event.time && <span className="text-xs text-muted-foreground font-semibold">{event.time}</span>}
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
+                  <span className="flex-1 font-medium truncate min-w-0">{event.title}</span>
+                  {isDriving && <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 shrink-0 hidden sm:inline-flex">Schedule</Badge>}
+                  {event.time && <span className="text-[10px] sm:text-xs text-muted-foreground font-semibold shrink-0">{event.time}</span>}
                 </div>
               );
             })}
@@ -304,14 +405,14 @@ const StudyCalendar = () => {
         </Card>
       )}
 
-      {/* Calendar */}
-      <Card className="p-4">
+      {/* Calendar - Compact on Mobile */}
+      <Card className="p-2 sm:p-4">
         {isLoadingEvents ? (
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <div className="grid grid-cols-7 gap-2">
+          <div className="space-y-2 sm:space-y-4">
+            <Skeleton className="h-8 sm:h-10 w-full" />
+            <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {Array.from({ length: 35 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
+                <Skeleton key={i} className="h-8 sm:h-10 w-full" />
               ))}
             </div>
           </div>
@@ -323,124 +424,66 @@ const StudyCalendar = () => {
             onMonthChange={handleMonthChange}
             modifiers={modifiers}
             modifiersClassNames={modifiersClassNames}
-            className="rounded-md border w-full pointer-events-auto"
+            className={cn(
+              "rounded-md border w-full pointer-events-auto",
+              isMobile && "text-sm [&_td]:p-1 [&_th]:p-1.5 [&_button]:h-8 [&_button]:text-xs"
+            )}
           />
         )}
       </Card>
 
-      {/* Selected Date Events */}
+      {/* Selected Date Events - Compact on Mobile */}
       {selectedDate && (
-        <Card className="p-5">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h3 className="font-bold text-lg">
-                {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+        <Card className="p-3 sm:p-5">
+          <div className="flex justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2">
+            <div className="min-w-0 flex-1">
+              <h3 className="font-bold text-sm sm:text-lg truncate">
+                {format(selectedDate, isMobile ? 'MMM d, yyyy' : 'EEEE, MMMM d, yyyy')}
               </h3>
-              <p className="text-sm text-muted-foreground">
-                {allEventsOnSelectedDate.length} event(s) scheduled
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                {allEventsOnSelectedDate.length} event{allEventsOnSelectedDate.length !== 1 ? 's' : ''}
               </p>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Event
-                </Button>
-              </DialogTrigger>
+            {isMobile ? (
+              <Sheet open={isDialogOpen} onOpenChange={handleDialogChange}>
+                <SheetTrigger asChild>
+                  <Button size="sm" className="h-8 px-2 shrink-0">
+                    <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline ml-1">Add</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[90vh] overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>{editingEvent ? 'Edit Event' : 'Add New Event'}</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-4">
+                    {renderEventForm()}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            ) : (
+              <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="shrink-0">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Event
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>
                     {editingEvent ? 'Edit Event' : 'Add New Event'}
                   </DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div>
-                    <Label htmlFor="type">Event Type</Label>
-                    <Select
-                      value={newEvent.type}
-                      onValueChange={(value) => setNewEvent({ ...newEvent, type: value as EventType })}
-                    >
-                      <SelectTrigger id="type">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {eventTypes.map(type => {
-                          const Icon = type.icon;
-                          return (
-                            <SelectItem key={type.value} value={type.value}>
-                              <div className="flex items-center gap-2">
-                                <Icon className="w-4 h-4" />
-                                {type.label}
-                              </div>
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="title">Event Title *</Label>
-                    <Input
-                      id="title"
-                      placeholder="e.g., Highway driving practice"
-                      value={newEvent.title}
-                      onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="time">Time</Label>
-                    <Input
-                      id="time"
-                      type="time"
-                      value={newEvent.time}
-                      onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      placeholder="e.g., Driving School HQ"
-                      value={newEvent.location}
-                      onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="instructor">Instructor/Contact</Label>
-                    <Input
-                      id="instructor"
-                      placeholder="e.g., John Smith"
-                      value={newEvent.instructor}
-                      onChange={(e) => setNewEvent({ ...newEvent, instructor: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="description">Notes</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Additional details..."
-                      value={newEvent.description}
-                      onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
-
-                  <Button onClick={handleSaveEvent} className="w-full">
-                    {editingEvent ? 'Update Event' : 'Add Event'}
-                  </Button>
-                </div>
+                {renderEventForm()}
               </DialogContent>
             </Dialog>
+            )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             {allEventsOnSelectedDate.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
+              <p className="text-xs sm:text-sm text-muted-foreground text-center py-6 sm:py-8">
                 No events scheduled for this day
               </p>
             ) : (
@@ -452,61 +495,67 @@ const StudyCalendar = () => {
                 return (
                   <div
                     key={event.id}
-                    className={`p-4 rounded-lg border-l-4 ${config.color} ${isCompleted ? 'opacity-70' : ''}`}
+                    className={cn(
+                      "p-2.5 sm:p-4 rounded-lg border-l-4",
+                      config.color,
+                      isCompleted && "opacity-70"
+                    )}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-start gap-2 flex-1">
-                        <Icon className="w-5 h-5 mt-0.5" />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold text-sm">{event.title}</p>
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex items-start gap-1.5 sm:gap-2 flex-1 min-w-0">
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5 mt-0.5 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                            <p className="font-semibold text-xs sm:text-sm truncate">{event.title}</p>
                             {isDrivingSchedule && (
-                              <Badge variant="outline" className="text-[10px]">Schedule</Badge>
+                              <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 shrink-0">Schedule</Badge>
                             )}
                             {isCompleted && (
-                              <Badge variant="outline" className="text-[10px] bg-green-50">✓ Completed</Badge>
+                              <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-green-50 shrink-0">✓</Badge>
                             )}
                           </div>
-                          <div className="flex flex-wrap gap-2 mt-1">
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-1">
                             {event.time && (
-                              <span className="text-xs opacity-75 flex items-center gap-1">
+                              <span className="text-[10px] sm:text-xs opacity-75 flex items-center gap-0.5 sm:gap-1">
                                 🕐 {event.time}
                               </span>
                             )}
                             {event.location && (
-                              <span className="text-xs opacity-75 flex items-center gap-1">
-                                <MapPin className="w-3 h-3" />
-                                {event.location}
+                              <span className="text-[10px] sm:text-xs opacity-75 flex items-center gap-0.5 sm:gap-1 truncate max-w-full">
+                                <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+                                <span className="truncate">{event.location}</span>
                               </span>
                             )}
                           </div>
                           {event.instructor && (
-                            <p className="text-xs opacity-75 mt-1">
+                            <p className="text-[10px] sm:text-xs opacity-75 mt-1 truncate">
                               👤 {event.instructor}
                             </p>
                           )}
-                          {event.description && (
-                            <p className="text-xs opacity-75 mt-2 whitespace-pre-wrap">
+                          {event.description && !isMobile && (
+                            <p className="text-xs opacity-75 mt-2 whitespace-pre-wrap line-clamp-2">
                               {event.description}
                             </p>
                           )}
                         </div>
                       </div>
                       {!isDrivingSchedule && (
-                        <div className="flex gap-1">
+                        <div className="flex gap-0.5 sm:gap-1 shrink-0">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEditEvent(event)}
+                            className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                           >
-                            <Edit2 className="w-4 h-4" />
+                            <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteEvent(event.id)}
+                            className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </Button>
                         </div>
                       )}
