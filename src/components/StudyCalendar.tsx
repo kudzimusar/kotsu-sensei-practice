@@ -268,7 +268,7 @@ const StudyCalendar = () => {
             Today
           </Button>
         </div>
-        <Link to={`/planner${searchParams.toString() ? `?${searchParams.toString()}` : ''}`}>
+        <Link to={`/planner?${searchParams.toString()}`}>
           <Button variant="outline" size="sm" className="gap-2">
             <Calendar className="w-4 h-4" />
             <span className="hidden sm:inline">Grid View</span>
