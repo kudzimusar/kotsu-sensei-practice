@@ -373,13 +373,13 @@ export function DrivingScheduleGrid({ initialMonth, initialYear }: DrivingSchedu
 
             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
               <>
-                <div key={`day-${day}`} className="sticky left-0 bg-background z-10 p-1 sm:p-2 font-medium border-r text-xs sm:text-sm">
-                  <div className={cn("leading-tight", isPastDate(day) && "text-muted-foreground")}>
-                    {day}<span className="hidden sm:inline"> {getDayOfWeek(day)}</span>
+                <div key={`day-${day}`} className="sticky left-0 bg-background z-10 p-0.5 sm:p-1 sm:p-2 font-medium border-r pr-1 sm:pr-2 text-[10px] sm:text-xs">
+                  <div className={cn("leading-tight font-semibold", isPastDate(day) && "text-muted-foreground")}>
+                    {day}
                   </div>
-                  <div className="sm:hidden text-[9px] opacity-70">{getDayOfWeek(day).slice(0, 3)}</div>
-                  {isHoliday(day) && <div className="text-[9px] sm:text-[10px] text-red-500">Holiday</div>}
-                  {isPastDate(day) && <div className="text-[9px] sm:text-[10px] text-muted-foreground">Past</div>}
+                  <div className="text-[8px] sm:text-[9px] opacity-70 mt-0.5">{getDayOfWeek(day).slice(0, 3)}</div>
+                  {isHoliday(day) && <div className="text-[8px] sm:text-[10px] text-red-500 mt-0.5">Holiday</div>}
+                  {isPastDate(day) && !isHoliday(day) && <div className="text-[8px] sm:text-[10px] text-muted-foreground mt-0.5">Past</div>}
                 </div>
                 {TIME_SLOTS.map(slot => {
                   const blocked = isBlocked(day, slot);
