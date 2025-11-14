@@ -15,11 +15,13 @@ CREATE INDEX IF NOT EXISTS idx_driving_schedule_user_date_status
   ON public.driving_school_schedule(user_id, date, status)
   WHERE user_id IS NOT NULL;
 
--- Partial index for upcoming events queries (most common query pattern)
+-- Index for upcoming events queries (most common query pattern)
 -- Optimizes the "show upcoming events" query that runs frequently
-CREATE INDEX IF NOT EXISTS idx_driving_schedule_upcoming 
-  ON public.driving_school_schedule(user_id, date, status) 
-  WHERE status = 'scheduled' AND date >= CURRENT_DATE;
+-- Note: Cannot use CURRENT_DATE in partial index as it's not immutable
+-- The regular index with status will help with filtering
+CREATE INDEX IF NOT EXISTS idx_driving_schedule_status_date 
+  ON public.driving_school_schedule(user_id, status, date) 
+  WHERE status = 'scheduled';
 
 -- Index for holiday lookups by date range
 -- Used when checking if dates are holidays for calendar blocking
