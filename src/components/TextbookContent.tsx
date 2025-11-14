@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { textbookChapters, terminology, threeElements } from "@/data/lectureData";
 import bookCover from "@/assets/book-cover.jpg";
+import { TTSButton } from "@/components/ui/tts-button";
 
 interface TextbookContentProps {
   textbookId: string;
@@ -186,7 +187,14 @@ export const TextbookContent = ({ textbookId, onBack }: TextbookContentProps) =>
                   <div className="space-y-3">
                     {terms.map((term, idx) => (
                       <div key={idx} className="p-4 bg-muted/50 rounded-lg">
-                        <h4 className="font-semibold text-base mb-2">{term.term}</h4>
+                        <div className="flex items-start gap-2 mb-2">
+                          <h4 className="font-semibold text-base flex-1">{term.term}</h4>
+                          <TTSButton 
+                            text={`${term.term}: ${term.definition}`}
+                            size="sm" 
+                            variant="ghost" 
+                          />
+                        </div>
                         <p className="text-sm text-muted-foreground">{term.definition}</p>
                       </div>
                     ))}
@@ -210,7 +218,14 @@ export const TextbookContent = ({ textbookId, onBack }: TextbookContentProps) =>
                     <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
                       {idx + 1}
                     </div>
-                    <h3 className="text-xl font-bold">{element.name}</h3>
+                    <div className="flex items-center gap-2 flex-1">
+                      <h3 className="text-xl font-bold">{element.name}</h3>
+                      <TTSButton 
+                        text={`${element.name}: ${element.description}`}
+                        size="sm" 
+                        variant="ghost" 
+                      />
+                    </div>
                   </div>
                   <p className="text-muted-foreground mb-4">{element.description}</p>
                   <div className="space-y-2">

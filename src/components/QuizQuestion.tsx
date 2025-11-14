@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, XCircle, ChevronRight, X, Clock } from "lucide-react";
 import type { Question } from "@/data/questions";
 import { QuestionImage } from "@/components/QuestionImage";
+import { TTSButton } from "@/components/ui/tts-button";
 
 interface QuizQuestionProps {
   question: Question;
@@ -107,7 +108,10 @@ const QuizQuestion = ({
         </div>
 
         <div className="mb-4 md:mb-5">
-          <p className="text-xs text-muted-foreground mb-1.5 md:mb-2">{question.test}</p>
+          <div className="flex items-start gap-2 mb-1.5 md:mb-2">
+            <p className="text-xs text-muted-foreground flex-1">{question.test}</p>
+            <TTSButton text={question.question} size="sm" variant="ghost" />
+          </div>
           <h2 className="text-sm md:text-base leading-snug md:leading-relaxed font-medium text-card-foreground">
             {question.question}
           </h2>
@@ -169,9 +173,12 @@ const QuizQuestion = ({
                 </div>
               </div>
               <div className="pl-7 md:pl-9">
-                <p className="text-xs md:text-sm text-card-foreground leading-relaxed">
-                  {question.explanation}
-                </p>
+                <div className="flex items-start gap-2 mb-2">
+                  <p className="text-xs md:text-sm text-card-foreground leading-relaxed flex-1">
+                    {question.explanation}
+                  </p>
+                  <TTSButton text={question.explanation} size="sm" variant="ghost" />
+                </div>
               </div>
             </Card>
 

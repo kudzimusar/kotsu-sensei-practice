@@ -35,6 +35,7 @@ import { DrivingScheduleGrid } from "@/components/DrivingScheduleGrid";
 import BottomNav from "@/components/BottomNav";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { TTSButton } from "@/components/ui/tts-button";
 
 const Lectures = () => {
   const { user } = useAuth();
@@ -297,11 +298,18 @@ const Lectures = () => {
                           <div key={lecture.id} className="p-3 rounded-lg border-2 hover:border-primary transition-colors bg-card">
                             <div className="flex flex-col gap-3">
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-1">
                                   <Badge variant="outline" className="text-sm px-2 py-0.5 shrink-0">
                                     L{lecture.lecture_number}
                                   </Badge>
-                                  <h3 className="font-semibold text-sm">{lecture.stage}</h3>
+                                  <div className="flex items-center gap-2 flex-1">
+                                    <h3 className="font-semibold text-sm">{lecture.stage}</h3>
+                                    <TTSButton 
+                                      text={`Lecture ${lecture.lecture_number}: ${lecture.stage}`}
+                                      size="sm" 
+                                      variant="ghost" 
+                                    />
+                                  </div>
                                 </div>
                                 <div onClick={() => handleStatusToggle(lecture.lecture_number, lecture.status)} className="shrink-0">
                                   {getStatusBadge(lecture.status)}
@@ -352,7 +360,14 @@ const Lectures = () => {
                                     
                                     {material.key_concepts && material.key_concepts.length > 0 && (
                                       <div>
-                                        <h4 className="font-semibold mb-1.5 text-xs sm:text-sm">Key Concepts:</h4>
+                                        <div className="flex items-center gap-2 mb-1.5">
+                                          <h4 className="font-semibold text-xs sm:text-sm">Key Concepts:</h4>
+                                          <TTSButton 
+                                            text={`Key concepts: ${material.key_concepts.join('. ')}`}
+                                            size="sm" 
+                                            variant="ghost" 
+                                          />
+                                        </div>
                                         <ul className="list-disc list-inside space-y-0.5">
                                           {material.key_concepts.map((concept, idx) => (
                                             <li key={idx} className="text-xs sm:text-sm">{concept}</li>

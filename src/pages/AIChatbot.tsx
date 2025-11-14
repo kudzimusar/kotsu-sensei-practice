@@ -8,6 +8,7 @@ import { useAIChat } from '@/hooks/useAIChat';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { TTSButton } from '@/components/ui/tts-button';
 
 const SUGGESTED_QUESTIONS = [
   "What are the speed limits in different areas in Japan?",
@@ -134,16 +135,35 @@ const AIChatbot = () => {
                         : 'prose-slate'
                     }`}>
                       {message.role === 'user' ? (
-                        <p className="whitespace-pre-wrap break-words m-0">{message.content}</p>
+                        <div className="flex items-start gap-2">
+                          <p className="whitespace-pre-wrap break-words m-0 flex-1">{message.content}</p>
+                          {message.content && (
+                            <TTSButton 
+                              text={message.content}
+                              size="sm" 
+                              variant="ghost"
+                              className="text-white hover:bg-blue-700"
+                            />
+                          )}
+                        </div>
                       ) : message.sections ? (
                         // Structured section-based response
                         <div className="space-y-6">
-                          {message.sections.map((section, sectionIdx) => (
+                          {message.sections.map((section, sectionIdx) => {
+                            const sectionText = `${section.heading}. ${section.content}${section.summary ? ` Summary: ${section.summary}` : ''}`;
+                            return (
                             <div key={sectionIdx} className="border-l-4 border-blue-500 pl-4">
                               {/* Heading */}
-                              <h3 className="text-base font-bold text-gray-900 mb-3">
-                                {section.heading}
-                              </h3>
+                              <div className="flex items-start gap-2 mb-3">
+                                <h3 className="text-base font-bold text-gray-900 flex-1">
+                                  {section.heading}
+                                </h3>
+                                <TTSButton 
+                                  text={sectionText}
+                                  size="sm" 
+                                  variant="ghost" 
+                                />
+                              </div>
                               
                               {/* Image */}
                               {section.image && (
@@ -188,13 +208,16 @@ const AIChatbot = () => {
                                 </div>
                               )}
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         // Fallback to plain markdown for backward compatibility
-                        <ReactMarkdown 
-                          remarkPlugins={[remarkGfm]}
-                          components={{
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              components={{
                             h1: ({node, ...props}) => <h1 className="text-lg font-bold mt-4 mb-2" {...props} />,
                             h2: ({node, ...props}) => <h2 className="text-base font-bold mt-3 mb-2" {...props} />,
                             h3: ({node, ...props}) => <h3 className="text-sm font-bold mt-2 mb-1" {...props} />,
@@ -216,9 +239,18 @@ const AIChatbot = () => {
                               <blockquote className="border-l-4 border-blue-500 pl-4 my-2 italic" {...props} />
                             ),
                           }}
-                        >
-                          {message.content || ''}
-                        </ReactMarkdown>
+                            >
+                              {message.content || ''}
+                            </ReactMarkdown>
+                          </div>
+                          {message.content && (
+                            <TTSButton 
+                              text={message.content}
+                              size="sm" 
+                              variant="ghost" 
+                            />
+                          )}
+                        </div>
                       )}
                     </div>
                     <div
