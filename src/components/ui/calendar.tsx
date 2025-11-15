@@ -29,8 +29,8 @@ function Calendar({ className, classNames, showOutsideDays = true, numberOfMonth
         head_row: "flex w-full",
         head_cell: "text-muted-foreground rounded-md font-normal text-[0.8rem] flex-1 min-w-0 text-center",
         row: "flex w-full mt-2",
-        cell: "h-9 flex-1 min-w-0 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-        day: cn(buttonVariants({ variant: "ghost" }), "h-9 w-full p-0 font-normal aria-selected:opacity-100"),
+        cell: "h-11 sm:h-12 flex-1 min-w-0 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+        day: cn(buttonVariants({ variant: "ghost" }), "h-11 sm:h-12 w-full p-0 font-normal aria-selected:opacity-100 text-base sm:text-lg"),
         day_range_end: "day-range-end",
         day_selected:
           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
