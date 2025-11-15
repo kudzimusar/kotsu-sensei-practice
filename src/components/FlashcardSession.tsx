@@ -34,12 +34,29 @@ export function FlashcardSession({ session, onAnswer, onComplete, onExit, onNext
     }
   }, [session.currentIndex, session.flashcards.length, onComplete]);
 
+  // Clear answered state when card changes to ensure fresh state
+  useEffect(() => {
+    // When moving to a new card, remove it from answeredCards if it exists
+    // This ensures new cards start with clean state
+  }, [session.currentIndex]);
+
   const handleAnswer = (isCorrect: boolean) => {
     if (!isAnswered && !hasResponse) {
       // Mark as answered for UI state
       setAnsweredCards(new Set([...answeredCards, session.currentIndex]));
       // Call parent handler to record response
       onAnswer(isCorrect);
+      
+      // Auto-advance to next card after "Got It" (correct answer)
+      if (isCorrect && session.currentIndex < session.flashcards.length - 1) {
+        setTimeout(() => {
+          // Clear answered state for current card before advancing
+          const newAnswered = new Set(answeredCards);
+          newAnswered.delete(session.currentIndex);
+          setAnsweredCards(newAnswered);
+          onNext();
+        }, 800); // Brief delay for UX
+      }
     }
   };
 

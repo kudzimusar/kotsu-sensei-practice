@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { QuestionImage } from './QuestionImage';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
@@ -23,6 +23,12 @@ interface FlashcardProps {
 export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered = false }: FlashcardProps) {
   const [isFlipped, setIsFlipped] = useState(showAnswer);
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  // Reset state when flashcard changes (new card loaded)
+  useEffect(() => {
+    setIsFlipped(false);
+    setImageLoaded(false);
+  }, [flashcard.imageUrl, flashcard.question]);
 
   const handleFlip = () => {
     if (!isFlipped && !isAnswered) {
@@ -76,11 +82,20 @@ export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered 
                   <img
                     src={flashcard.imageUrl}
                     alt={flashcard.question}
-                    className="w-full max-h-64 object-contain rounded-lg"
+                    className={`w-full max-h-64 object-contain rounded-lg transition-opacity ${
+                      imageLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
                     onLoad={() => setImageLoaded(true)}
-                    onError={() => setImageLoaded(true)}
-                    style={{ display: imageLoaded ? 'block' : 'none' }}
+                    onError={() => {
+                      setImageLoaded(true); // Still mark as loaded even on error
+                    }}
+                    key={flashcard.imageUrl} // Force reload on URL change
                   />
+                  {!imageLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Skeleton className="w-full h-64 rounded-lg" />
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
