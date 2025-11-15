@@ -39,29 +39,33 @@ const eventTypes = [
     value: 'lesson' as EventType, 
     label: 'Driving Lesson', 
     icon: Car,
-    color: 'bg-blue-100 border-blue-500 text-blue-900',
-    badgeColor: 'bg-blue-500'
+    color: 'bg-event-lesson-bg border-event-lesson text-event-lesson',
+    badgeColor: 'bg-event-lesson',
+    dotColor: 'bg-event-lesson'
   },
   { 
     value: 'test' as EventType, 
     label: 'Driving Test', 
     icon: FileCheck,
-    color: 'bg-red-100 border-red-500 text-red-900',
-    badgeColor: 'bg-red-500'
+    color: 'bg-event-test-bg border-event-test text-event-test',
+    badgeColor: 'bg-event-test',
+    dotColor: 'bg-event-test'
   },
   { 
     value: 'class' as EventType, 
     label: 'Theory Class', 
     icon: BookOpen,
-    color: 'bg-purple-100 border-purple-500 text-purple-900',
-    badgeColor: 'bg-purple-500'
+    color: 'bg-event-class-bg border-event-class text-event-class',
+    badgeColor: 'bg-event-class',
+    dotColor: 'bg-event-class'
   },
   { 
     value: 'practice' as EventType, 
     label: 'Practice Session', 
     icon: Car,
-    color: 'bg-green-100 border-green-500 text-green-900',
-    badgeColor: 'bg-green-500'
+    color: 'bg-event-practice-bg border-event-practice text-event-practice',
+    badgeColor: 'bg-event-practice',
+    dotColor: 'bg-event-practice'
   },
 ];
 
@@ -278,48 +282,50 @@ const StudyCalendar = () => {
     });
   };
 
-  // Enhanced modifiers for better visual indicators
+  // Generate event-type-specific modifiers for colored dots
+  const eventModifiers: any = {};
+  const eventModifiersClassNames: any = {};
+  
+  events?.forEach((event) => {
+    const eventDate = new Date(event.date);
+    const eventType = (event as any).type || 'lesson';
+    const modifierKey = `event_${eventType}_${event.id}`;
+    
+    if (!eventModifiers[modifierKey]) {
+      eventModifiers[modifierKey] = [];
+    }
+    eventModifiers[modifierKey].push(eventDate);
+    
+    const config = getEventTypeConfig(eventType);
+    eventModifiersClassNames[modifierKey] = cn(
+      'relative',
+      `after:content-[""] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2`,
+      config.dotColor,
+      isMobile ? 'after:w-1.5 after:h-1.5 after:rounded-full' : 'after:w-2 after:h-2 after:rounded-full'
+    );
+  });
+
   const modifiers = {
-    hasEvent: eventDates,
-    hasMultipleEvents: eventDates.filter(date => {
-      const events = getEventsForDate(date);
-      return events.length > 1;
-    }),
-    hasTest: eventDates.filter(date => {
-      const events = getEventsForDate(date);
-      return events.some(e => {
-        const eventType = (e as any).type || (e as any).event_type;
-        return eventType === 'test';
-      });
-    }),
-    hasDriving: eventDates.filter(date => {
-      const events = getEventsForDate(date);
-      return events.some(e => {
-        const eventType = (e as any).type || (e as any).event_type;
-        return eventType === 'lesson' || eventType === 'driving';
-      });
-    }),
+    hasEvent: events?.map(event => new Date(event.date)) || [],
+    hasMultipleEvents: events?.reduce((acc, event) => {
+      const date = new Date(event.date);
+      const count = events.filter(e => isSameDay(new Date(e.date), date)).length;
+      if (count > 1) acc.push(date);
+      return acc;
+    }, [] as Date[]) || [],
+    hasTest: events?.filter(event => (event as any).type === 'test' || (event as any).event_type === 'test').map(event => new Date(event.date)) || [],
+    hasDriving: events?.filter(event => (event as any).type === 'lesson' || (event as any).event_type === 'lesson').map(event => new Date(event.date)) || [],
     isToday: [new Date()],
+    ...eventModifiers,
   };
 
   const modifiersClassNames = {
-    hasEvent: cn(
-      'relative',
-      'after:content-[""] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2',
-      isMobile 
-        ? 'after:w-1.5 after:h-1.5 after:bg-primary after:rounded-full' 
-        : 'after:w-2 after:h-2 after:bg-primary after:rounded-full'
-    ),
-    hasMultipleEvents: cn(
-      'relative',
-      'after:content-[""] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2',
-      isMobile 
-        ? 'after:w-2 after:h-2 after:bg-primary after:rounded-full' 
-        : 'after:w-2.5 after:h-2.5 after:bg-primary after:rounded-full'
-    ),
-    hasTest: 'bg-red-50/70 border-red-300/60 border',
-    hasDriving: 'bg-blue-50/70 border-blue-300/60 border',
-    isToday: 'ring-2 ring-primary ring-offset-2 font-bold bg-primary/10',
+    hasEvent: 'relative',
+    hasMultipleEvents: 'relative',
+    hasTest: 'bg-event-test-bg/50 border-event-test/40 border',
+    hasDriving: 'bg-event-lesson-bg/50 border-event-lesson/40 border',
+    isToday: 'ring-2 ring-primary ring-offset-1 font-bold bg-primary/10',
+    ...eventModifiersClassNames,
   };
 
   const handleMonthChange = (date: Date | undefined) => {
@@ -648,7 +654,7 @@ const StudyCalendar = () => {
               </div>
             </div>
           ) : (
-            <div className="w-full max-w-full overflow-x-hidden">
+            <div className="w-full max-w-full overflow-x-hidden relative">
               <Calendar
                 mode="single"
                 selected={selectedDate}
@@ -658,20 +664,32 @@ const StudyCalendar = () => {
                 modifiersClassNames={modifiersClassNames}
                 className={cn(
                   "rounded-lg w-full max-w-full",
-                  isMobile && "text-sm [&_.rdp-head_cell]:text-xs [&_.rdp-cell]:h-10 [&_.rdp-day]:h-10 [&_.rdp-day]:text-sm [&_.rdp-nav_button]:h-8 [&_.rdp-nav_button]:w-8"
+                  isMobile && "text-sm [&_.rdp-head_cell]:text-xs [&_.rdp-cell]:h-12 [&_.rdp-day]:h-12 [&_.rdp-day]:text-base [&_.rdp-nav_button]:h-8 [&_.rdp-nav_button]:w-8"
                 )}
                 classNames={
                   isMobile
                     ? {
                         head_cell: "text-xs h-8 p-1 font-semibold text-muted-foreground",
-                        cell: "h-10 p-0.5",
-                        day: "h-10 text-sm p-0 font-medium touch-manipulation hover:bg-primary/10 transition-colors rounded-lg",
+                        cell: "h-12 p-0.5 relative",
+                        day: "h-12 text-base p-0 font-medium touch-manipulation hover:bg-primary/10 transition-colors rounded-lg relative",
                         nav_button: "h-8 w-8 p-0 hover:bg-primary/10",
-                        caption_label: "text-sm font-bold",
+                        caption_label: "text-base font-bold",
                       }
-                    : undefined
+                    : {
+                        cell: "relative",
+                        day: "relative",
+                      }
                 }
               />
+              {/* Custom event dots overlay */}
+              <div className="absolute inset-0 pointer-events-none">
+                {selectedDate && events?.map((event) => {
+                  const eventDate = new Date(event.date);
+                  const dayIndex = eventDate.getDate();
+                  const config = getEventTypeConfig((event as any).type || 'lesson');
+                  return null; // Placeholder - dots now handled via modifiers
+                })}
+              </div>
             </div>
           )}
         </Card>

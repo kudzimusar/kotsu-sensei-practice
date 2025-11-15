@@ -53,6 +53,23 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
+    /* Event type colors */
+    --event-lesson: 217 91% 60%;
+    --event-lesson-foreground: 0 0% 100%;
+    --event-lesson-bg: 217 91% 95%;
+    
+    --event-test: 0 84% 60%;
+    --event-test-foreground: 0 0% 100%;
+    --event-test-bg: 0 84% 95%;
+    
+    --event-class: 262 83% 58%;
+    --event-class-foreground: 0 0% 100%;
+    --event-class-bg: 262 83% 95%;
+    
+    --event-practice: 160 84% 39%;
+    --event-practice-foreground: 0 0% 100%;
+    --event-practice-bg: 160 84% 95%;
+
     /* Custom design tokens */
     --gradient-primary: linear-gradient(135deg, hsl(210 90% 48%) 0%, hsl(195 85% 50%) 100%);
     --gradient-success: linear-gradient(135deg, hsl(140 70% 45%) 0%, hsl(140 70% 55%) 100%);
@@ -108,6 +125,19 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Event type colors - dark mode */
+    --event-lesson: 217 91% 65%;
+    --event-lesson-bg: 217 60% 20%;
+    
+    --event-test: 0 84% 65%;
+    --event-test-bg: 0 60% 20%;
+    
+    --event-class: 262 83% 68%;
+    --event-class-bg: 262 60% 20%;
+    
+    --event-practice: 160 84% 45%;
+    --event-practice-bg: 160 60% 20%;
 
     --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.3);
     --shadow-button: 0 4px 20px rgba(26, 95, 180, 0.25);
