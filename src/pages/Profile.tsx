@@ -123,7 +123,6 @@ const Profile = () => {
   };
 
   const menuItems = [
-    { icon: QrCode, label: "Share & Earn", description: "Refer friends & earn $1/install", onClick: () => navigate('/share-referral') },
     { icon: Settings, label: "Settings", description: "App preferences", onClick: () => setSettingsOpen(true) },
     { icon: Bell, label: "Notifications", description: "Manage alerts", onClick: () => setNotificationsOpen(true) },
     { icon: Target, label: "Study Goals", description: "Set daily targets", onClick: () => setGoalsOpen(true) },
@@ -171,7 +170,7 @@ const Profile = () => {
         {/* User Card */}
         <section className="mb-6">
           <div className="bg-white rounded-2xl shadow-md p-6">
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-4 mb-4">
               <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
                 <span className="text-blue-600 font-bold text-lg">{userStats.name[0]}</span>
               </div>
@@ -180,6 +179,15 @@ const Profile = () => {
                 <p className="text-xs text-muted-foreground">Driving Test Candidate</p>
               </div>
             </div>
+
+            {/* QR Code Share Button - WhatsApp Business Style */}
+            <button
+              onClick={() => navigate('/share-referral')}
+              className="w-full flex items-center justify-center gap-2 py-3 mb-4 bg-primary/10 hover:bg-primary/15 text-primary rounded-xl transition-colors"
+            >
+              <QrCode className="w-5 h-5" />
+              <span className="font-semibold text-sm">Share & Earn Commission</span>
+            </button>
 
             {/* Exam Date */}
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">

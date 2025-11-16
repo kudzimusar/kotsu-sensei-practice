@@ -18,6 +18,7 @@ const ShareReferral = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+  const qrModalCanvasRef = useRef<HTMLCanvasElement>(null);
   const [qrGenerated, setQrGenerated] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
@@ -38,19 +39,37 @@ const ShareReferral = () => {
   const shareUrl = `${PWA_BASE_URL}/?ref=${referralCode}`;
   const shortUrl = `kotsu.me/${referralCode}`;
 
-  // Generate QR Code
+  // Generate QR Code for main canvas
   useEffect(() => {
-    if (qrCanvasRef.current && !qrGenerated && referralCode) {
+    if (qrCanvasRef.current && referralCode && !qrGenerated) {
       QRCode.toCanvas(qrCanvasRef.current, shareUrl, {
         width: 280,
         margin: 2,
         color: { dark: '#1a73e8', light: '#ffffff' }
       }, (err) => {
-        if (err) console.error(err);
-        else setQrGenerated(true);
+        if (err) {
+          console.error('QR Code generation error:', err);
+        } else {
+          setQrGenerated(true);
+        }
       });
     }
-  }, [shareUrl, qrGenerated, referralCode]);
+  }, [shareUrl, referralCode, qrGenerated]);
+
+  // Generate QR Code for modal when opened
+  useEffect(() => {
+    if (showQR && qrModalCanvasRef.current && referralCode) {
+      QRCode.toCanvas(qrModalCanvasRef.current, shareUrl, {
+        width: 280,
+        margin: 2,
+        color: { dark: '#1a73e8', light: '#ffffff' }
+      }, (err) => {
+        if (err) {
+          console.error('QR Code modal generation error:', err);
+        }
+      });
+    }
+  }, [showQR, shareUrl, referralCode]);
 
   const handleCopy = async () => {
     try {
@@ -90,15 +109,26 @@ const ShareReferral = () => {
   };
 
   const downloadQR = () => {
-    if (qrCanvasRef.current) {
-      const link = document.createElement('a');
-      link.download = `kotsu-sensei-qr-${referralCode}.png`;
-      link.href = qrCanvasRef.current.toDataURL();
-      link.click();
-      toast({
-        title: "QR Code Downloaded",
-        description: "Share it anywhere!",
-      });
+    const canvas = qrModalCanvasRef.current || qrCanvasRef.current;
+    if (canvas) {
+      try {
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = `kotsu-sensei-qr-${referralCode}.png`;
+        link.href = dataUrl;
+        link.click();
+        toast({
+          title: "QR Code Downloaded",
+          description: "Share it anywhere!",
+        });
+      } catch (err) {
+        console.error('Download error:', err);
+        toast({
+          title: "Download failed",
+          description: "Please try again",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -176,9 +206,9 @@ const ShareReferral = () => {
           </button>
         </div>
 
-        {/* QR Canvas (Hidden) */}
-        <div className="hidden">
-          <canvas ref={qrCanvasRef} />
+        {/* QR Canvas (Hidden but rendered) */}
+        <div className="sr-only" style={{ position: 'absolute', left: '-9999px' }}>
+          <canvas ref={qrCanvasRef} width={280} height={280} />
         </div>
 
         {/* Info Text */}
@@ -199,8 +229,8 @@ const ShareReferral = () => {
             <DialogTitle className="text-center">Scan QR Code</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
-            <div className="p-4 bg-white rounded-xl">
-              <canvas ref={qrCanvasRef} />
+            <div className="p-4 bg-white rounded-xl shadow-sm">
+              <canvas ref={qrModalCanvasRef} width={280} height={280} />
             </div>
             <p className="text-sm text-muted-foreground text-center">
               Scan this code to install {APP_NAME}
