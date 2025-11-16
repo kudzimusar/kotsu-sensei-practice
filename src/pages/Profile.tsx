@@ -1,5 +1,5 @@
 import BottomNav from "@/components/BottomNav";
-import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Info, FileText, Shield, BookOpen, Car, Clock } from "lucide-react";
+import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Info, FileText, Shield, BookOpen, Car, Clock, QrCode } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { format, differenceInDays, parseISO, isAfter } from "date-fns";
@@ -123,6 +123,7 @@ const Profile = () => {
   };
 
   const menuItems = [
+    { icon: QrCode, label: "Share & Earn", description: "Refer friends & earn $1/install", onClick: () => navigate('/share-referral') },
     { icon: Settings, label: "Settings", description: "App preferences", onClick: () => setSettingsOpen(true) },
     { icon: Bell, label: "Notifications", description: "Manage alerts", onClick: () => setNotificationsOpen(true) },
     { icon: Target, label: "Study Goals", description: "Set daily targets", onClick: () => setGoalsOpen(true) },

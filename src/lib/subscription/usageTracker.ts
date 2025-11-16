@@ -29,7 +29,7 @@ export async function checkAndIncrementUsage(
     throw error;
   }
 
-  return data as UsageCheckResult;
+  return data as unknown as UsageCheckResult;
 }
 
 /**
