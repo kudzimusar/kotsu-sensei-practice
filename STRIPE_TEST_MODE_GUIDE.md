@@ -29,28 +29,32 @@ Use these **Stripe test card numbers** in Test Mode:
 
 #### **Successful Payment:**
 - **Card Number**: `4242 4242 4242 4242`
-- **Expiry**: Any future date (e.g., `12/25`)
-- **CVC**: Any 3 digits (e.g., `123`)
-- **ZIP**: Any 5 digits (e.g., `12345`)
+- **Expiry (MM/YY)**: Any future date (e.g., `12/25`, `01/26`, `12/30`)
+- **CVC**: Any 3 digits (e.g., `123`, `456`, `999`)
+- **Cardholder Name**: Any name (e.g., `Test User`, `John Doe`, `Your Name`)
+- **ZIP/Postal Code**: Any 5 digits (e.g., `12345`, `10000`) - Optional for some countries
 
 #### **Requires Authentication (3D Secure):**
 - **Card Number**: `4000 0025 0000 3155`
-- **Expiry**: Any future date
-- **CVC**: Any 3 digits
+- **Expiry (MM/YY)**: Any future date (e.g., `12/25`)
+- **CVC**: Any 3 digits (e.g., `123`)
+- **Cardholder Name**: Any name
 - **ZIP**: Any 5 digits
 - **Note**: Will prompt for authentication
 
 #### **Declined Card:**
 - **Card Number**: `4000 0000 0000 0002`
-- **Expiry**: Any future date
-- **CVC**: Any 3 digits
+- **Expiry (MM/YY)**: Any future date (e.g., `12/25`)
+- **CVC**: Any 3 digits (e.g., `123`)
+- **Cardholder Name**: Any name
 - **ZIP**: Any 5 digits
 - **Note**: Will be declined for testing error handling
 
 #### **Insufficient Funds:**
 - **Card Number**: `4000 0000 0000 9995`
-- **Expiry**: Any future date
-- **CVC**: Any 3 digits
+- **Expiry (MM/YY)**: Any future date (e.g., `12/25`)
+- **CVC**: Any 3 digits (e.g., `123`)
+- **Cardholder Name**: Any name
 - **ZIP**: Any 5 digits
 
 ---
@@ -59,9 +63,10 @@ Use these **Stripe test card numbers** in Test Mode:
 
 ### **JCB (Japan Credit Bureau):**
 - **Card Number**: `3530 1113 3330 0000`
-- **Expiry**: Any future date
-- **CVC**: Any 3 digits
-- **ZIP**: Any 5 digits
+- **Expiry (MM/YY)**: Any future date (e.g., `12/25`)
+- **CVC**: Any 3 digits (e.g., `123`)
+- **Cardholder Name**: Any name
+- **ZIP**: Any 5 digits (e.g., `100-0001` for Japan)
 
 ### **PayPay Test:**
 - PayPay requires a Japan Stripe account
