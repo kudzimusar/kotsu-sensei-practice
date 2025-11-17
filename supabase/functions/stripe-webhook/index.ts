@@ -119,7 +119,26 @@ async function handleCheckoutCompleted(
 ) {
   const userId = session.metadata?.user_id;
   const planType = session.metadata?.plan_type;
+  const bookingId = session.metadata?.booking_id;
 
+  // Handle booking payments
+  if (bookingId) {
+    await supabase
+      .from("bookings")
+      .update({
+        payment_status: "paid",
+        status: "confirmed",
+        stripe_payment_intent_id: session.payment_intent as string,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", bookingId)
+      .eq("user_id", userId);
+
+    console.log("Booking payment completed:", bookingId);
+    return;
+  }
+
+  // Handle subscription payments
   if (!userId || !planType) {
     console.error("Missing metadata in checkout session");
     return;
