@@ -26,12 +26,16 @@ const Auth = () => {
 
   // Only redirect if user is logged in and we haven't redirected yet
   useEffect(() => {
-    if (!authLoading && user && !hasRedirected.current) {
+    // Wait for auth to finish loading
+    if (authLoading) {
+      return;
+    }
+    
+    // If user is logged in and we're on the auth page, redirect them
+    if (user && !hasRedirected.current && location.pathname === "/auth") {
       hasRedirected.current = true;
-      // Only redirect if we're not already going to the target
-      if (location.pathname === "/auth") {
-        navigate(from);
-      }
+      // Use replace to prevent back button from going to auth page
+      navigate(from, { replace: true });
     }
   }, [authLoading, user, navigate, from, location.pathname]);
 
@@ -115,6 +119,7 @@ const Auth = () => {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="John Doe"
+                autoComplete="name"
                 required={isSignUp}
               />
             </div>
@@ -128,6 +133,7 @@ const Auth = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
+              autoComplete="email"
               required
             />
           </div>
@@ -140,6 +146,7 @@ const Auth = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              autoComplete={isSignUp ? "new-password" : "current-password"}
               required
               minLength={6}
             />

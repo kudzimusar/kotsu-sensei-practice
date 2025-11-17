@@ -9,10 +9,20 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
-    if (!loading && !user && !guestId) {
+    // Only redirect if:
+    // 1. Auth has finished loading (loading === false)
+    // 2. User is definitely not logged in (user === null)
+    // 3. No guest session exists (guestId === null/undefined)
+    // This prevents race conditions where loading finishes before user is set
+    if (loading) {
+      return; // Wait for auth to finish loading
+    }
+    
+    if (!user && !guestId) {
       // Preserve the intended destination so user can return after login
       navigate("/auth", { 
-        state: { from: location.pathname + location.search } 
+        state: { from: location.pathname + location.search },
+        replace: true // Use replace to prevent back button issues
       });
     }
   }, [user, loading, guestId, navigate, location]);
