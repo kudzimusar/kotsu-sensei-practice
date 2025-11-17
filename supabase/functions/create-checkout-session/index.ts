@@ -184,10 +184,37 @@ serve(async (req) => {
       );
     }
 
+    // Check for existing active subscription FIRST - prevent duplicates
+    const { data: existingActiveSubscription } = await supabaseClient
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    // Prevent duplicate active subscriptions
+    if (existingActiveSubscription) {
+      console.log("User already has active subscription:", existingActiveSubscription.id);
+      return new Response(
+        JSON.stringify({ 
+          error: "You already have an active subscription. Please manage it from your account page or upgrade to a different plan.",
+          existingSubscription: {
+            plan_type: existingActiveSubscription.plan_type,
+            status: existingActiveSubscription.status,
+            current_period_end: existingActiveSubscription.current_period_end,
+          }
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Get or create Stripe customer
     let customerId: string;
 
-    // Check if user already has a Stripe customer ID
+    // Check if user already has a Stripe customer ID (from any subscription, including trialing)
     const { data: existingSubscription } = await supabaseClient
       .from("subscriptions")
       .select("stripe_customer_id")
