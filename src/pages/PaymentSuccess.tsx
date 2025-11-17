@@ -155,16 +155,14 @@ export default function PaymentSuccess() {
     };
 
     if (user && sessionId) {
-      // Wait a bit for webhook to process
-      setTimeout(() => {
-        fetchSessionDetails();
-      }, 2000);
+      // Start polling immediately (no delay needed, polling handles retries)
+      fetchSessionDetails();
     } else if (!user) {
       navigate("/auth");
     } else {
       setIsVerifying(false);
     }
-  }, [user, sessionId, navigate]);
+  }, [user, sessionId, navigate, queryClient]);
 
   // Auto-redirect countdown
   useEffect(() => {
