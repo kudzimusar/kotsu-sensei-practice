@@ -126,9 +126,18 @@ export default function Payment() {
     // ProtectedRoute already handles authentication check
     // Only show message if user already has premium
     if (user && isPremium && subscription) {
-      toast.info("You already have an active premium subscription!");
+      // Check if subscription is active (not just trialing)
+      if (subscription.status === "active") {
+        toast.info("You already have an active premium subscription! Redirecting to account page...", {
+          duration: 3000,
+        });
+        // Redirect to account page after a short delay
+        setTimeout(() => {
+          navigate("/account");
+        }, 2000);
+      }
     }
-  }, [user, isPremium, subscription, authLoading]);
+  }, [user, isPremium, subscription, authLoading, navigate]);
 
   const handleCheckout = async (planType: PlanType) => {
     // ProtectedRoute ensures user is logged in, but double-check for safety
@@ -183,6 +192,17 @@ export default function Payment() {
           setIsLoading(false);
           return;
         }
+        
+        // Handle existing subscription error
+        if (error.message?.includes("already have an active subscription") || error.message?.includes("existing subscription")) {
+          toast.error("You already have an active subscription. Please manage it from your account page.", {
+            duration: 6000,
+          });
+          navigate("/account");
+          setIsLoading(false);
+          return;
+        }
+        
         throw error;
       }
 
