@@ -31,9 +31,9 @@ export const Paywall = ({ feature, usageLimits, title, description }: PaywallPro
     },
     instructor_sessions: {
       title: "One-on-One Instructor Sessions",
-      description: "Book personalized sessions with certified driving instructors to get expert guidance.",
+      description: "Book personalized sessions with certified driving instructors to get expert guidance. (Coming soon)",
       freeLimit: "Not available",
-      premiumBenefit: "Book sessions anytime",
+      premiumBenefit: "Coming soon",
     },
     advanced_analytics: {
       title: "Advanced Progress Analytics",
@@ -135,7 +135,7 @@ export const Paywall = ({ feature, usageLimits, title, description }: PaywallPro
             </li>
             <li className="flex items-center gap-2">
               <Check className="h-4 w-4 text-green-500 shrink-0" />
-              <span>One-on-one instructor sessions</span>
+              <span>One-on-one instructor sessions (Coming soon)</span>
             </li>
             <li className="flex items-center gap-2">
               <Check className="h-4 w-4 text-green-500 shrink-0" />

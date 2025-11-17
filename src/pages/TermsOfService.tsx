@@ -131,6 +131,51 @@ const TermsOfService = () => {
           </section>
 
           <section className="mb-6 sm:mb-8">
+            <h2 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 text-foreground">Subscription Terms</h2>
+            <div className="text-muted-foreground leading-relaxed max-w-prose space-y-4">
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">Subscription Plans</h3>
+                <p>We offer the following subscription plans:</p>
+                <ul className="list-disc pl-5 sm:pl-6 mt-2 space-y-1">
+                  <li><strong>Monthly:</strong> ¥980 per month, billed monthly</li>
+                  <li><strong>Quarterly:</strong> ¥1,500 per 3 months, billed every 3 months (Save 23%)</li>
+                  <li><strong>Annual:</strong> ¥8,800 per year, billed annually (Save 25%)</li>
+                  <li><strong>9-Month Access:</strong> ¥2,400 one-time payment for 9 months access (standard driving license period)</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">Free Trial</h3>
+                <p>All subscription plans include a 7-day free trial. You will not be charged during the trial period. You may cancel your subscription at any time during the trial period without being charged.</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">Service Duration</h3>
+                <p>Our service is designed to support students through the standard 9-month driving license preparation period. The 9-Month Access plan provides access for exactly 9 months from the date of purchase. Monthly, Quarterly, and Annual plans will continue until cancelled.</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">Cancellation</h3>
+                <p>You may cancel your subscription at any time through your account settings or by contacting us. Cancellation will take effect at the end of your current billing period. You will continue to have access to premium features until the end of the paid period. No refunds will be provided for the current billing period.</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">Payment Methods</h3>
+                <p>We accept credit/debit cards, PayPal, PayPay (Japan), and convenience store payments (Konbini - for one-time payments only). All payments are processed securely through Stripe.</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">Premium Features</h3>
+                <p>Premium subscriptions include:</p>
+                <ul className="list-disc pl-5 sm:pl-6 mt-2 space-y-1">
+                  <li>Unlimited AI-generated questions</li>
+                  <li>Personalized study plans</li>
+                  <li>Advanced progress analytics</li>
+                  <li>Export & print study guides</li>
+                  <li>Ad-free experience</li>
+                  <li>Priority support</li>
+                  <li>One-on-one instructor sessions (Coming soon)</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-6 sm:mb-8">
             <h2 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 text-foreground">Contact Information</h2>
             <p className="text-muted-foreground leading-relaxed max-w-prose">
               If you have any questions about these Terms of Service, please contact us at:

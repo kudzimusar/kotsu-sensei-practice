@@ -36,7 +36,7 @@ const plans: Plan[] = [
       "Unlimited AI-generated questions",
       "Personalized study plans",
       "Advanced progress analytics",
-      "One-on-one instructor sessions",
+      "One-on-one instructor sessions (Coming soon)",
       "Export & print study guides",
       "Ad-free experience",
       "Priority support",
@@ -45,14 +45,14 @@ const plans: Plan[] = [
   {
     type: "quarterly",
     name: "Quarterly",
-    price: 2400,
-    priceDisplay: "¥2,400",
+    price: 1500,
+    priceDisplay: "¥1,500",
     period: "per 3 months",
-    savings: "Save 18%",
+    savings: "Save 23%",
     popular: true,
     features: [
       "Everything in Monthly",
-      "18% savings",
+      "23% savings",
       "Better value",
     ],
   },
@@ -72,15 +72,15 @@ const plans: Plan[] = [
   },
   {
     type: "lifetime",
-    name: "Lifetime",
-    price: 19800,
-    priceDisplay: "¥19,800",
-    period: "one-time payment",
-    savings: "Best Deal",
+    name: "9-Month Access",
+    price: 2400,
+    priceDisplay: "¥2,400",
+    period: "one-time payment (9 months)",
+    savings: "Best Value",
     features: [
-      "Everything in Annual",
-      "Pay once, use forever",
-      "All future features included",
+      "Everything in Quarterly",
+      "9 months access (standard license period)",
+      "One-time payment",
       "No recurring charges",
     ],
   },
@@ -132,8 +132,9 @@ export default function Payment() {
     try {
       // Get current URL for success/cancel redirects
       const baseUrl = window.location.origin;
-      const successUrl = `${baseUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${baseUrl}/payment?canceled=true`;
+      const basePath = import.meta.env.MODE === 'production' ? '/kotsu-sensei-practice' : '';
+      const successUrl = `${baseUrl}${basePath}/payment/success?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${baseUrl}${basePath}/payment?canceled=true`;
 
       // Call Supabase Edge Function to create checkout session
       const { data, error } = await supabase.functions.invoke("create-checkout-session", {
@@ -145,12 +146,25 @@ export default function Payment() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Better error handling for payment method issues
+        if (error.message?.includes("payment_method") || error.message?.includes("not available")) {
+          toast.error(`${selectedPaymentMethod === "paypal" ? "PayPal" : selectedPaymentMethod === "paypay" ? "PayPay" : "Konbini"} is not available. Please try card payment.`, {
+            duration: 5000,
+          });
+          // Auto-fallback to card
+          setSelectedPaymentMethod("card");
+          setIsLoading(false);
+          return;
+        }
+        throw error;
+      }
 
       // Check if fallback was used
       if (data?.fallbackUsed && data?.paymentMethod !== selectedPaymentMethod) {
         toast.warning(
-          `${selectedPaymentMethod === "paypal" ? "PayPal" : selectedPaymentMethod === "paypay" ? "PayPay" : "Konbini"} is not available for your account. Using card payment instead.`
+          `${selectedPaymentMethod === "paypal" ? "PayPal" : selectedPaymentMethod === "paypay" ? "PayPay" : "Konbini"} is not available for your account. Using card payment instead.`,
+          { duration: 5000 }
         );
       }
 
@@ -159,15 +173,21 @@ export default function Payment() {
         window.location.href = data.url;
       } else if (data?.sessionId) {
         // If we get session ID, we might need to redirect manually
-        toast.error("Failed to get checkout URL");
+        toast.error("Failed to get checkout URL. Please try again.");
+        setIsLoading(false);
+      } else {
+        toast.error("Unexpected response from payment server. Please try again.");
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Error creating checkout session:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to start checkout. Please try again."
-      );
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Failed to start checkout. Please try again or contact support.";
+      
+      toast.error(errorMessage, {
+        duration: 6000,
+      });
       setIsLoading(false);
     }
   };
@@ -412,15 +432,22 @@ export default function Payment() {
                 )}
               </Button>
 
-              <p className="text-center text-xs text-muted-foreground">
-                Secure payment powered by Stripe. Cancel anytime.
-                {selectedPlanData.type !== "lifetime" && " 7-day free trial included."}
-                {selectedPaymentMethod === "konbini" && (
-                  <span className="block mt-1">
-                    You'll receive a payment slip to pay at a convenience store.
-                  </span>
+              <div className="space-y-2">
+                <p className="text-center text-xs text-muted-foreground">
+                  Secure payment powered by Stripe. Cancel anytime.
+                  {selectedPlanData.type !== "lifetime" && " 7-day free trial included."}
+                </p>
+                {selectedPlanData.type !== "lifetime" && (
+                  <p className="text-center text-xs text-muted-foreground">
+                    You can cancel during the 7-day free trial without being charged. After the trial, you'll be charged {selectedPlanData.priceDisplay} {selectedPlanData.period === "per month" ? "monthly" : selectedPlanData.period === "per 3 months" ? "every 3 months" : "annually"}.
+                  </p>
                 )}
-              </p>
+                {selectedPaymentMethod === "konbini" && (
+                  <p className="text-center text-xs text-muted-foreground">
+                    You'll receive a payment slip to pay at a convenience store.
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}

@@ -90,7 +90,7 @@ export default function PaymentSuccess() {
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
-                        <span>Book one-on-one instructor sessions</span>
+                        <span>One-on-one instructor sessions (Coming soon)</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />

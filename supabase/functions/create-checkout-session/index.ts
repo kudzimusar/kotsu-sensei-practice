@@ -217,7 +217,7 @@ serve(async (req) => {
         priceId: Deno.env.get("STRIPE_PRICE_ID_MONTHLY") || "",
       },
       quarterly: {
-        amount: 240000, // ¥2,400 in yen
+        amount: 150000, // ¥1,500 in yen (Stripe uses smallest currency unit)
         currency: "jpy",
         interval: "month",
         interval_count: 3,
@@ -230,7 +230,7 @@ serve(async (req) => {
         priceId: Deno.env.get("STRIPE_PRICE_ID_ANNUAL") || "",
       },
       lifetime: {
-        amount: 1980000, // ¥19,800 in yen (one-time payment)
+        amount: 240000, // ¥2,400 in yen (one-time payment for 9 months)
         currency: "jpy",
         priceId: Deno.env.get("STRIPE_PRICE_ID_LIFETIME") || "",
       },
@@ -259,8 +259,8 @@ serve(async (req) => {
             price_data: {
               currency: plan.currency,
               product_data: {
-                name: "Kōtsū Sensei Premium - Lifetime",
-                description: "Lifetime access to all premium features",
+                name: "Kōtsū Sensei Premium - 9-Month Access",
+                description: "9 months access to all premium features (standard driving license period)",
               },
               unit_amount: plan.amount,
             },
