@@ -217,28 +217,34 @@ serve(async (req) => {
     }
 
     // Define pricing based on plan type
+    // CRITICAL FIX: JPY amounts were 100x too high
+    // JPY uses 1 yen = 1 unit (no decimals), so:
+    // - ¥980 = 980 (not 98000)
+    // - ¥1,500 = 1500 (not 150000)
+    // - ¥2,400 = 2400 (not 240000)
+    // - ¥8,800 = 8800 (not 880000)
     const pricing = {
       monthly: {
-        amount: 98000, // ¥980 in yen (Stripe uses smallest currency unit)
+        amount: 980, // ¥980 in yen (Stripe uses smallest currency unit, JPY has no decimals)
         currency: "jpy",
         interval: "month",
         priceId: Deno.env.get("STRIPE_PRICE_ID_MONTHLY") || "",
       },
       quarterly: {
-        amount: 150000, // ¥1,500 in yen (Stripe uses smallest currency unit)
+        amount: 1500, // ¥1,500 in yen (Stripe uses smallest currency unit, JPY has no decimals)
         currency: "jpy",
         interval: "month",
         interval_count: 3,
         priceId: Deno.env.get("STRIPE_PRICE_ID_QUARTERLY") || "",
       },
       annual: {
-        amount: 880000, // ¥8,800 in yen
+        amount: 8800, // ¥8,800 in yen (Stripe uses smallest currency unit, JPY has no decimals)
         currency: "jpy",
         interval: "year",
         priceId: Deno.env.get("STRIPE_PRICE_ID_ANNUAL") || "",
       },
       lifetime: {
-        amount: 240000, // ¥2,400 in yen (one-time payment for 9 months)
+        amount: 2400, // ¥2,400 in yen (one-time payment for 9 months, JPY has no decimals)
         currency: "jpy",
         priceId: Deno.env.get("STRIPE_PRICE_ID_LIFETIME") || "",
       },
@@ -270,8 +276,8 @@ serve(async (req) => {
                 name: "Kōtsū Sensei Premium - 9-Month Access",
                 description: "9 months access to all premium features (standard driving license period)",
               },
-              // CRITICAL: Always use correct amount (240000 = ¥2,400, not ¥240,000)
-              // JPY: 1 yen = 1 unit, so 240000 = ¥2,400 ✅
+              // CRITICAL FIX: Amount corrected (was 100x too high)
+              // JPY: 1 yen = 1 unit (no decimals), so 2400 = ¥2,400 ✅
               unit_amount: plan.amount,
             },
             quantity: 1,
@@ -339,12 +345,12 @@ serve(async (req) => {
             interval: (("interval" in plan ? plan.interval : "month") || "month") as "month" | "year",
             interval_count: ("interval_count" in plan ? plan.interval_count : 1) || 1,
           },
-          // CRITICAL: Always use correct amounts from pricing object
-          // JPY: 1 yen = 1 unit, so:
-          // - 150000 = ¥1,500 (Quarterly) ✅ (was showing ¥150,000)
-          // - 240000 = ¥2,400 (9-Month) ✅
-          // - 98000 = ¥980 (Monthly) ✅
-          // - 880000 = ¥8,800 (Annual) ✅
+          // CRITICAL FIX: Amounts corrected (were 100x too high)
+          // JPY: 1 yen = 1 unit (no decimals), so:
+          // - 1500 = ¥1,500 (Quarterly) ✅
+          // - 2400 = ¥2,400 (9-Month) ✅
+          // - 980 = ¥980 (Monthly) ✅
+          // - 8800 = ¥8,800 (Annual) ✅
           unit_amount: plan.amount,
         },
         quantity: 1,
