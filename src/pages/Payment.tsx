@@ -341,9 +341,11 @@ export default function Payment() {
                   onValueChange={setSelectedPaymentMethod}
                   className="space-y-3"
                 >
-                  <div className="flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent cursor-pointer">
-                    <RadioGroupItem value="card" id="card" />
-                    <Label htmlFor="card" className="flex-1 cursor-pointer">
+                  <div className={`flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent ${
+                    isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                  }`}>
+                    <RadioGroupItem value="card" id="card" disabled={isLoading} />
+                    <Label htmlFor="card" className={`flex-1 ${isLoading ? "cursor-not-allowed" : "cursor-pointer"}`}>
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-5 w-5" />
                         <div>
@@ -356,9 +358,11 @@ export default function Payment() {
                     </Label>
                   </div>
 
-                  <div className="flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent cursor-pointer">
-                    <RadioGroupItem value="paypal" id="paypal" />
-                    <Label htmlFor="paypal" className="flex-1 cursor-pointer">
+                  <div className={`flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent ${
+                    isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                  }`}>
+                    <RadioGroupItem value="paypal" id="paypal" disabled={isLoading} />
+                    <Label htmlFor="paypal" className={`flex-1 ${isLoading ? "cursor-not-allowed" : "cursor-pointer"}`}>
                       <div className="flex items-center gap-2">
                         <Wallet className="h-5 w-5 text-blue-600" />
                         <div>
@@ -371,9 +375,11 @@ export default function Payment() {
                     </Label>
                   </div>
 
-                  <div className="flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent cursor-pointer">
-                    <RadioGroupItem value="paypay" id="paypay" />
-                    <Label htmlFor="paypay" className="flex-1 cursor-pointer">
+                  <div className={`flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent ${
+                    isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                  }`}>
+                    <RadioGroupItem value="paypay" id="paypay" disabled={isLoading} />
+                    <Label htmlFor="paypay" className={`flex-1 ${isLoading ? "cursor-not-allowed" : "cursor-pointer"}`}>
                       <div className="flex items-center gap-2">
                         <Wallet className="h-5 w-5 text-yellow-600" />
                         <div>
@@ -387,12 +393,12 @@ export default function Payment() {
                   </div>
 
                   <div className={`flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent ${
-                    selectedPlan !== "lifetime" ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                    selectedPlan !== "lifetime" || isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                   }`}>
                     <RadioGroupItem 
                       value="konbini" 
                       id="konbini" 
-                      disabled={selectedPlan !== "lifetime"}
+                      disabled={selectedPlan !== "lifetime" || isLoading}
                     />
                     <Label htmlFor="konbini" className="flex-1 cursor-pointer">
                       <div className="flex items-center gap-2">
