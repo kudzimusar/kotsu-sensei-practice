@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -91,9 +91,20 @@ export default function Payment() {
   const { isPremium, subscription } = usePremium();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>("quarterly");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("card");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Handle canceled payment redirect
+  useEffect(() => {
+    const canceled = searchParams.get("canceled");
+    if (canceled === "true") {
+      toast.info("Payment was canceled. You can try again anytime.");
+      // Remove the canceled parameter from URL
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   // Reset payment method if switching to/from lifetime plan
   useEffect(() => {
@@ -131,10 +142,21 @@ export default function Payment() {
 
     try {
       // Get current URL for success/cancel redirects
+      // Use the current location to avoid double path issues
       const baseUrl = window.location.origin;
-      const basePath = import.meta.env.MODE === 'production' ? '/kotsu-sensei-practice' : '';
-      const successUrl = `${baseUrl}${basePath}/payment/success?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${baseUrl}${basePath}/payment?canceled=true`;
+      // Get the actual path prefix from current location to avoid duplication
+      const currentPath = window.location.pathname;
+      let pathPrefix = '';
+      if (import.meta.env.MODE === 'production') {
+        // Check if we're already on the correct path
+        if (currentPath.startsWith('/kotsu-sensei-practice')) {
+          pathPrefix = '/kotsu-sensei-practice';
+        } else {
+          pathPrefix = '/kotsu-sensei-practice';
+        }
+      }
+      const successUrl = `${baseUrl}${pathPrefix}/payment/success?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${baseUrl}${pathPrefix}/payment?canceled=true`;
 
       // Call Supabase Edge Function to create checkout session
       const { data, error } = await supabase.functions.invoke("create-checkout-session", {

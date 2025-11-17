@@ -140,6 +140,14 @@ serve(async (req) => {
 
     const { plan_type, success_url, cancel_url, payment_method } = await req.json();
 
+    // Log URLs for debugging (remove sensitive data in production)
+    console.log('Received checkout request:', {
+      plan_type,
+      success_url,
+      cancel_url: cancel_url?.substring(0, 50) + '...',
+      payment_method,
+    });
+
     if (!plan_type || !success_url || !cancel_url) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
@@ -262,6 +270,7 @@ serve(async (req) => {
                 name: "Kōtsū Sensei Premium - 9-Month Access",
                 description: "9 months access to all premium features (standard driving license period)",
               },
+              // Ensure amount is in smallest currency unit (JPY: 1 yen = 1 unit, so 240000 = ¥2,400)
               unit_amount: plan.amount,
             },
             quantity: 1,
@@ -329,9 +338,10 @@ serve(async (req) => {
                 description: `Premium subscription (${plan_type})`,
               },
               recurring: {
-                interval: (plan.interval || "month") as "month" | "year",
+                interval: (("interval" in plan ? plan.interval : "month") || "month") as "month" | "year",
                 interval_count: ("interval_count" in plan ? plan.interval_count : 1) || 1,
               },
+              // Ensure amount is in smallest currency unit (JPY: 1 yen = 1 unit, so 150000 = ¥1,500)
               unit_amount: plan.amount,
             },
             quantity: 1,
