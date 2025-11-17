@@ -65,7 +65,9 @@ export const usePremium = () => {
       return data as Subscription | null;
     },
     enabled: !!user,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 0, // Always refetch to get latest subscription status
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    refetchOnMount: true, // Always refetch on mount
   });
 
   // Fetch premium status from profile (denormalized for quick checks)
@@ -88,7 +90,9 @@ export const usePremium = () => {
       return data;
     },
     enabled: !!user,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0, // Always refetch to get latest premium status
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   // Calculate premium status

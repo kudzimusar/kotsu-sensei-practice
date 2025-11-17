@@ -42,11 +42,20 @@ const Profile = () => {
     }
   }, [user?.id]);
 
-  // Refresh subscription status when page is focused (in case payment just completed)
+  // Refresh subscription status when page is focused or mounted (in case payment just completed)
   useEffect(() => {
     if (user) {
+      // Immediately refetch on mount
+      queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+      queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
+      queryClient.refetchQueries({ queryKey: ["profile", user.id] });
+      
       const handleFocus = () => {
         queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
+        queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+        queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
+        queryClient.refetchQueries({ queryKey: ["profile", user.id] });
       };
       window.addEventListener('focus', handleFocus);
       return () => window.removeEventListener('focus', handleFocus);

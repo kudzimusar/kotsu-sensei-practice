@@ -93,31 +93,65 @@ export default function PaymentSuccess() {
     const fetchSessionDetails = async () => {
       if (!user || !sessionId) return;
 
-      try {
-        const { data, error } = await supabase.functions.invoke("get-checkout-session", {
-          body: { session_id: sessionId },
-        });
-
-        if (error) throw error;
-        if (data) {
-          setSessionDetails(data);
-          setIsVerifying(false);
-          
-          // Invalidate subscription query to refresh premium status
+      // Poll for subscription to be created (webhook might take a few seconds)
+      const pollForSubscription = async (attempts = 0): Promise<void> => {
+        if (attempts > 10) {
+          // After 10 attempts (5 seconds), give up and just invalidate
+          console.log("Polling timeout, invalidating queries");
           queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
           queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
-          
-          // Wait a bit for queries to refetch, then show success
-          setTimeout(() => {
-            toast.success("Welcome to Premium! 🎉");
-          }, 500);
+          setIsVerifying(false);
+          toast.success("Payment successful! 🎉");
+          return;
         }
-      } catch (error) {
-        console.error("Error fetching session details:", error);
-        // Still show success page even if session fetch fails
-        setIsVerifying(false);
-        toast.success("Payment successful! 🎉");
-      }
+
+        try {
+          // Check if subscription exists in database
+          const { data: subscriptionData, error: subError } = await supabase
+            .from("subscriptions")
+            .select("*")
+            .eq("user_id", user.id)
+            .in("status", ["active", "trialing"])
+            .order("created_at", { ascending: false })
+            .maybeSingle();
+
+          if (!subError && subscriptionData) {
+            // Subscription found! Invalidate and refresh
+            console.log("Subscription found, refreshing UI");
+            queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
+            queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+            queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
+            queryClient.refetchQueries({ queryKey: ["profile", user.id] });
+            
+            // Also fetch session details
+            const { data: sessionData } = await supabase.functions.invoke("get-checkout-session", {
+              body: { session_id: sessionId },
+            });
+            if (sessionData) {
+              setSessionDetails(sessionData);
+            }
+            
+            setIsVerifying(false);
+            toast.success("Welcome to Premium! 🎉");
+            return;
+          }
+
+          // Subscription not found yet, wait and retry
+          setTimeout(() => {
+            pollForSubscription(attempts + 1);
+          }, 500);
+        } catch (error) {
+          console.error("Error polling for subscription:", error);
+          // On error, just invalidate and continue
+          queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
+          queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+          setIsVerifying(false);
+          toast.success("Payment successful! 🎉");
+        }
+      };
+
+      // Start polling
+      pollForSubscription();
     };
 
     if (user && sessionId) {

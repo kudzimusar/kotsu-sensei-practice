@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminRoute } from "./components/AdminRoute";
 import Index from "./pages/Index";
 import Study from "./pages/Study";
 import Tests from "./pages/Tests";
@@ -79,7 +80,7 @@ const App = () => (
           <Route path="/my-bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
           <Route path="/instructor/dashboard" element={<ProtectedRoute><InstructorDashboard /></ProtectedRoute>} />
           <Route path="/instructor/:id" element={<InstructorProfile />} />
-          <Route path="/admin/instructors" element={<AdminInstructors />} />
+          <Route path="/admin/instructors" element={<AdminRoute><AdminInstructors /></AdminRoute>} />
           <Route path="/about" element={<About />} />
           <Route path="/support" element={<Support />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
