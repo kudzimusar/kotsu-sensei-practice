@@ -142,24 +142,15 @@ export default function Payment() {
 
     try {
       // Get current URL for success/cancel redirects
-      // Construct URLs properly to avoid double path issues
+      // ALWAYS include base path in production for GitHub Pages
       const baseUrl = window.location.origin;
-      
-      // Get the current path to determine if we're already on the base path
-      const currentPath = window.location.pathname;
       const basePath = '/kotsu-sensei-practice';
       
-      // Determine path prefix - only add if not already in path
-      let pathPrefix = '';
-      if (import.meta.env.MODE === 'production') {
-        // Check if current path already includes base path
-        if (!currentPath.startsWith(basePath)) {
-          pathPrefix = basePath;
-        }
-        // If it does start with basePath, we don't need to add it again
-      }
+      // In production, always use base path (GitHub Pages requirement)
+      // In development, use root path
+      const pathPrefix = import.meta.env.MODE === 'production' ? basePath : '';
       
-      // Construct clean paths without duplication
+      // Construct URLs - always include base path in production
       const successUrl = `${baseUrl}${pathPrefix}/payment/success?session_id={CHECKOUT_SESSION_ID}`;
       const cancelUrl = `${baseUrl}${pathPrefix}/payment?canceled=true`;
       
@@ -168,8 +159,7 @@ export default function Payment() {
         cancelUrl, 
         pathPrefix, 
         baseUrl,
-        currentPath,
-        basePath 
+        mode: import.meta.env.MODE
       });
 
       // Call Supabase Edge Function to create checkout session

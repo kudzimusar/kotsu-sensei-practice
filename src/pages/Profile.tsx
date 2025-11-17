@@ -1,5 +1,5 @@
 import BottomNav from "@/components/BottomNav";
-import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Info, FileText, Shield, BookOpen, Car, Clock, QrCode, Crown, CreditCard, GraduationCap } from "lucide-react";
+import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Info, FileText, Shield, BookOpen, Car, Clock, QrCode, Crown, CreditCard, GraduationCap, Users } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { format, differenceInDays, parseISO, isAfter } from "date-fns";
@@ -147,6 +147,7 @@ const Profile = () => {
 
   const menuItems = [
     { icon: GraduationCap, label: "Book Instructor", description: "Get personalized lessons", onClick: () => navigate('/book-instructor'), highlight: true },
+    { icon: Users, label: "Practice Rooms", description: "Join group study sessions", onClick: () => navigate('/practice-rooms'), highlight: true },
     { icon: BookOpen, label: "My Bookings", description: "View your sessions", onClick: () => navigate('/my-bookings') },
     ...(instructor && instructor.status === 'approved' ? [
       { icon: GraduationCap, label: "Instructor Dashboard", description: "Manage your instructor profile", onClick: () => navigate('/instructor/dashboard'), highlight: true }

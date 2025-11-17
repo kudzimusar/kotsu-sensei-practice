@@ -35,6 +35,9 @@ import InstructorDashboard from "./pages/InstructorDashboard";
 import BookingReview from "./pages/BookingReview";
 import BookingDetails from "./pages/BookingDetails";
 import PracticeRooms from "./pages/PracticeRooms";
+import PracticeRoomDetails from "./pages/PracticeRoomDetails";
+import PracticeRoomPayment from "./pages/PracticeRoomPayment";
+import PracticeRoomSuccess from "./pages/PracticeRoomSuccess";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +68,9 @@ const App = () => (
           <Route path="/become-instructor" element={<ProtectedRoute><BecomeInstructor /></ProtectedRoute>} />
           <Route path="/book-instructor" element={<BookInstructor />} />
           <Route path="/practice-rooms" element={<ProtectedRoute><PracticeRooms /></ProtectedRoute>} />
+          <Route path="/practice-room/:id" element={<ProtectedRoute><PracticeRoomDetails /></ProtectedRoute>} />
+          <Route path="/practice-room/:id/payment" element={<ProtectedRoute><PracticeRoomPayment /></ProtectedRoute>} />
+          <Route path="/practice-room/:id/success" element={<ProtectedRoute><PracticeRoomSuccess /></ProtectedRoute>} />
           <Route path="/book-instructor/:id" element={<ProtectedRoute><BookingFlow /></ProtectedRoute>} />
           <Route path="/booking/:id/payment" element={<ProtectedRoute><BookingPayment /></ProtectedRoute>} />
           <Route path="/booking/:id/success" element={<ProtectedRoute><BookingSuccess /></ProtectedRoute>} />

@@ -120,8 +120,46 @@ async function handleCheckoutCompleted(
   const userId = session.metadata?.user_id;
   const planType = session.metadata?.plan_type;
   const bookingId = session.metadata?.booking_id;
+  const practiceRoomId = session.metadata?.practice_room_id;
+  const participantId = session.metadata?.participant_id;
+  const paymentType = session.metadata?.type;
 
-    // Handle booking payments
+  // Handle practice room payments
+  if (paymentType === 'practice_room_payment' && practiceRoomId && participantId) {
+    await supabase
+      .from("practice_room_participants")
+      .update({
+        payment_status: "paid",
+        stripe_payment_intent_id: session.payment_intent as string,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", participantId)
+      .eq("user_id", userId);
+
+    // Update practice room participant count
+    const { data: room } = await supabase
+      .from("practice_rooms")
+      .select("current_participants, max_participants")
+      .eq("id", practiceRoomId)
+      .single();
+
+    if (room) {
+      const newCount = (room.current_participants || 0) + 1;
+      await supabase
+        .from("practice_rooms")
+        .update({
+          current_participants: newCount,
+          status: newCount >= room.max_participants ? 'full' : 'open',
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", practiceRoomId);
+    }
+
+    console.log("Practice room payment completed:", practiceRoomId, participantId);
+    return;
+  }
+
+  // Handle booking payments
   if (bookingId) {
     await supabase
       .from("bookings")

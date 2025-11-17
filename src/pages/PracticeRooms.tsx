@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { getAvailablePracticeRooms, getPracticeRoomById, joinPracticeRoom, getUserPracticeRooms } from "@/lib/supabase/practiceRooms";
+import { getAvailablePracticeRooms, getUserPracticeRooms } from "@/lib/supabase/practiceRooms";
 import { getInstructorById } from "@/lib/supabase/instructors";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Users, Video, MapPin, Calendar, Clock, Search, GraduationCap } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import { format, parseISO, isAfter } from "date-fns";
 import type { PracticeRoom } from "@/lib/supabase/practiceRooms";
@@ -21,8 +20,6 @@ import type { PracticeRoom } from "@/lib/supabase/practiceRooms";
 export default function PracticeRooms() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("browse");
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -42,26 +39,6 @@ export default function PracticeRooms() {
     queryKey: ["my-practice-rooms", user?.id],
     queryFn: () => getUserPracticeRooms(),
     enabled: !!user,
-  });
-
-  const joinMutation = useMutation({
-    mutationFn: (roomId: string) => joinPracticeRoom(roomId),
-    onSuccess: (participant) => {
-      queryClient.invalidateQueries({ queryKey: ["practice-rooms"] });
-      queryClient.invalidateQueries({ queryKey: ["my-practice-rooms"] });
-      toast({
-        title: "Joined practice room",
-        description: "You've joined the practice room. Complete payment to confirm your spot.",
-      });
-      navigate(`/practice-room/${participant.practice_room_id}/payment`);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to join",
-        description: error.message || "Could not join practice room.",
-        variant: "destructive",
-      });
-    },
   });
 
   const filteredRooms = availableRooms.filter((room) => {
@@ -159,8 +136,8 @@ export default function PracticeRooms() {
                     <PracticeRoomCard
                       key={room.id}
                       room={room}
-                      onJoin={() => joinMutation.mutate(room.id)}
-                      isJoining={joinMutation.isPending}
+                      onJoin={() => {}}
+                      isJoining={false}
                     />
                   ))}
                 </div>
@@ -292,19 +269,10 @@ function PracticeRoomCard({ room, onJoin, isJoining, isJoined }: PracticeRoomCar
           ) : (
             <Button
               size="sm"
-              onClick={onJoin}
-              disabled={isJoining || isFull || !isUpcoming}
+              onClick={() => navigate(`/practice-room/${room.id}`)}
+              disabled={isFull || !isUpcoming}
             >
-              {isJoining ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Joining...
-                </>
-              ) : isFull ? (
-                "Full"
-              ) : (
-                "Join Room"
-              )}
+              {isFull ? "Full" : "View Details"}
             </Button>
           )}
         </div>
