@@ -198,7 +198,7 @@ export async function updateInstructorProfile(
     .single();
 
   if (error) throw error;
-  return data as Instructor;
+  return data;
 }
 
 /**
