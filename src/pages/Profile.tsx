@@ -217,18 +217,30 @@ const Profile = () => {
             }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {isPremium ? (
+                  {premiumLoading ? (
+                    <>
+                      <div className="w-4 h-4 rounded-full bg-gray-300 animate-pulse"></div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-500">Loading...</p>
+                        <p className="text-[10px] text-gray-400">Checking subscription</p>
+                      </div>
+                    </>
+                  ) : isPremium && subscription ? (
                     <>
                       <Crown className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                       <div>
                         <p className="text-xs font-bold text-purple-700 dark:text-purple-300">
-                          Premium {subscription?.plan_type ? subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1) : ""}
+                          Premium {subscription.plan_type ? subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1) : "Member"}
                         </p>
                         <p className="text-[10px] text-purple-600 dark:text-purple-400">
-                          {subscription?.plan_type === "lifetime" 
+                          {subscription.plan_type === "lifetime" 
                             ? "Lifetime access" 
-                            : subscription?.current_period_end
+                            : subscription.status === "trialing" && subscription.trial_end
+                            ? `Trial ends ${format(new Date(subscription.trial_end), "MMM d, yyyy")}`
+                            : subscription.current_period_end
                             ? `Renews ${format(new Date(subscription.current_period_end), "MMM d, yyyy")}`
+                            : subscription.status === "trialing"
+                            ? "7-day free trial active"
                             : "Active"}
                         </p>
                       </div>
@@ -251,7 +263,13 @@ const Profile = () => {
                       ? "border-purple-300 text-purple-700 hover:bg-purple-100" 
                       : "bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white"
                   }`}
-                  onClick={() => navigate(isPremium ? "/account" : "/payment")}
+                  onClick={() => {
+                    if (isPremium) {
+                      navigate("/account");
+                    } else {
+                      navigate("/payment");
+                    }
+                  }}
                 >
                   {isPremium ? "Manage" : "Upgrade"}
                 </Button>
