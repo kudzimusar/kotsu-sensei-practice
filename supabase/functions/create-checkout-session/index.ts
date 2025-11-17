@@ -270,7 +270,8 @@ serve(async (req) => {
                 name: "Kōtsū Sensei Premium - 9-Month Access",
                 description: "9 months access to all premium features (standard driving license period)",
               },
-              // Ensure amount is in smallest currency unit (JPY: 1 yen = 1 unit, so 240000 = ¥2,400)
+              // CRITICAL: Always use correct amount (240000 = ¥2,400, not ¥240,000)
+              // JPY: 1 yen = 1 unit, so 240000 = ¥2,400 ✅
               unit_amount: plan.amount,
             },
             quantity: 1,
