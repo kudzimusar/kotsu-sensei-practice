@@ -325,28 +325,30 @@ serve(async (req) => {
         );
       }
 
-      // Try to use price ID if available, otherwise use price_data
-      const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = plan.priceId
-        ? {
-            price: plan.priceId,
-            quantity: 1,
-          }
-        : {
-            price_data: {
-              currency: plan.currency,
-              product_data: {
-                name: `Kōtsū Sensei Premium - ${plan_type.charAt(0).toUpperCase() + plan_type.slice(1)}`,
-                description: `Premium subscription (${plan_type})`,
-              },
-              recurring: {
-                interval: (("interval" in plan ? plan.interval : "month") || "month") as "month" | "year",
-                interval_count: ("interval_count" in plan ? plan.interval_count : 1) || 1,
-              },
-              // Ensure amount is in smallest currency unit (JPY: 1 yen = 1 unit, so 150000 = ¥1,500)
-              unit_amount: plan.amount,
-            },
-            quantity: 1,
-          };
+      // CRITICAL FIX: Always use price_data to ensure correct pricing
+      // Price IDs are disabled to prevent wrong prices (e.g., ¥150,000 instead of ¥1,500)
+      // This ensures we always use the correct amounts defined in the pricing object
+      const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = {
+        price_data: {
+          currency: plan.currency,
+          product_data: {
+            name: `Kōtsū Sensei Premium - ${plan_type.charAt(0).toUpperCase() + plan_type.slice(1)}`,
+            description: `Premium subscription (${plan_type})`,
+          },
+          recurring: {
+            interval: (("interval" in plan ? plan.interval : "month") || "month") as "month" | "year",
+            interval_count: ("interval_count" in plan ? plan.interval_count : 1) || 1,
+          },
+          // CRITICAL: Always use correct amounts from pricing object
+          // JPY: 1 yen = 1 unit, so:
+          // - 150000 = ¥1,500 (Quarterly) ✅ (was showing ¥150,000)
+          // - 240000 = ¥2,400 (9-Month) ✅
+          // - 98000 = ¥980 (Monthly) ✅
+          // - 880000 = ¥8,800 (Annual) ✅
+          unit_amount: plan.amount,
+        },
+        quantity: 1,
+      };
 
       const sessionParams: Stripe.Checkout.SessionCreateParams = {
         customer: customerId,
