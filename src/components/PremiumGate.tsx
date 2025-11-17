@@ -2,7 +2,15 @@ import { ReactNode } from "react";
 import { usePremium } from "@/hooks/usePremium";
 import { useAuth } from "@/hooks/useAuth";
 import { Paywall } from "./Paywall";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface PremiumGateProps {
   children: ReactNode;
@@ -19,6 +27,7 @@ export const PremiumGate = ({
 }: PremiumGateProps) => {
   const { user } = useAuth();
   const { isPremium, isLoading, usageLimits } = usePremium();
+  const navigate = useNavigate();
 
   // Show loading state
   if (isLoading) {
@@ -89,16 +98,50 @@ export const PremiumGate = ({
     return <>{fallback}</>;
   }
 
-  // Default: show upgrade prompt
+  // Default: show upgrade prompt with lock icon
   return (
     <div className="rounded-lg border border-purple-200 bg-purple-50 p-6 text-center dark:border-purple-800 dark:bg-purple-900/20">
+      <Lock className="w-8 h-8 mx-auto mb-2 text-purple-600 dark:text-purple-400" />
       <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
         Premium Feature
       </p>
-      <p className="mt-2 text-sm text-muted-foreground">
+      <p className="mt-2 text-sm text-muted-foreground mb-4">
         Upgrade to Premium to unlock this feature.
       </p>
+      <Button
+        onClick={() => navigate("/payment")}
+        className="bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700"
+        size="sm"
+      >
+        Upgrade to Premium
+      </Button>
     </div>
+  );
+};
+
+// Lock icon component for inline use
+export const PremiumLockIcon = ({ feature, className = "" }: { feature?: string; className?: string }) => {
+  const { isPremium } = usePremium();
+  const navigate = useNavigate();
+
+  if (isPremium) return null;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => navigate("/payment")}
+            className={`inline-flex items-center text-purple-600 hover:text-purple-700 transition-colors ${className}`}
+          >
+            <Lock className="w-4 h-4" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Upgrade to unlock this feature</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
 

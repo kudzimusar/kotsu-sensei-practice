@@ -7,9 +7,11 @@ import { Separator } from "@/components/ui/separator";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSettings, updateSettings } from "@/lib/supabase/settings";
 import { useAuth } from "@/hooks/useAuth";
+import { usePremium } from "@/hooks/usePremium";
 import { useToast } from "@/hooks/use-toast";
 import { getUsageStats, resetUsage, shouldShowWarning, isUsageCritical } from "@/lib/tts/usageTracker";
-import { Volume2, AlertTriangle, RefreshCw } from "lucide-react";
+import { Volume2, AlertTriangle, RefreshCw, CreditCard, Crown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -21,8 +23,10 @@ const TTS_AUTOPLAY_KEY = 'tts_autoplay';
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { user } = useAuth();
+  const { isPremium, subscription } = usePremium();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const [ttsAutoplay, setTtsAutoplay] = useState(false);
   const [usageStats, setUsageStats] = useState(getUsageStats());
@@ -100,6 +104,48 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
         <div className="space-y-6 py-4">
+          {/* Account Section */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-base">Account</h3>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+              <div className="flex items-center gap-2">
+                {isPremium ? (
+                  <>
+                    <Crown className="h-4 w-4 text-purple-600" />
+                    <div>
+                      <p className="text-sm font-medium">Premium Subscription</p>
+                      <p className="text-xs text-muted-foreground">
+                        {subscription?.plan_type
+                          ? subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1)
+                          : "Active"}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <p className="text-sm font-medium">Free Plan</p>
+                    <p className="text-xs text-muted-foreground">Upgrade to unlock premium features</p>
+                  </div>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onOpenChange(false);
+                  navigate("/account");
+                }}
+              >
+                Manage
+              </Button>
+            </div>
+          </div>
+
+          <Separator className="my-4" />
+
           <div className="flex items-center justify-between">
             <Label htmlFor="email" className="flex flex-col gap-1">
               <span className="font-medium">Email Notifications</span>

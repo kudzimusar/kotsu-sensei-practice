@@ -1,9 +1,10 @@
 import BottomNav from "@/components/BottomNav";
-import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Info, FileText, Shield, BookOpen, Car, Clock } from "lucide-react";
+import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Info, FileText, Shield, BookOpen, Car, Clock, Crown, CreditCard } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { format, differenceInDays, parseISO, isAfter } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
+import { usePremium } from "@/hooks/usePremium";
 import { getProfile } from "@/lib/supabase/profiles";
 import { getAllPerformance } from "@/lib/supabase/performance";
 import { getTestHistory } from "@/lib/supabase/tests";
@@ -17,10 +18,12 @@ import StudyCalendar from "@/components/StudyCalendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
+  const { isPremium, subscription } = usePremium();
   const navigate = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -123,6 +126,7 @@ const Profile = () => {
   };
 
   const menuItems = [
+    { icon: CreditCard, label: "Account", description: "Subscription & billing", onClick: () => navigate('/account'), highlight: isPremium },
     { icon: Settings, label: "Settings", description: "App preferences", onClick: () => setSettingsOpen(true) },
     { icon: Bell, label: "Notifications", description: "Manage alerts", onClick: () => setNotificationsOpen(true) },
     { icon: Target, label: "Study Goals", description: "Set daily targets", onClick: () => setGoalsOpen(true) },
@@ -177,6 +181,55 @@ const Profile = () => {
               <div>
                 <h2 className="text-base font-bold">{userStats.name}</h2>
                 <p className="text-xs text-muted-foreground">Driving Test Candidate</p>
+              </div>
+            </div>
+
+            {/* Subscription Status */}
+            <div className={`mb-4 rounded-xl p-3 border ${
+              isPremium 
+                ? "bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200 dark:from-purple-900/20 dark:to-violet-900/20 dark:border-purple-700" 
+                : "bg-gray-50 border-gray-200"
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {isPremium ? (
+                    <>
+                      <Crown className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <div>
+                        <p className="text-xs font-bold text-purple-700 dark:text-purple-300">
+                          Premium {subscription?.plan_type ? subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1) : ""}
+                        </p>
+                        <p className="text-[10px] text-purple-600 dark:text-purple-400">
+                          {subscription?.plan_type === "lifetime" 
+                            ? "Lifetime access" 
+                            : subscription?.current_period_end
+                            ? `Renews ${format(new Date(subscription.current_period_end), "MMM d, yyyy")}`
+                            : "Active"}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-4 h-4 rounded-full bg-gray-400"></div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-600">Free Plan</p>
+                        <p className="text-[10px] text-gray-500">Upgrade for unlimited features</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <Button
+                  variant={isPremium ? "outline" : "default"}
+                  size="sm"
+                  className={`text-xs h-7 ${
+                    isPremium 
+                      ? "border-purple-300 text-purple-700 hover:bg-purple-100" 
+                      : "bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white"
+                  }`}
+                  onClick={() => navigate(isPremium ? "/account" : "/payment")}
+                >
+                  {isPremium ? "Manage" : "Upgrade"}
+                </Button>
               </div>
             </div>
 

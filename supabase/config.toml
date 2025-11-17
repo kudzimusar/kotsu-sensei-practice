@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.check-payment-methods]
 verify_jwt = true
+
+[functions.create-customer-portal-session]
+verify_jwt = true
+
+[functions.get-billing-history]
+verify_jwt = true
