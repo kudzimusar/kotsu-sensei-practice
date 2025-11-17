@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { Loader2, GraduationCap } from "lucide-react";
 
 const Auth = () => {
@@ -17,19 +18,22 @@ const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
+  const hasRedirected = useRef(false);
   
   // Get the intended destination from location state, default to home
   const from = (location.state as any)?.from || "/";
 
+  // Only redirect if user is logged in and we haven't redirected yet
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+    if (!authLoading && user && !hasRedirected.current) {
+      hasRedirected.current = true;
+      // Only redirect if we're not already going to the target
+      if (location.pathname === "/auth") {
         navigate(from);
       }
-    };
-    checkUser();
-  }, [navigate, from]);
+    }
+  }, [authLoading, user, navigate, from, location.pathname]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();

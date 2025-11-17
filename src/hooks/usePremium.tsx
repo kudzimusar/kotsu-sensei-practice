@@ -9,6 +9,7 @@ export interface Subscription {
   plan_type: "monthly" | "quarterly" | "annual" | "lifetime";
   status: "active" | "canceled" | "past_due" | "trialing" | "incomplete" | "incomplete_expired" | "unpaid";
   stripe_subscription_id: string | null;
+  stripe_customer_id: string | null;
   current_period_start: string | null;
   current_period_end: string | null;
   trial_start: string | null;

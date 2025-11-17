@@ -87,7 +87,7 @@ const plans: Plan[] = [
 ];
 
 export default function Payment() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { isPremium, subscription } = usePremium();
   const navigate = useNavigate();
   const location = useLocation();
@@ -109,18 +109,18 @@ export default function Payment() {
   const feature = location.state?.feature;
 
   useEffect(() => {
-    if (!user) {
-      navigate("/auth", { state: { from: "/payment" } });
-      return;
-    }
-
-    // If user already has premium, show message
-    if (isPremium && subscription) {
+    // Wait for auth to finish loading before checking
+    if (authLoading) return;
+    
+    // ProtectedRoute already handles authentication check
+    // Only show message if user already has premium
+    if (user && isPremium && subscription) {
       toast.info("You already have an active premium subscription!");
     }
-  }, [user, isPremium, subscription, navigate]);
+  }, [user, isPremium, subscription, authLoading]);
 
   const handleCheckout = async (planType: PlanType) => {
+    // ProtectedRoute ensures user is logged in, but double-check for safety
     if (!user) {
       toast.error("Please sign in to continue");
       navigate("/auth", { state: { from: "/payment" } });
@@ -174,6 +174,17 @@ export default function Payment() {
 
   const selectedPlanData = plans.find((p) => p.type === selectedPlan);
 
+  // Show loading state while auth is loading
+  // ProtectedRoute will handle redirect if user is not logged in
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  // ProtectedRoute ensures user is logged in, but show nothing if somehow not
   if (!user) {
     return null;
   }
