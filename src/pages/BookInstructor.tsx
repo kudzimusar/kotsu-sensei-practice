@@ -309,7 +309,11 @@ export default function BookInstructor() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredInstructors.map((instructor) => (
-                <InstructorCard key={instructor.id} instructor={instructor} />
+                <InstructorCard 
+                  key={instructor.id} 
+                  instructor={instructor}
+                  userLocation={filters.session_type === "in_person" ? userLocation : null}
+                />
               ))}
             </div>
           )}

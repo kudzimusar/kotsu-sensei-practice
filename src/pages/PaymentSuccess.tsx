@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import { format, addDays, parseISO } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface SessionDetails {
   session_id: string;
@@ -29,6 +30,7 @@ interface SessionDetails {
 export default function PaymentSuccess() {
   const { user } = useAuth();
   const { isPremium, subscription, isLoading: premiumLoading } = usePremium();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
@@ -100,7 +102,15 @@ export default function PaymentSuccess() {
         if (data) {
           setSessionDetails(data);
           setIsVerifying(false);
-          toast.success("Welcome to Premium! 🎉");
+          
+          // Invalidate subscription query to refresh premium status
+          queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
+          queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+          
+          // Wait a bit for queries to refetch, then show success
+          setTimeout(() => {
+            toast.success("Welcome to Premium! 🎉");
+          }, 500);
         }
       } catch (error) {
         console.error("Error fetching session details:", error);

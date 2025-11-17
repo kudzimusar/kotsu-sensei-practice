@@ -78,6 +78,7 @@ export function InstructorCard({ instructor, userLocation }: InstructorCardProps
             <span>
               {instructor.location_prefecture}
               {instructor.location_city && `, ${instructor.location_city}`}
+              {distance && ` • ${distance} away`}
             </span>
           </div>
         )}

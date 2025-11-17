@@ -276,7 +276,7 @@ export default function InstructorProfile() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => navigate(`/book-instructor/${id}?type=practice_room&duration=${price.duration_minutes}`)}
+                                onClick={() => navigate(`/practice-rooms?instructor=${id}`)}
                               >
                                 View Rooms
                               </Button>

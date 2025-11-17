@@ -1,13 +1,15 @@
 import BottomNav from "@/components/BottomNav";
-import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Info, FileText, Shield, BookOpen, Car, Clock, QrCode, Crown, CreditCard } from "lucide-react";
+import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Info, FileText, Shield, BookOpen, Car, Clock, QrCode, Crown, CreditCard, GraduationCap } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { format, differenceInDays, parseISO, isAfter } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { usePremium } from "@/hooks/usePremium";
+import { useQueryClient } from "@tanstack/react-query";
 import { getProfile } from "@/lib/supabase/profiles";
 import { getAllPerformance } from "@/lib/supabase/performance";
 import { getTestHistory } from "@/lib/supabase/tests";
+import { getInstructorByUserId } from "@/lib/supabase/instructors";
 import { getMonthSchedule, autoCompletePastEvents } from "@/lib/supabase/drivingSchedule";
 import { getUserCurriculum, getCurriculumProgress, autoCompletePastLectures } from "@/lib/supabase/curriculum";
 import { useQuery } from "@tanstack/react-query";
@@ -23,7 +25,8 @@ import { useEffect } from "react";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
-  const { isPremium, subscription } = usePremium();
+  const { isPremium, subscription, isLoading: premiumLoading } = usePremium();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -38,6 +41,17 @@ const Profile = () => {
       autoCompletePastLectures().catch(console.error);
     }
   }, [user?.id]);
+
+  // Refresh subscription status when page is focused (in case payment just completed)
+  useEffect(() => {
+    if (user) {
+      const handleFocus = () => {
+        queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
+      };
+      window.addEventListener('focus', handleFocus);
+      return () => window.removeEventListener('focus', handleFocus);
+    }
+  }, [user?.id, queryClient]);
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", user?.id],
@@ -75,6 +89,12 @@ const Profile = () => {
     queryFn: () => getCurriculumProgress(user!.id),
     enabled: !!user,
     staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: instructor } = useQuery({
+    queryKey: ["instructor-profile", user?.id],
+    queryFn: () => getInstructorByUserId(user!.id),
+    enabled: !!user,
   });
 
   const isLoading = profileLoading || performanceLoading || testHistoryLoading || scheduleLoading || curriculumLoading;
@@ -126,6 +146,11 @@ const Profile = () => {
   };
 
   const menuItems = [
+    { icon: GraduationCap, label: "Book Instructor", description: "Get personalized lessons", onClick: () => navigate('/book-instructor'), highlight: true },
+    { icon: BookOpen, label: "My Bookings", description: "View your sessions", onClick: () => navigate('/my-bookings') },
+    ...(instructor && instructor.status === 'approved' ? [
+      { icon: GraduationCap, label: "Instructor Dashboard", description: "Manage your instructor profile", onClick: () => navigate('/instructor/dashboard'), highlight: true }
+    ] : []),
     { icon: CreditCard, label: "Account", description: "Subscription & billing", onClick: () => navigate('/account'), highlight: isPremium },
     { icon: Settings, label: "Settings", description: "App preferences", onClick: () => setSettingsOpen(true) },
     { icon: Bell, label: "Notifications", description: "Manage alerts", onClick: () => setNotificationsOpen(true) },

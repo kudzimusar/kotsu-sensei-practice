@@ -121,7 +121,7 @@ async function handleCheckoutCompleted(
   const planType = session.metadata?.plan_type;
   const bookingId = session.metadata?.booking_id;
 
-  // Handle booking payments
+    // Handle booking payments
   if (bookingId) {
     await supabase
       .from("bookings")
@@ -135,6 +135,19 @@ async function handleCheckoutCompleted(
       .eq("user_id", userId);
 
     console.log("Booking payment completed:", bookingId);
+
+    // Send confirmation notification
+    try {
+      await supabase.functions.invoke("send-booking-notifications", {
+        body: {
+          booking_id: bookingId,
+          notification_type: "booking_confirmed",
+        },
+      });
+    } catch (error) {
+      console.error("Failed to send notification:", error);
+    }
+
     return;
   }
 

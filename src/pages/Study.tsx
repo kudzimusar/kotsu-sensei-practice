@@ -212,6 +212,26 @@ const Study = () => {
               </Link>
             </section>
 
+            {/* Book Instructor */}
+            <section>
+              <Link to="/book-instructor">
+                <Card className="p-5 bg-gradient-to-br from-blue-500/10 to-blue-500/5 hover:shadow-lg transition-shadow cursor-pointer border-blue-500/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                        <GraduationCap className="text-blue-600" size={24} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm">Book an Instructor</h3>
+                        <p className="text-xs text-muted-foreground">Get personalized lessons from certified instructors</p>
+                      </div>
+                    </div>
+                    <span className="text-blue-600 font-bold text-xs">Open →</span>
+                  </div>
+                </Card>
+              </Link>
+            </section>
+
             {/* Study by Category */}
             <section>
               <h2 className="font-bold text-base mb-4">Study by Category</h2>

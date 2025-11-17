@@ -82,11 +82,26 @@
       (function(){
         var redirect = sessionStorage.redirect;
         delete sessionStorage.redirect;
-        if (redirect && redirect !== location.pathname + location.search + location.hash) {
-          // Preserve the base path for GitHub Pages
+        if (redirect) {
+          // Get current path without base path
           var basePath = '/kotsu-sensei-practice';
-          var fullPath = basePath + redirect;
-          history.replaceState(null, null, fullPath);
+          var currentPath = window.location.pathname;
+          
+          // Remove base path from current path if present
+          if (currentPath.startsWith(basePath)) {
+            currentPath = currentPath.substring(basePath.length);
+          }
+          
+          // Ensure currentPath starts with /
+          if (!currentPath.startsWith('/')) {
+            currentPath = '/' + currentPath;
+          }
+          
+          // Only redirect if paths are different
+          if (redirect !== currentPath + window.location.search + window.location.hash) {
+            var fullPath = basePath + redirect;
+            history.replaceState(null, null, fullPath);
+          }
         }
       })();
     </script>

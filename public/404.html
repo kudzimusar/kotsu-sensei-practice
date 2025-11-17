@@ -10,11 +10,24 @@
       var search = window.location.search;
       var hash = window.location.hash;
       
-      // Store the full URL for React Router to handle
-      sessionStorage.redirect = path + search + hash;
+      // Remove base path if it's already in the path to avoid duplication
+      var basePath = '/kotsu-sensei-practice';
+      var cleanPath = path;
+      
+      // If path already starts with basePath, remove it
+      if (path.startsWith(basePath)) {
+        cleanPath = path.substring(basePath.length);
+      }
+      
+      // Ensure cleanPath starts with /
+      if (!cleanPath.startsWith('/')) {
+        cleanPath = '/' + cleanPath;
+      }
+      
+      // Store the clean path for React Router to handle
+      sessionStorage.redirect = cleanPath + search + hash;
       
       // Redirect to index.html (GitHub Pages will serve this)
-      var basePath = '/kotsu-sensei-practice';
       window.location.replace(basePath + '/index.html');
     </script>
   </head>
