@@ -110,7 +110,7 @@ export default function Payment() {
 
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      navigate("/auth", { state: { from: "/payment" } });
       return;
     }
 
@@ -123,7 +123,7 @@ export default function Payment() {
   const handleCheckout = async (planType: PlanType) => {
     if (!user) {
       toast.error("Please sign in to continue");
-      navigate("/auth");
+      navigate("/auth", { state: { from: "/payment" } });
       return;
     }
 

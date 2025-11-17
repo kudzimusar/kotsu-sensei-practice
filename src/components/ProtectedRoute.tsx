@@ -1,17 +1,21 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, isGuest, guestId } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!loading && !user && !guestId) {
-      navigate("/auth");
+      // Preserve the intended destination so user can return after login
+      navigate("/auth", { 
+        state: { from: location.pathname + location.search } 
+      });
     }
-  }, [user, loading, guestId, navigate]);
+  }, [user, loading, guestId, navigate, location]);
 
   if (loading) {
     return (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,17 +15,21 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  
+  // Get the intended destination from location state, default to home
+  const from = (location.state as any)?.from || "/";
 
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/");
+        navigate(from);
       }
     };
     checkUser();
-  }, [navigate]);
+  }, [navigate, from]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +54,13 @@ const Auth = () => {
           title: 'Account created successfully!',
           description: 'Please check your email to verify your account.',
         });
+        
+        // If user is auto-logged in (email verification disabled), redirect to intended destination
+        // Otherwise, they'll need to verify email first
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          navigate(from);
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -62,7 +73,7 @@ const Auth = () => {
           title: 'Welcome back!',
           description: 'You have successfully signed in.',
         });
-        navigate("/");
+        navigate(from);
       }
     } catch (error: any) {
       toast({
