@@ -22,6 +22,7 @@ const ShareReferral = () => {
   const [qrGenerated, setQrGenerated] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [qrLoading, setQrLoading] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -29,7 +30,7 @@ const ShareReferral = () => {
     enabled: !!user,
   });
 
-  const { data: referralData } = useQuery({
+  const { data: referralData, isLoading: isLoadingReferral } = useQuery({
     queryKey: ["referralCode", user?.id],
     queryFn: generateReferralCode,
     enabled: !!user,
@@ -37,35 +38,78 @@ const ShareReferral = () => {
 
   const referralCode = referralData?.referralCode || '';
   const shareUrl = `${PWA_BASE_URL}/?ref=${referralCode}`;
-  const shortUrl = `kotsu.me/${referralCode}`;
+  const shortUrl = referralCode ? `kotsu.me/${referralCode}` : 'Loading...';
 
-  // Generate QR Code for modal when opened
+  // Debug logging
   useEffect(() => {
-    if (showQR && qrModalCanvasRef.current && referralCode) {
-      // Small delay to ensure canvas is rendered in DOM
-      const timer = setTimeout(() => {
-        if (qrModalCanvasRef.current) {
-          QRCode.toCanvas(qrModalCanvasRef.current, shareUrl, {
-            width: 280,
-            margin: 2,
-            color: { dark: '#1a73e8', light: '#ffffff' }
-          }, (err) => {
-            if (err) {
-              console.error('QR Code modal generation error:', err);
-              toast({
-                title: "QR Generation Failed",
-                description: "Please try again",
-                variant: "destructive",
-              });
-            } else {
-              console.log('QR Code generated successfully');
-            }
-          });
-        }
-      }, 100);
-      
-      return () => clearTimeout(timer);
+    console.log('ShareReferral Debug:', {
+      user: user?.id,
+      referralData,
+      referralCode,
+      shareUrl,
+      shortUrl
+    });
+  }, [user, referralData, referralCode, shareUrl, shortUrl]);
+
+  // Generate QR Code when modal opens
+  useEffect(() => {
+    if (!showQR || !referralCode) {
+      console.log('QR generation skipped:', { showQR, referralCode });
+      return;
     }
+
+    setQrLoading(true);
+    setQrGenerated(false);
+
+    // Wait for modal to fully render
+    const timer = setTimeout(() => {
+      const canvas = qrModalCanvasRef.current;
+      if (!canvas) {
+        console.error('Canvas not found');
+        setQrLoading(false);
+        toast({
+          title: "Canvas Error",
+          description: "Unable to initialize QR code canvas",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Generating QR for URL:', shareUrl);
+      
+      QRCode.toCanvas(
+        canvas,
+        shareUrl,
+        {
+          width: 280,
+          height: 280,
+          margin: 2,
+          color: {
+            dark: '#1a73e8',
+            light: '#ffffff'
+          }
+        },
+        (err) => {
+          setQrLoading(false);
+          if (err) {
+            console.error('QR generation error:', err);
+            toast({
+              title: "QR Generation Failed",
+              description: err.message || "Please try again",
+              variant: "destructive",
+            });
+          } else {
+            console.log('QR Code generated successfully!');
+            setQrGenerated(true);
+          }
+        }
+      );
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+      setQrLoading(false);
+    };
   }, [showQR, shareUrl, referralCode, toast]);
 
   const handleCopy = async () => {
@@ -143,6 +187,29 @@ const ShareReferral = () => {
 
   if (!user) {
     return null;
+  }
+
+  if (isLoadingReferral) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your referral link...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!referralCode) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center">
+        <div className="text-center px-6">
+          <p className="text-destructive font-semibold mb-2">Unable to load referral code</p>
+          <p className="text-muted-foreground text-sm">Please try again later</p>
+          <Button onClick={() => navigate(-1)} className="mt-4">Go Back</Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -234,13 +301,29 @@ const ShareReferral = () => {
             <DialogTitle className="text-center">Scan QR Code</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
-            <div className="p-4 bg-white rounded-xl shadow-sm">
-              <canvas ref={qrModalCanvasRef} width={280} height={280} />
+            <div className="p-4 bg-white rounded-xl shadow-sm relative">
+              {qrLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              )}
+              <canvas 
+                ref={qrModalCanvasRef} 
+                width={280} 
+                height={280}
+                className="block"
+                style={{ width: '280px', height: '280px' }}
+              />
             </div>
             <p className="text-sm text-muted-foreground text-center">
               Scan this code to install {APP_NAME}
             </p>
-            <Button onClick={downloadQR} variant="outline" className="w-full">
+            <Button 
+              onClick={downloadQR} 
+              variant="outline" 
+              className="w-full"
+              disabled={!qrGenerated || qrLoading}
+            >
               Download QR Code
             </Button>
           </div>
