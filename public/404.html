@@ -4,10 +4,18 @@
     <meta charset="utf-8">
     <title>Redirecting...</title>
     <script>
-      // Redirect to index.html and preserve the path
-      // GitHub Pages will serve this file for 404 errors
-      sessionStorage.redirect = location.href;
-      location.replace('/kotsu-sensei-practice/');
+      // GitHub Pages 404.html - Redirect to index.html preserving the path
+      // This allows React Router to handle client-side routing
+      var path = window.location.pathname;
+      var search = window.location.search;
+      var hash = window.location.hash;
+      
+      // Store the full URL for React Router to handle
+      sessionStorage.redirect = path + search + hash;
+      
+      // Redirect to index.html (GitHub Pages will serve this)
+      var basePath = '/kotsu-sensei-practice';
+      window.location.replace(basePath + '/index.html');
     </script>
   </head>
   <body>

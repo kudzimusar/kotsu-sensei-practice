@@ -82,8 +82,11 @@
       (function(){
         var redirect = sessionStorage.redirect;
         delete sessionStorage.redirect;
-        if (redirect && redirect !== location.href) {
-          history.replaceState(null, null, redirect);
+        if (redirect && redirect !== location.pathname + location.search + location.hash) {
+          // Preserve the base path for GitHub Pages
+          var basePath = '/kotsu-sensei-practice';
+          var fullPath = basePath + redirect;
+          history.replaceState(null, null, fullPath);
         }
       })();
     </script>
