@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound";
 import AIChatbot from "./pages/AIChatbot";
 import Flashcards from "./pages/Flashcards";
 import Account from "./pages/Account";
+import ShareReferral from "./pages/ShareReferral";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+          <Route path="/share-referral" element={<ProtectedRoute><ShareReferral /></ProtectedRoute>} />
           <Route path="/generate" element={<ProtectedRoute><QuestionGenerator /></ProtectedRoute>} />
           <Route path="/about" element={<About />} />
           <Route path="/support" element={<Support />} />

@@ -65,6 +65,28 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        event: {
+          lesson: {
+            DEFAULT: "hsl(var(--event-lesson))",
+            foreground: "hsl(var(--event-lesson-foreground))",
+            bg: "hsl(var(--event-lesson-bg))",
+          },
+          test: {
+            DEFAULT: "hsl(var(--event-test))",
+            foreground: "hsl(var(--event-test-foreground))",
+            bg: "hsl(var(--event-test-bg))",
+          },
+          class: {
+            DEFAULT: "hsl(var(--event-class))",
+            foreground: "hsl(var(--event-class-foreground))",
+            bg: "hsl(var(--event-class-bg))",
+          },
+          practice: {
+            DEFAULT: "hsl(var(--event-practice))",
+            foreground: "hsl(var(--event-practice-foreground))",
+            bg: "hsl(var(--event-practice-bg))",
+          },
+        },
       },
       backgroundImage: {
         'gradient-primary': 'var(--gradient-primary)',

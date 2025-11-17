@@ -348,6 +348,125 @@ export type Database = {
         }
         Relationships: []
       }
+      instructor_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          duration_minutes: number
+          id: string
+          instructor_id: string
+          instructor_notes: string | null
+          meeting_id: string | null
+          meeting_link: string | null
+          notes: string | null
+          price_paid: number | null
+          rating: number | null
+          review: string | null
+          scheduled_at: string
+          status: Database["public"]["Enums"]["instructor_session_status"]
+          stripe_payment_intent_id: string | null
+          updated_at: string
+          user_id: string
+          user_notes: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          instructor_id: string
+          instructor_notes?: string | null
+          meeting_id?: string | null
+          meeting_link?: string | null
+          notes?: string | null
+          price_paid?: number | null
+          rating?: number | null
+          review?: string | null
+          scheduled_at: string
+          status?: Database["public"]["Enums"]["instructor_session_status"]
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+          user_id: string
+          user_notes?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          instructor_id?: string
+          instructor_notes?: string | null
+          meeting_id?: string | null
+          meeting_link?: string | null
+          notes?: string | null
+          price_paid?: number | null
+          rating?: number | null
+          review?: string | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["instructor_session_status"]
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+          user_id?: string
+          user_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instructor_sessions_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instructors: {
+        Row: {
+          availability_schedule: Json | null
+          bio: string | null
+          created_at: string
+          email: string
+          hourly_rate: number
+          id: string
+          is_active: boolean | null
+          languages: string[] | null
+          name: string
+          phone: string | null
+          rating: number | null
+          total_sessions: number | null
+          updated_at: string
+        }
+        Insert: {
+          availability_schedule?: Json | null
+          bio?: string | null
+          created_at?: string
+          email: string
+          hourly_rate?: number
+          id?: string
+          is_active?: boolean | null
+          languages?: string[] | null
+          name: string
+          phone?: string | null
+          rating?: number | null
+          total_sessions?: number | null
+          updated_at?: string
+        }
+        Update: {
+          availability_schedule?: Json | null
+          bio?: string | null
+          created_at?: string
+          email?: string
+          hourly_rate?: number
+          id?: string
+          is_active?: boolean | null
+          languages?: string[] | null
+          name?: string
+          phone?: string | null
+          rating?: number | null
+          total_sessions?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -355,6 +474,7 @@ export type Database = {
           full_name: string | null
           gender: string | null
           id: string
+          is_premium: boolean | null
           updated_at: string
         }
         Insert: {
@@ -363,6 +483,7 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id: string
+          is_premium?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -371,6 +492,7 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id?: string
+          is_premium?: boolean | null
           updated_at?: string
         }
         Relationships: []
@@ -596,6 +718,96 @@ export type Database = {
           updated_at?: string
           user_id?: string
           weekly_study_hours_target?: number
+        }
+        Relationships: []
+      }
+      subscription_usage: {
+        Row: {
+          count: number
+          created_at: string
+          feature_type: string
+          id: string
+          limit_count: number
+          reset_at: string | null
+          updated_at: string
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          feature_type: string
+          id?: string
+          limit_count?: number
+          reset_at?: string | null
+          updated_at?: string
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          feature_type?: string
+          id?: string
+          limit_count?: number
+          reset_at?: string | null
+          updated_at?: string
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type"]
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id: string | null
+          stripe_price_id: string | null
+          stripe_subscription_id: string | null
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_type: Database["public"]["Enums"]["subscription_plan_type"]
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_type?: Database["public"]["Enums"]["subscription_plan_type"]
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1036,6 +1248,18 @@ export type Database = {
     }
     Functions: {
       auto_complete_past_schedule_events: { Args: never; Returns: undefined }
+      check_and_increment_usage: {
+        Args: {
+          p_feature_type: string
+          p_increment_by?: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      get_user_feature_limit: {
+        Args: { p_feature_type: string; p_user_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1047,6 +1271,7 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      is_user_premium: { Args: { p_user_id: string }; Returns: boolean }
       mark_schedule_event_complete: {
         Args: { event_id: string }
         Returns: {
@@ -1076,9 +1301,24 @@ export type Database = {
         Args: { p_guest_session_id: string; p_user_id: string }
         Returns: Json
       }
+      reset_daily_usage: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      instructor_session_status:
+        | "scheduled"
+        | "completed"
+        | "cancelled"
+        | "no_show"
+      subscription_plan_type: "monthly" | "quarterly" | "annual" | "lifetime"
+      subscription_status:
+        | "active"
+        | "canceled"
+        | "past_due"
+        | "trialing"
+        | "incomplete"
+        | "incomplete_expired"
+        | "unpaid"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1207,6 +1447,22 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      instructor_session_status: [
+        "scheduled",
+        "completed",
+        "cancelled",
+        "no_show",
+      ],
+      subscription_plan_type: ["monthly", "quarterly", "annual", "lifetime"],
+      subscription_status: [
+        "active",
+        "canceled",
+        "past_due",
+        "trialing",
+        "incomplete",
+        "incomplete_expired",
+        "unpaid",
+      ],
     },
   },
 } as const

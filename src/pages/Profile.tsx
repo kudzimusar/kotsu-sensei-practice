@@ -1,5 +1,5 @@
 import BottomNav from "@/components/BottomNav";
-import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Info, FileText, Shield, BookOpen, Car, Clock, Crown, CreditCard } from "lucide-react";
+import { User, Calendar, Target, Trophy, Settings, Bell, HelpCircle, LogOut, Info, FileText, Shield, BookOpen, Car, Clock, QrCode, Crown, CreditCard } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { format, differenceInDays, parseISO, isAfter } from "date-fns";
@@ -174,7 +174,7 @@ const Profile = () => {
         {/* User Card */}
         <section className="mb-6">
           <div className="bg-white rounded-2xl shadow-md p-6">
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-4 mb-4">
               <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
                 <span className="text-blue-600 font-bold text-lg">{userStats.name[0]}</span>
               </div>
@@ -232,6 +232,15 @@ const Profile = () => {
                 </Button>
               </div>
             </div>
+
+            {/* QR Code Share Button - WhatsApp Business Style */}
+            <button
+              onClick={() => navigate('/share-referral')}
+              className="w-full flex items-center justify-center gap-2 py-3 mb-4 bg-primary/10 hover:bg-primary/15 text-primary rounded-xl transition-colors"
+            >
+              <QrCode className="w-5 h-5" />
+              <span className="font-semibold text-sm">Share & Earn Commission</span>
+            </button>
 
             {/* Exam Date */}
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
