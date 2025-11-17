@@ -286,6 +286,8 @@ serve(async (req) => {
         mode: "payment",
         success_url: success_url,
         cancel_url: cancel_url,
+        // Allow users to enter payment details instead of using saved card
+        payment_method_collection: "always", // Always show payment form, don't auto-fill saved payment methods
         metadata: {
           user_id: user.id,
           plan_type: plan_type,
@@ -363,6 +365,8 @@ serve(async (req) => {
         mode: "subscription",
         success_url: success_url,
         cancel_url: cancel_url,
+        // Allow users to enter payment details instead of using saved card
+        payment_method_collection: "always", // Always show payment form, don't auto-fill saved payment methods
         subscription_data: {
           trial_period_days: 7, // 7-day free trial
           metadata: {
