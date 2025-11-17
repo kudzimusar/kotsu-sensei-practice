@@ -142,21 +142,17 @@ export default function Payment() {
 
     try {
       // Get current URL for success/cancel redirects
-      // Use the current location to avoid double path issues
+      // Construct URLs properly to avoid double path issues
       const baseUrl = window.location.origin;
-      // Get the actual path prefix from current location to avoid duplication
-      const currentPath = window.location.pathname;
-      let pathPrefix = '';
-      if (import.meta.env.MODE === 'production') {
-        // Check if we're already on the correct path
-        if (currentPath.startsWith('/kotsu-sensei-practice')) {
-          pathPrefix = '/kotsu-sensei-practice';
-        } else {
-          pathPrefix = '/kotsu-sensei-practice';
-        }
-      }
+      
+      // In production, use the base path; in development, use root
+      const pathPrefix = import.meta.env.MODE === 'production' ? '/kotsu-sensei-practice' : '';
+      
+      // Construct clean paths without duplication
       const successUrl = `${baseUrl}${pathPrefix}/payment/success?session_id={CHECKOUT_SESSION_ID}`;
       const cancelUrl = `${baseUrl}${pathPrefix}/payment?canceled=true`;
+      
+      console.log('Checkout URLs:', { successUrl, cancelUrl, pathPrefix, baseUrl });
 
       // Call Supabase Edge Function to create checkout session
       const { data, error } = await supabase.functions.invoke("create-checkout-session", {
