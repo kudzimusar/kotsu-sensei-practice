@@ -189,9 +189,21 @@ const Profile = () => {
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", user?.id],
-    queryFn: () => getProfile(user!.id),
+    queryFn: async () => {
+      // Always fetch fresh data including is_premium
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user!.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
     enabled: !!user,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const { data: performance = [], isLoading: performanceLoading } = useQuery({
@@ -595,36 +607,54 @@ const Profile = () => {
                       
                       console.log("✅ Test subscription created:", newSub);
                       
-                      // Update is_premium
-                      const { error: updateError } = await supabase
+                      // Update is_premium (verify it worked)
+                      const { data: updatedProfile, error: updateError } = await supabase
                         .from("profiles")
                         .update({ is_premium: true })
-                        .eq("id", user.id);
+                        .eq("id", user.id)
+                        .select()
+                        .single();
                       
                       if (updateError) {
                         console.error("❌ Error updating is_premium:", updateError);
                         toast.error(`Subscription created but failed to update profile: ${updateError.message}`);
-                      } else {
-                        console.log("✅ Profile updated to premium");
-                        
-                        // Force cache update
-                        queryClient.setQueryData(["subscription", user.id], {
-                          ...newSub,
-                          _updatedAt: Date.now(),
-                        });
-                        queryClient.setQueryData(["profile", user.id], {
-                          is_premium: true,
-                          _updatedAt: Date.now(),
-                        });
-                        
-                        await queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
-                        await queryClient.refetchQueries({ queryKey: ["profile", user.id] });
-                        
-                        toast.success("Test subscription created! Refreshing page...");
-                        setTimeout(() => {
-                          window.location.reload();
-                        }, 1000);
+                        return;
                       }
+                      
+                      console.log("✅ Profile updated to premium:", updatedProfile);
+                      
+                      // Verify the update worked
+                      const { data: verifiedProfile } = await supabase
+                        .from("profiles")
+                        .select("is_premium")
+                        .eq("id", user.id)
+                        .maybeSingle();
+                      
+                      console.log("✅ Verified profile:", verifiedProfile);
+                      
+                      // Force cache update with new object references
+                      queryClient.setQueryData(["subscription", user.id], {
+                        ...newSub,
+                        _updatedAt: Date.now(),
+                      });
+                      
+                      queryClient.setQueryData(["profile", user.id], {
+                        ...updatedProfile,
+                        _updatedAt: Date.now(),
+                      });
+                      
+                      // Invalidate and refetch to ensure fresh data
+                      await queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
+                      await queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+                      await queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
+                      await queryClient.refetchQueries({ queryKey: ["profile", user.id] });
+                      
+                      toast.success("Test subscription created! Refreshing page...");
+                      
+                      // Force hard refresh after a short delay
+                      setTimeout(() => {
+                        window.location.href = window.location.href;
+                      }, 1500);
                     } catch (error) {
                       console.error("❌ Unexpected error:", error);
                       toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);

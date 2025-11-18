@@ -5,6 +5,7 @@ export interface Profile {
   full_name: string | null;
   exam_date: string | null;
   gender: string | null;
+  is_premium?: boolean; // Added is_premium field
   created_at: string;
   updated_at: string;
 }
