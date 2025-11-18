@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Crown, Loader2, Calendar, CreditCard, ArrowRight, Download, Share2, Sparkles, Clock, Gift, TrendingUp, HelpCircle } from "lucide-react";
+import { CheckCircle2, Crown, Loader2, Calendar, CreditCard, ArrowRight, Download, Share2, Sparkles, Clock, Gift, TrendingUp, HelpCircle, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePremium } from "@/hooks/usePremium";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,8 +36,9 @@ export default function PaymentSuccess() {
   const sessionId = searchParams.get("session_id");
   const [isVerifying, setIsVerifying] = useState(true);
   const [sessionDetails, setSessionDetails] = useState<SessionDetails | null>(null);
-  const [countdown, setCountdown] = useState(5);
-  const [autoRedirect, setAutoRedirect] = useState(true);
+  const [countdown, setCountdown] = useState(15); // Increased to 15 seconds
+  const [autoRedirect, setAutoRedirect] = useState(false); // Disabled by default
+  const [subscriptionConfirmed, setSubscriptionConfirmed] = useState(false); // Track when subscription is confirmed
 
   // Plan details mapping
   const planDetails: Record<string, { name: string; price: number; period: string; features: string[] }> = {
@@ -139,14 +140,16 @@ export default function PaymentSuccess() {
             // Subscription found! Force immediate UI update
             console.log("✅ Subscription found:", subscriptionData.id, "Status:", subscriptionData.status);
             
-            // Force immediate update to cache
-            queryClient.setQueryData(["subscription", user.id], subscriptionData);
-            queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
-            queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
-            queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
-            queryClient.refetchQueries({ queryKey: ["profile", user.id] });
+            // Create NEW object with timestamp to force React Query to see it as changed
+            const updatedSubscription = {
+              ...subscriptionData,
+              _updatedAt: Date.now(), // Force new object reference
+            };
             
-            // Update profile is_premium flag if needed
+            // Update cache with new object reference (forces React Query to detect change)
+            queryClient.setQueryData(["subscription", user.id], updatedSubscription);
+            
+            // Update profile is_premium flag
             const { data: profileData } = await supabase
               .from("profiles")
               .select("is_premium")
@@ -158,8 +161,20 @@ export default function PaymentSuccess() {
                 .from("profiles")
                 .update({ is_premium: true })
                 .eq("id", user.id);
-              queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+              
+              // Force profile cache update with new reference
+              queryClient.setQueryData(["profile", user.id], {
+                ...profileData,
+                is_premium: true,
+                _updatedAt: Date.now(),
+              });
             }
+            
+            // Wait a bit for cache update to propagate, then refetch for consistency
+            setTimeout(() => {
+              queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
+              queryClient.refetchQueries({ queryKey: ["profile", user.id] });
+            }, 200);
             
             // Also fetch session details
             try {
@@ -174,6 +189,9 @@ export default function PaymentSuccess() {
             }
             
             setIsVerifying(false);
+            setSubscriptionConfirmed(true); // Mark subscription as confirmed
+            setAutoRedirect(true); // Enable auto-redirect now that subscription is confirmed
+            setCountdown(15); // Reset countdown to 15 seconds
             toast.success("Welcome to Premium! 🎉");
             return;
           }
@@ -209,17 +227,22 @@ export default function PaymentSuccess() {
     }
   }, [user, sessionId, navigate, queryClient]);
 
-  // Auto-redirect countdown
+  // Auto-redirect countdown - only start AFTER subscription is confirmed
   useEffect(() => {
-    if (!isVerifying && autoRedirect && countdown > 0) {
+    // Only start countdown if:
+    // 1. Not verifying (subscription check complete)
+    // 2. Subscription is confirmed
+    // 3. Auto-redirect is enabled
+    // 4. Countdown is greater than 0
+    if (!isVerifying && subscriptionConfirmed && autoRedirect && countdown > 0) {
       const timer = setTimeout(() => {
         setCountdown(countdown - 1);
       }, 1000);
       return () => clearTimeout(timer);
-    } else if (!isVerifying && autoRedirect && countdown === 0) {
+    } else if (!isVerifying && subscriptionConfirmed && autoRedirect && countdown === 0) {
       navigate("/");
     }
-  }, [isVerifying, autoRedirect, countdown, navigate]);
+  }, [isVerifying, subscriptionConfirmed, autoRedirect, countdown, navigate]);
 
   // Cancel auto-redirect
   const handleCancelRedirect = () => {
@@ -497,8 +520,57 @@ export default function PaymentSuccess() {
               </CardContent>
             </Card>
 
-            {/* Auto-redirect Notice */}
-            {autoRedirect && countdown > 0 && (
+            {/* Manual Refresh Button */}
+            {!isVerifying && (
+              <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Subscription Status
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        {subscription ? "Active" : "Not detected yet"}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                      onClick={async () => {
+                        // Force refresh subscription status
+                        const { data: subscriptionData } = await supabase
+                          .from("subscriptions")
+                          .select("*")
+                          .eq("user_id", user.id)
+                          .in("status", ["active", "trialing"])
+                          .order("created_at", { ascending: false })
+                          .maybeSingle();
+                        
+                        if (subscriptionData) {
+                          // Force update with new reference
+                          queryClient.setQueryData(["subscription", user.id], {
+                            ...subscriptionData,
+                            _updatedAt: Date.now(),
+                          });
+                          await queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
+                          await queryClient.refetchQueries({ queryKey: ["profile", user.id] });
+                          toast.success("Subscription status refreshed!");
+                        } else {
+                          toast.info("No subscription found. Please wait a moment and try again.");
+                        }
+                      }}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Refresh Status
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Auto-redirect Notice - only show after subscription is confirmed */}
+            {subscriptionConfirmed && autoRedirect && countdown > 0 && (
               <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">

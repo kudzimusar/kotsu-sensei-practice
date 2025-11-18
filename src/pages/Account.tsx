@@ -188,7 +188,7 @@ export default function Account() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {isPremium && subscription ? (
+            {(subscription && (subscription.status === "active" || subscription.status === "trialing")) || (isPremium && subscription) ? (
               <>
                 <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -280,7 +280,7 @@ export default function Account() {
         </Card>
 
         {/* Payment Method */}
-        {isPremium && subscription && (
+        {((subscription && (subscription.status === "active" || subscription.status === "trialing")) || (isPremium && subscription)) && (
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -322,7 +322,7 @@ export default function Account() {
         )}
 
         {/* Billing History */}
-        {isPremium && subscription && (
+        {((subscription && (subscription.status === "active" || subscription.status === "trialing")) || (isPremium && subscription)) && (
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">

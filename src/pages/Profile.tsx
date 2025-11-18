@@ -23,6 +23,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -89,6 +90,72 @@ const Profile = () => {
       };
       window.addEventListener('focus', handleFocus);
       return () => window.removeEventListener('focus', handleFocus);
+    }
+  }, [user?.id, queryClient]);
+
+  // Force check and update premium status on mount
+  useEffect(() => {
+    if (user) {
+      const forceUpdatePremiumStatus = async () => {
+        try {
+          // 1. Check if subscription exists
+          const { data: subscriptionData, error: subError } = await supabase
+            .from("subscriptions")
+            .select("*")
+            .eq("user_id", user.id)
+            .in("status", ["active", "trialing"])
+            .order("created_at", { ascending: false })
+            .maybeSingle();
+          
+          if (!subError && subscriptionData) {
+            // 2. Force update is_premium flag directly
+            const { error: updateError } = await supabase
+              .from("profiles")
+              .update({ is_premium: true })
+              .eq("id", user.id);
+            
+            if (updateError) {
+              console.error("Error updating is_premium:", updateError);
+            } else {
+              console.log("✅ Force-updated is_premium to true");
+            }
+            
+            // 3. Force update React Query cache with new reference
+            queryClient.setQueryData(["subscription", user.id], {
+              ...subscriptionData,
+              _updatedAt: Date.now(),
+            });
+            
+            queryClient.setQueryData(["profile", user.id], {
+              is_premium: true,
+              _updatedAt: Date.now(),
+            });
+            
+            // 4. Force refetch
+            await queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
+            await queryClient.refetchQueries({ queryKey: ["profile", user.id] });
+          } else if (!subError && !subscriptionData) {
+            // No subscription found - ensure is_premium is false
+            const { error: updateError } = await supabase
+              .from("profiles")
+              .update({ is_premium: false })
+              .eq("id", user.id);
+            
+            if (!updateError) {
+              queryClient.setQueryData(["profile", user.id], {
+                is_premium: false,
+                _updatedAt: Date.now(),
+              });
+              await queryClient.refetchQueries({ queryKey: ["profile", user.id] });
+            }
+          }
+        } catch (error) {
+          console.error("Error in forceUpdatePremiumStatus:", error);
+        }
+      };
+      
+      // Run immediately on mount
+      forceUpdatePremiumStatus();
     }
   }, [user?.id, queryClient]);
 
@@ -265,7 +332,7 @@ const Profile = () => {
                         <p className="text-[10px] text-gray-400">Checking subscription</p>
                       </div>
                     </>
-                  ) : isPremium && subscription ? (
+                  ) : (subscription && (subscription.status === "active" || subscription.status === "trialing")) || (profile?.is_premium === true) ? (
                     <>
                       <Crown className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                       <div>
@@ -304,14 +371,59 @@ const Profile = () => {
                       : "bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white"
                   }`}
                   onClick={() => {
-                    if (isPremium) {
+                    if (subscription && (subscription.status === "active" || subscription.status === "trialing")) {
                       navigate("/account");
                     } else {
                       navigate("/payment");
                     }
                   }}
                 >
-                  {isPremium ? "Manage" : "Upgrade"}
+                  {subscription && (subscription.status === "active" || subscription.status === "trialing") ? "Manage" : "Upgrade"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7 text-blue-600 hover:text-blue-700"
+                  onClick={async () => {
+                    if (!user) return;
+                    
+                    // Direct database check and update
+                    const { data: subscriptionData } = await supabase
+                      .from("subscriptions")
+                      .select("*")
+                      .eq("user_id", user.id)
+                      .in("status", ["active", "trialing"])
+                      .order("created_at", { ascending: false })
+                      .maybeSingle();
+                    
+                    if (subscriptionData) {
+                      // Force update is_premium
+                      await supabase
+                        .from("profiles")
+                        .update({ is_premium: true })
+                        .eq("id", user.id);
+                      
+                      // Force cache update
+                      queryClient.setQueryData(["subscription", user.id], {
+                        ...subscriptionData,
+                        _updatedAt: Date.now(),
+                      });
+                      queryClient.setQueryData(["profile", user.id], {
+                        is_premium: true,
+                        _updatedAt: Date.now(),
+                      });
+                      
+                      // Refetch
+                      await queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
+                      await queryClient.refetchQueries({ queryKey: ["profile", user.id] });
+                      
+                      toast.success("Status updated! Please refresh the page.");
+                    } else {
+                      toast.info("No active subscription found.");
+                    }
+                  }}
+                >
+                  Fix Status
                 </Button>
               </div>
             </div>
