@@ -55,6 +55,13 @@ serve(async (req) => {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+        console.log("📦 checkout.session.completed:", {
+          session_id: session.id,
+          mode: session.mode,
+          customer: session.customer,
+          subscription: session.subscription,
+          metadata: session.metadata,
+        });
         await handleCheckoutCompleted(supabaseClient, session);
         break;
       }
@@ -62,6 +69,12 @@ serve(async (req) => {
       case "customer.subscription.created":
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
+        console.log("🔄 customer.subscription." + (event.type.includes("created") ? "created" : "updated") + ":", {
+          subscription_id: subscription.id,
+          status: subscription.status,
+          customer: subscription.customer,
+          metadata: subscription.metadata,
+        });
         await handleSubscriptionUpdate(supabaseClient, subscription);
         break;
       }
@@ -191,13 +204,83 @@ async function handleCheckoutCompleted(
 
   // Handle subscription payments
   if (!userId || !planType) {
-    console.error("Missing metadata in checkout session");
+    console.error("Missing metadata in checkout session:", {
+      userId,
+      planType,
+      metadata: session.metadata,
+    });
     return;
+  }
+
+  // For subscriptions, get the subscription object and create record immediately
+  if (session.mode === "subscription" && session.subscription) {
+    const subscriptionId = typeof session.subscription === 'string' 
+      ? session.subscription 
+      : session.subscription.id;
+    
+    try {
+      // Retrieve full subscription from Stripe
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      
+      // Determine status
+      let status = "active";
+      if (subscription.status === "trialing") {
+        status = "trialing";
+      } else if (subscription.status === "canceled") {
+        status = "canceled";
+      } else if (subscription.status === "past_due" || subscription.status === "unpaid") {
+        status = "past_due";
+      }
+      
+      // Create/update subscription record
+      const { error: subError } = await supabase.from("subscriptions").upsert({
+        user_id: userId,
+        plan_type: planType,
+        status: status,
+        stripe_subscription_id: subscription.id,
+        stripe_customer_id: subscription.customer as string,
+        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        trial_start: subscription.trial_start 
+          ? new Date(subscription.trial_start * 1000).toISOString() 
+          : null,
+        trial_end: subscription.trial_end 
+          ? new Date(subscription.trial_end * 1000).toISOString() 
+          : null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,stripe_subscription_id',
+      });
+      
+      if (subError) {
+        console.error("Error creating subscription:", subError);
+      } else {
+        console.log("✅ Subscription created from checkout.session.completed:", subscription.id);
+      }
+      
+      // Update profile is_premium flag
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ is_premium: true })
+        .eq("id", userId);
+      
+      if (profileError) {
+        console.error("Error updating profile is_premium:", profileError);
+      } else {
+        console.log("✅ Profile is_premium updated for user:", userId);
+      }
+      
+      return;
+    } catch (error) {
+      console.error("Error retrieving subscription from Stripe:", error);
+      // Continue to let subscription.created event handle it as fallback
+    }
   }
 
   // For one-time payments (lifetime), create subscription record
   if (session.mode === "payment") {
-    await supabase.from("subscriptions").upsert({
+    const { error: subError } = await supabase.from("subscriptions").upsert({
       user_id: userId,
       plan_type: planType,
       status: "active",
@@ -207,9 +290,22 @@ async function handleCheckoutCompleted(
       current_period_end: null, // Lifetime has no end date
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'user_id,stripe_subscription_id',
     });
+    
+    if (subError) {
+      console.error("Error creating lifetime subscription:", subError);
+    } else {
+      console.log("✅ Lifetime subscription created from checkout.session.completed");
+    }
+    
+    // Update profile is_premium flag
+    await supabase
+      .from("profiles")
+      .update({ is_premium: true })
+      .eq("id", userId);
   }
-  // For subscriptions, the subscription.created event will handle it
 }
 
 async function handleSubscriptionUpdate(

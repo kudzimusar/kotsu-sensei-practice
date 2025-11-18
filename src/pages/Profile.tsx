@@ -6,6 +6,7 @@ import { format, differenceInDays, parseISO, isAfter } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { usePremium } from "@/hooks/usePremium";
 import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { getProfile } from "@/lib/supabase/profiles";
 import { getAllPerformance } from "@/lib/supabase/performance";
 import { getTestHistory } from "@/lib/supabase/tests";
@@ -45,11 +46,40 @@ const Profile = () => {
   // Refresh subscription status when page is focused or mounted (in case payment just completed)
   useEffect(() => {
     if (user) {
-      // Immediately refetch on mount
-      queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
-      queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
-      queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
-      queryClient.refetchQueries({ queryKey: ["profile", user.id] });
+      // Immediately check subscription on mount (direct database query)
+      const checkSubscription = async () => {
+        try {
+          const { data: subscriptionData, error: subError } = await supabase
+            .from("subscriptions")
+            .select("*")
+            .eq("user_id", user.id)
+            .in("status", ["active", "trialing"])
+            .order("created_at", { ascending: false })
+            .maybeSingle();
+          
+          if (!subError && subscriptionData) {
+            // Force update to cache immediately
+            queryClient.setQueryData(["subscription", user.id], subscriptionData);
+            queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
+            queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+            queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
+            queryClient.refetchQueries({ queryKey: ["profile", user.id] });
+          } else {
+            // No subscription found, still invalidate to ensure fresh data
+            queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
+            queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+            queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
+            queryClient.refetchQueries({ queryKey: ["profile", user.id] });
+          }
+        } catch (error) {
+          console.error("Error checking subscription on mount:", error);
+          // Still invalidate on error
+          queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
+          queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+        }
+      };
+      
+      checkSubscription();
       
       const handleFocus = () => {
         queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });

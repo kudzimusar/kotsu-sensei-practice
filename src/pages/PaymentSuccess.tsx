@@ -88,6 +88,24 @@ export default function PaymentSuccess() {
     },
   };
 
+  // Check and restore authentication if needed
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (!sessionId) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // Try to restore session or redirect to login with return path
+        const returnPath = `/payment/success?session_id=${sessionId}`;
+        toast.info("Please sign in to view your payment confirmation");
+        navigate("/auth", { state: { from: returnPath } });
+        return;
+      }
+    };
+    
+    checkAuth();
+  }, [sessionId, navigate]);
+
   // Fetch session details
   useEffect(() => {
     const fetchSessionDetails = async () => {
@@ -95,18 +113,20 @@ export default function PaymentSuccess() {
 
       // Poll for subscription to be created (webhook might take a few seconds)
       const pollForSubscription = async (attempts = 0): Promise<void> => {
-        if (attempts > 10) {
-          // After 10 attempts (5 seconds), give up and just invalidate
-          console.log("Polling timeout, invalidating queries");
+        if (attempts > 20) {
+          // After 20 attempts (10 seconds), give up and force refresh
+          console.log("⏱️ Polling timeout after 10 seconds, forcing refresh");
           queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
           queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+          queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
+          queryClient.refetchQueries({ queryKey: ["profile", user.id] });
           setIsVerifying(false);
-          toast.success("Payment successful! 🎉");
+          toast.success("Payment successful! Refreshing subscription status...");
           return;
         }
 
         try {
-          // Check if subscription exists in database
+          // Direct database query (bypasses cache)
           const { data: subscriptionData, error: subError } = await supabase
             .from("subscriptions")
             .select("*")
@@ -116,19 +136,41 @@ export default function PaymentSuccess() {
             .maybeSingle();
 
           if (!subError && subscriptionData) {
-            // Subscription found! Invalidate and refresh
-            console.log("Subscription found, refreshing UI");
+            // Subscription found! Force immediate UI update
+            console.log("✅ Subscription found:", subscriptionData.id, "Status:", subscriptionData.status);
+            
+            // Force immediate update to cache
+            queryClient.setQueryData(["subscription", user.id], subscriptionData);
             queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
             queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
             queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
             queryClient.refetchQueries({ queryKey: ["profile", user.id] });
             
+            // Update profile is_premium flag if needed
+            const { data: profileData } = await supabase
+              .from("profiles")
+              .select("is_premium")
+              .eq("id", user.id)
+              .maybeSingle();
+            
+            if (!profileData?.is_premium) {
+              await supabase
+                .from("profiles")
+                .update({ is_premium: true })
+                .eq("id", user.id);
+              queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+            }
+            
             // Also fetch session details
-            const { data: sessionData } = await supabase.functions.invoke("get-checkout-session", {
-              body: { session_id: sessionId },
-            });
-            if (sessionData) {
-              setSessionDetails(sessionData);
+            try {
+              const { data: sessionData } = await supabase.functions.invoke("get-checkout-session", {
+                body: { session_id: sessionId },
+              });
+              if (sessionData) {
+                setSessionDetails(sessionData);
+              }
+            } catch (err) {
+              console.error("Error fetching session details:", err);
             }
             
             setIsVerifying(false);
@@ -137,20 +179,22 @@ export default function PaymentSuccess() {
           }
 
           // Subscription not found yet, wait and retry
+          if (attempts % 4 === 0) {
+            console.log(`⏳ Polling for subscription... (attempt ${attempts + 1}/20)`);
+          }
           setTimeout(() => {
             pollForSubscription(attempts + 1);
           }, 500);
         } catch (error) {
           console.error("Error polling for subscription:", error);
-          // On error, just invalidate and continue
-          queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
-          queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
-          setIsVerifying(false);
-          toast.success("Payment successful! 🎉");
+          // On error, retry
+          setTimeout(() => {
+            pollForSubscription(attempts + 1);
+          }, 500);
         }
       };
 
-      // Start polling
+      // Start polling immediately
       pollForSubscription();
     };
 
@@ -158,7 +202,8 @@ export default function PaymentSuccess() {
       // Start polling immediately (no delay needed, polling handles retries)
       fetchSessionDetails();
     } else if (!user) {
-      navigate("/auth");
+      // User not logged in, but don't navigate yet (checkAuth will handle it)
+      setIsVerifying(false);
     } else {
       setIsVerifying(false);
     }
