@@ -98,6 +98,8 @@ const Profile = () => {
     if (user) {
       const forceUpdatePremiumStatus = async () => {
         try {
+          console.log("🔄 Auto-checking premium status on mount for user:", user.id);
+          
           // 1. Check if subscription exists
           const { data: subscriptionData, error: subError } = await supabase
             .from("subscriptions")
@@ -107,20 +109,42 @@ const Profile = () => {
             .order("created_at", { ascending: false })
             .maybeSingle();
           
+          console.log("🔍 Auto-check subscription:", { subscriptionData, subError });
+          
           if (!subError && subscriptionData) {
-            // 2. Force update is_premium flag directly
-            const { error: updateError } = await supabase
+            // 2. Check current profile status first
+            const { data: currentProfile } = await supabase
+              .from("profiles")
+              .select("is_premium")
+              .eq("id", user.id)
+              .maybeSingle();
+            
+            console.log("🔍 Current profile before update:", currentProfile);
+            
+            // 3. Force update is_premium flag directly
+            const { data: updatedProfile, error: updateError } = await supabase
               .from("profiles")
               .update({ is_premium: true })
-              .eq("id", user.id);
+              .eq("id", user.id)
+              .select()
+              .single();
             
             if (updateError) {
-              console.error("Error updating is_premium:", updateError);
+              console.error("❌ Error updating is_premium:", updateError);
             } else {
-              console.log("✅ Force-updated is_premium to true");
+              console.log("✅ Force-updated is_premium to true:", updatedProfile);
+              
+              // 4. Verify the update
+              const { data: verifiedProfile } = await supabase
+                .from("profiles")
+                .select("is_premium")
+                .eq("id", user.id)
+                .maybeSingle();
+              
+              console.log("✅ Verified profile after auto-update:", verifiedProfile);
             }
             
-            // 3. Force update React Query cache with new reference
+            // 5. Force update React Query cache with new reference
             queryClient.setQueryData(["subscription", user.id], {
               ...subscriptionData,
               _updatedAt: Date.now(),
@@ -131,10 +155,12 @@ const Profile = () => {
               _updatedAt: Date.now(),
             });
             
-            // 4. Force refetch
+            // 6. Force refetch
             await queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
             await queryClient.refetchQueries({ queryKey: ["profile", user.id] });
           } else if (!subError && !subscriptionData) {
+            console.log("⚠️ No subscription found - setting is_premium to false");
+            
             // No subscription found - ensure is_premium is false
             const { error: updateError } = await supabase
               .from("profiles")
@@ -148,9 +174,11 @@ const Profile = () => {
               });
               await queryClient.refetchQueries({ queryKey: ["profile", user.id] });
             }
+          } else if (subError) {
+            console.error("❌ Error checking subscription on mount:", subError);
           }
         } catch (error) {
-          console.error("Error in forceUpdatePremiumStatus:", error);
+          console.error("❌ Error in forceUpdatePremiumStatus:", error);
         }
       };
       
@@ -387,43 +415,142 @@ const Profile = () => {
                   onClick={async () => {
                     if (!user) return;
                     
-                    // Direct database check and update
-                    const { data: subscriptionData } = await supabase
-                      .from("subscriptions")
-                      .select("*")
-                      .eq("user_id", user.id)
-                      .in("status", ["active", "trialing"])
-                      .order("created_at", { ascending: false })
-                      .maybeSingle();
-                    
-                    if (subscriptionData) {
-                      // Force update is_premium
-                      await supabase
+                    try {
+                      // Step 1: Check if subscription exists FIRST
+                      const { data: subscriptionData, error: subError } = await supabase
+                        .from("subscriptions")
+                        .select("*")
+                        .eq("user_id", user.id)
+                        .in("status", ["active", "trialing"])
+                        .order("created_at", { ascending: false })
+                        .maybeSingle();
+                      
+                      console.log("🔍 Subscription check:", { subscriptionData, subError });
+                      
+                      if (subError) {
+                        console.error("❌ Error checking subscription:", subError);
+                        toast.error(`Error checking subscription: ${subError.message}`);
+                        return;
+                      }
+                      
+                      if (!subscriptionData) {
+                        console.log("⚠️ No subscription found");
+                        toast.info("No active subscription found in database. Please complete a payment first.");
+                        return;
+                      }
+                      
+                      console.log("✅ Subscription found:", subscriptionData.id, subscriptionData.status);
+                      
+                      // Step 2: Check current is_premium status
+                      const { data: currentProfile, error: profileError } = await supabase
+                        .from("profiles")
+                        .select("is_premium")
+                        .eq("id", user.id)
+                        .maybeSingle();
+                      
+                      console.log("🔍 Current profile:", { currentProfile, profileError });
+                      
+                      // Step 3: Force update is_premium
+                      const { data: updatedProfile, error: updateError } = await supabase
                         .from("profiles")
                         .update({ is_premium: true })
-                        .eq("id", user.id);
+                        .eq("id", user.id)
+                        .select()
+                        .single();
                       
-                      // Force cache update
+                      if (updateError) {
+                        console.error("❌ Error updating is_premium:", updateError);
+                        toast.error(`Failed to update status: ${updateError.message}. Check console for details.`);
+                        return;
+                      }
+                      
+                      console.log("✅ Profile updated:", updatedProfile);
+                      
+                      // Step 4: Verify the update worked
+                      const { data: verifiedProfile, error: verifyError } = await supabase
+                        .from("profiles")
+                        .select("is_premium")
+                        .eq("id", user.id)
+                        .maybeSingle();
+                      
+                      console.log("✅ Verified profile after update:", verifiedProfile);
+                      
+                      if (verifyError) {
+                        console.error("❌ Error verifying update:", verifyError);
+                        toast.error("Update may have failed. Please refresh the page.");
+                        return;
+                      }
+                      
+                      if (verifiedProfile?.is_premium !== true) {
+                        console.error("❌ Update didn't work! is_premium is still:", verifiedProfile?.is_premium);
+                        toast.error("Update didn't work. Please check database permissions or contact support.");
+                        return;
+                      }
+                      
+                      // Step 5: Force cache update with new reference
                       queryClient.setQueryData(["subscription", user.id], {
                         ...subscriptionData,
                         _updatedAt: Date.now(),
                       });
+                      
                       queryClient.setQueryData(["profile", user.id], {
-                        is_premium: true,
+                        ...verifiedProfile,
                         _updatedAt: Date.now(),
                       });
                       
-                      // Refetch
+                      // Step 6: Force refetch
                       await queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
                       await queryClient.refetchQueries({ queryKey: ["profile", user.id] });
                       
-                      toast.success("Status updated! Please refresh the page.");
-                    } else {
-                      toast.info("No active subscription found.");
+                      // Step 7: Force page refresh after 1 second
+                      toast.success("Status updated successfully! Refreshing page...");
+                      setTimeout(() => {
+                        window.location.reload();
+                      }, 1000);
+                      
+                    } catch (error) {
+                      console.error("❌ Unexpected error:", error);
+                      toast.error(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
                     }
                   }}
                 >
                   Fix Status
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-7 text-red-600 hover:text-red-700"
+                  onClick={async () => {
+                    if (!user) return;
+                    
+                    // Check subscription
+                    const { data: sub, error: subErr } = await supabase
+                      .from("subscriptions")
+                      .select("*")
+                      .eq("user_id", user.id);
+                    
+                    // Check profile
+                    const { data: prof, error: profErr } = await supabase
+                      .from("profiles")
+                      .select("is_premium, id")
+                      .eq("id", user.id)
+                      .single();
+                    
+                    console.log("🔍 DIAGNOSTIC CHECK:");
+                    console.log("Subscriptions:", sub, "Error:", subErr);
+                    console.log("Profile:", prof, "Error:", profErr);
+                    console.log("User ID:", user.id);
+                    
+                    const subCount = sub?.length || 0;
+                    const activeSubs = sub?.filter(s => s.status === 'active' || s.status === 'trialing') || [];
+                    const isPremium = prof?.is_premium || false;
+                    
+                    alert(`Database Diagnostic:\n\nUser ID: ${user.id.slice(0, 8)}...\n\nSubscriptions found: ${subCount}\nActive/Trialing: ${activeSubs.length}\n\nProfile is_premium: ${isPremium}\n\nCheck browser console for full details.`);
+                    
+                    toast.info("Diagnostic info logged to console. Check browser DevTools.");
+                  }}
+                >
+                  Debug DB
                 </Button>
               </div>
             </div>
