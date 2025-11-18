@@ -372,7 +372,7 @@ const Profile = () => {
                         <p className="text-[10px] text-gray-400">Checking subscription</p>
                       </div>
                     </>
-                  ) : (subscription && (subscription.status === "active" || subscription.status === "trialing")) || (profile?.is_premium === true) ? (
+                  ) : isPremium && subscription ? (
                     <>
                       <Crown className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                       <div>
@@ -386,8 +386,6 @@ const Profile = () => {
                             ? `Trial ends ${format(new Date(subscription.trial_end), "MMM d, yyyy")}`
                             : subscription.current_period_end
                             ? `Renews ${format(new Date(subscription.current_period_end), "MMM d, yyyy")}`
-                            : subscription.status === "trialing"
-                            ? "7-day free trial active"
                             : "Active"}
                         </p>
                       </div>
@@ -411,213 +409,15 @@ const Profile = () => {
                       : "bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white"
                   }`}
                   onClick={() => {
-                    if (subscription && (subscription.status === "active" || subscription.status === "trialing")) {
+                    if (isPremium) {
                       navigate("/account");
                     } else {
                       navigate("/payment");
                     }
                   }}
                 >
-                  {subscription && (subscription.status === "active" || subscription.status === "trialing") ? "Manage" : "Upgrade"}
+                  {isPremium ? "Manage" : "Upgrade"}
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs h-7 text-blue-600 hover:text-blue-700"
-                  onClick={async () => {
-                    if (!user) return;
-                    
-                    try {
-                      // Step 1: Check if subscription exists FIRST
-                      const { data: subscriptionData, error: subError } = await supabase
-                        .from("subscriptions")
-                        .select("*")
-                        .eq("user_id", user.id)
-                        .in("status", ["active", "trialing"])
-                        .order("created_at", { ascending: false })
-                        .maybeSingle();
-                      
-                      console.log("🔍 Subscription check:", { subscriptionData, subError });
-                      
-                      if (subError) {
-                        console.error("❌ Error checking subscription:", subError);
-                        toast.error(`Error checking subscription: ${subError.message}`);
-                        return;
-                      }
-                      
-                      if (!subscriptionData) {
-                        console.log("⚠️ No subscription found");
-                        toast.info("No active subscription found in database. Please complete a payment first.");
-                        return;
-                      }
-                      
-                      console.log("✅ Subscription found:", subscriptionData.id, subscriptionData.status);
-                      
-                      // Step 2: Check current is_premium status
-                      const { data: currentProfile, error: profileError } = await supabase
-                        .from("profiles")
-                        .select("is_premium")
-                        .eq("id", user.id)
-                        .maybeSingle();
-                      
-                      console.log("🔍 Current profile:", { currentProfile, profileError });
-                      
-                      // Step 3: Force update is_premium
-                      const { data: updatedProfile, error: updateError } = await supabase
-                        .from("profiles")
-                        .update({ is_premium: true })
-                        .eq("id", user.id)
-                        .select()
-                        .single();
-                      
-                      if (updateError) {
-                        console.error("❌ Error updating is_premium:", updateError);
-                        toast.error(`Failed to update status: ${updateError.message}. Check console for details.`);
-                        return;
-                      }
-                      
-                      console.log("✅ Profile updated:", updatedProfile);
-                      
-                      // Step 4: Verify the update worked
-                      const { data: verifiedProfile, error: verifyError } = await supabase
-                        .from("profiles")
-                        .select("is_premium")
-                        .eq("id", user.id)
-                        .maybeSingle();
-                      
-                      console.log("✅ Verified profile after update:", verifiedProfile);
-                      
-                      if (verifyError) {
-                        console.error("❌ Error verifying update:", verifyError);
-                        toast.error("Update may have failed. Please refresh the page.");
-                        return;
-                      }
-                      
-                      if (verifiedProfile?.is_premium !== true) {
-                        console.error("❌ Update didn't work! is_premium is still:", verifiedProfile?.is_premium);
-                        toast.error("Update didn't work. Please check database permissions or contact support.");
-                        return;
-                      }
-                      
-                      // Step 5: Force cache update with new reference
-                      queryClient.setQueryData(["subscription", user.id], {
-                        ...subscriptionData,
-                        _updatedAt: Date.now(),
-                      });
-                      
-                      queryClient.setQueryData(["profile", user.id], {
-                        ...verifiedProfile,
-                        _updatedAt: Date.now(),
-                      });
-                      
-                      // Step 6: Force refetch
-                      await queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
-                      await queryClient.refetchQueries({ queryKey: ["profile", user.id] });
-                      
-                      // Step 7: Force page refresh after 1 second
-                      toast.success("Status updated successfully! Refreshing page...");
-                      setTimeout(() => {
-                        window.location.reload();
-                      }, 1000);
-                      
-                    } catch (error) {
-                      console.error("❌ Unexpected error:", error);
-                      toast.error(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                    }
-                  }}
-                >
-                  Fix Status
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-7 text-red-600 hover:text-red-700"
-                  onClick={async () => {
-                    if (!user) return;
-                    
-                    // Check subscription
-                    const { data: sub, error: subErr } = await supabase
-                      .from("subscriptions")
-                      .select("*")
-                      .eq("user_id", user.id);
-                    
-                    // Check profile
-                    const { data: prof, error: profErr } = await supabase
-                      .from("profiles")
-                      .select("is_premium, id")
-                      .eq("id", user.id)
-                      .single();
-                    
-                    console.log("🔍 DIAGNOSTIC CHECK:");
-                    console.log("Subscriptions:", sub, "Error:", subErr);
-                    console.log("Profile:", prof, "Error:", profErr);
-                    console.log("User ID:", user.id);
-                    
-                    const subCount = sub?.length || 0;
-                    const activeSubs = sub?.filter(s => s.status === 'active' || s.status === 'trialing') || [];
-                    const isPremium = prof?.is_premium || false;
-                    
-                    alert(`Database Diagnostic:\n\nUser ID: ${user.id.slice(0, 8)}...\n\nSubscriptions found: ${subCount}\nActive/Trialing: ${activeSubs.length}\n\nProfile is_premium: ${isPremium}\n\nCheck browser console for full details.`);
-                    
-                    toast.info("Diagnostic info logged to console. Check browser DevTools.");
-                  }}
-                >
-                  Debug DB
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-7 text-green-600 hover:text-green-700"
-                  onClick={async () => {
-                    if (!user) return;
-                    
-                    if (!confirm("Create a TEST subscription? This will give you premium access for testing. Use 'quarterly' plan with 7-day trial.")) {
-                      return;
-                    }
-                    
-                    try {
-                      // Create a test subscription manually
-                      const trialEnd = new Date();
-                      trialEnd.setDate(trialEnd.getDate() + 7); // 7-day trial
-                      
-                      const periodEnd = new Date();
-                      periodEnd.setMonth(periodEnd.getMonth() + 3); // 3 months
-                      
-                      const { data: newSub, error: createError } = await supabase
-                        .from("subscriptions")
-                        .insert({
-                          user_id: user.id,
-                          plan_type: 'quarterly',
-                          status: 'trialing',
-                          stripe_subscription_id: `test_sub_${Date.now()}`,
-                          stripe_customer_id: `test_customer_${user.id.slice(0, 8)}`,
-                          current_period_start: new Date().toISOString(),
-                          current_period_end: periodEnd.toISOString(),
-                          trial_start: new Date().toISOString(),
-                          trial_end: trialEnd.toISOString(),
-                        })
-                        .select()
-                        .single();
-                      
-                      if (createError) {
-                        console.error("❌ Error creating test subscription:", createError);
-                        toast.error(`Failed to create subscription: ${createError.message}`);
-                        return;
-                      }
-                      
-                      console.log("✅ Test subscription created:", newSub);
-                      
-                      // Update is_premium (verify it worked)
-                      const { data: updatedProfile, error: updateError } = await supabase
-                        .from("profiles")
-                        .update({ is_premium: true })
-                        .eq("id", user.id)
-                        .select()
-                        .single();
-                      
-                      if (updateError) {
-                        console.error("❌ Error updating is_premium:", updateError);
-                        toast.error(`Subscription created but failed to update profile: ${updateError.message}`);
                         return;
                       }
                       
