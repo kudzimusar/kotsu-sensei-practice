@@ -552,6 +552,87 @@ const Profile = () => {
                 >
                   Debug DB
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-7 text-green-600 hover:text-green-700"
+                  onClick={async () => {
+                    if (!user) return;
+                    
+                    if (!confirm("Create a TEST subscription? This will give you premium access for testing. Use 'quarterly' plan with 7-day trial.")) {
+                      return;
+                    }
+                    
+                    try {
+                      // Create a test subscription manually
+                      const trialEnd = new Date();
+                      trialEnd.setDate(trialEnd.getDate() + 7); // 7-day trial
+                      
+                      const periodEnd = new Date();
+                      periodEnd.setMonth(periodEnd.getMonth() + 3); // 3 months
+                      
+                      const { data: newSub, error: createError } = await supabase
+                        .from("subscriptions")
+                        .insert({
+                          user_id: user.id,
+                          plan_type: 'quarterly',
+                          status: 'trialing',
+                          stripe_subscription_id: `test_sub_${Date.now()}`,
+                          stripe_customer_id: `test_customer_${user.id.slice(0, 8)}`,
+                          current_period_start: new Date().toISOString(),
+                          current_period_end: periodEnd.toISOString(),
+                          trial_start: new Date().toISOString(),
+                          trial_end: trialEnd.toISOString(),
+                        })
+                        .select()
+                        .single();
+                      
+                      if (createError) {
+                        console.error("❌ Error creating test subscription:", createError);
+                        toast.error(`Failed to create subscription: ${createError.message}`);
+                        return;
+                      }
+                      
+                      console.log("✅ Test subscription created:", newSub);
+                      
+                      // Update is_premium
+                      const { error: updateError } = await supabase
+                        .from("profiles")
+                        .update({ is_premium: true })
+                        .eq("id", user.id);
+                      
+                      if (updateError) {
+                        console.error("❌ Error updating is_premium:", updateError);
+                        toast.error(`Subscription created but failed to update profile: ${updateError.message}`);
+                      } else {
+                        console.log("✅ Profile updated to premium");
+                        
+                        // Force cache update
+                        queryClient.setQueryData(["subscription", user.id], {
+                          ...newSub,
+                          _updatedAt: Date.now(),
+                        });
+                        queryClient.setQueryData(["profile", user.id], {
+                          is_premium: true,
+                          _updatedAt: Date.now(),
+                        });
+                        
+                        await queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
+                        await queryClient.refetchQueries({ queryKey: ["profile", user.id] });
+                        
+                        toast.success("Test subscription created! Refreshing page...");
+                        setTimeout(() => {
+                          window.location.reload();
+                        }, 1000);
+                      }
+                    } catch (error) {
+                      console.error("❌ Unexpected error:", error);
+                      toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                    }
+                  }}
+                >
+                  Create Test Sub
+                </Button>
               </div>
             </div>
 
