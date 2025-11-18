@@ -409,59 +409,14 @@ const Profile = () => {
                       : "bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white"
                   }`}
                   onClick={() => {
-                    if (isPremium) {
+                    if (subscription && (subscription.status === "active" || subscription.status === "trialing")) {
                       navigate("/account");
                     } else {
                       navigate("/payment");
                     }
                   }}
                 >
-                  {isPremium ? "Manage" : "Upgrade"}
-                </Button>
-                        return;
-                      }
-                      
-                      console.log("✅ Profile updated to premium:", updatedProfile);
-                      
-                      // Verify the update worked
-                      const { data: verifiedProfile } = await supabase
-                        .from("profiles")
-                        .select("is_premium")
-                        .eq("id", user.id)
-                        .maybeSingle();
-                      
-                      console.log("✅ Verified profile:", verifiedProfile);
-                      
-                      // Force cache update with new object references
-                      queryClient.setQueryData(["subscription", user.id], {
-                        ...newSub,
-                        _updatedAt: Date.now(),
-                      });
-                      
-                      queryClient.setQueryData(["profile", user.id], {
-                        ...updatedProfile,
-                        _updatedAt: Date.now(),
-                      });
-                      
-                      // Invalidate and refetch to ensure fresh data
-                      await queryClient.invalidateQueries({ queryKey: ["subscription", user.id] });
-                      await queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
-                      await queryClient.refetchQueries({ queryKey: ["subscription", user.id] });
-                      await queryClient.refetchQueries({ queryKey: ["profile", user.id] });
-                      
-                      toast.success("Test subscription created! Refreshing page...");
-                      
-                      // Force hard refresh after a short delay
-                      setTimeout(() => {
-                        window.location.href = window.location.href;
-                      }, 1500);
-                    } catch (error) {
-                      console.error("❌ Unexpected error:", error);
-                      toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                    }
-                  }}
-                >
-                  Create Test Sub
+                  {subscription && (subscription.status === "active" || subscription.status === "trialing") ? "Manage" : "Upgrade"}
                 </Button>
               </div>
             </div>
