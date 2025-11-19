@@ -1750,6 +1750,424 @@ const AUXILIARY_SIGNS: SignData[] = [
   }
 ];
 
+// Enforcement-Based Signs Data (6 signs)
+const ENFORCEMENT_SIGNS: SignData[] = [
+  {
+    id: "enforce-01",
+    category: "Enforcement-Based Signs",
+    number: "1",
+    japanese: "歩行者専用 / 自転車専用 / 歩行者・自転車専用 / バス専用",
+    romaji: "Hokōsha sen'yō / Jitensha sen'yō / Hokōsha・jitensha sen'yō / Basu sen'yō",
+    english: "Sign showing traffic signals for specific traffic",
+    meaning: "Indicates that the traffic signal applies only to the designated type of traffic (pedestrians, bicycles, pedestrian & bicycle, or buses).",
+    exam_note: "Very frequently tested – know which signal applies to whom"
+  },
+  {
+    id: "enforce-02",
+    category: "Enforcement-Based Signs",
+    number: "2",
+    japanese: "左折可",
+    romaji: "Sasetsu ka",
+    english: "Left turn permitted sign",
+    meaning: "Even when the traffic light is red, vehicles may turn left (after stopping and confirming safety).",
+    exam_note: ""
+  },
+  {
+    id: "enforce-03",
+    category: "Enforcement-Based Signs",
+    number: "3",
+    japanese: "消火栓",
+    romaji: "Shōkasen",
+    english: "Sign for fire-fighting water supply",
+    meaning: "Indicates the location of a fire hydrant.",
+    exam_note: ""
+  },
+  {
+    id: "enforce-04",
+    category: "Enforcement-Based Signs",
+    number: "4",
+    japanese: "時間制限駐車区間を示す標識",
+    romaji: "Jikan seigen chūsha kukan o shimesu hyōshiki",
+    english: "Sign to indicate time-limited parking zone",
+    meaning: "Shows the time period during which time-restricted parking applies (usually with parking meter or ticket machine).",
+    exam_note: "Examples shown: 8-20"
+  },
+  {
+    id: "enforce-05",
+    category: "Enforcement-Based Signs",
+    number: "5",
+    japanese: "駐車券発給機の標識",
+    romaji: "Chūsha-ken hakkō-ki no hyōshiki",
+    english: "Sign to indicate parking ticket machine",
+    meaning: "Indicates the location of the parking ticket issuing machine (maximum parking time shown).",
+    exam_note: "Example: P 60分"
+  },
+  {
+    id: "enforce-06",
+    category: "Enforcement-Based Signs",
+    number: "6",
+    japanese: "災害対策基本法による閉鎖標識",
+    romaji: "Saigai taisaku kihon-hō ni yoru heisa hyōshiki",
+    english: "Closed to traffic under the Disaster Measures Basic Law",
+    meaning: "Road is closed under disaster countermeasures law.",
+    exam_note: "Rare but appears in recent exams"
+  }
+];
+
+// Vehicle Designation Abbreviations Data (36+ entries from table)
+const VEHICLE_ABBREVIATIONS: SignData[] = [
+  {
+    id: "veh-01",
+    category: "Vehicle Abbreviations",
+    number: "1",
+    japanese: "大型",
+    romaji: "Ōgata",
+    english: "Large motor vehicle",
+    meaning: "Large motor vehicle",
+    exam_note: ""
+  },
+  {
+    id: "veh-02",
+    category: "Vehicle Abbreviations",
+    number: "2",
+    japanese: "大型等",
+    romaji: "Ōgata-tō",
+    english: "Large motor vehicle, specific middle motor vehicle and special heavy equipment",
+    meaning: "Large motor vehicle, specific middle motor vehicle and special heavy equipment",
+    exam_note: ""
+  },
+  {
+    id: "veh-03",
+    category: "Vehicle Abbreviations",
+    number: "3",
+    japanese: "中型",
+    romaji: "Chūgata",
+    english: "Middle motor vehicle",
+    meaning: "Middle motor vehicle",
+    exam_note: ""
+  },
+  {
+    id: "veh-04",
+    category: "Vehicle Abbreviations",
+    number: "4",
+    japanese: "特定中型",
+    romaji: "Tokutei chūgata",
+    english: "Specific middle motor vehicle",
+    meaning: "Specific middle motor vehicle",
+    exam_note: ""
+  },
+  {
+    id: "veh-05",
+    category: "Vehicle Abbreviations",
+    number: "5",
+    japanese: "準中型",
+    romaji: "Jun chūgata",
+    english: "Semi-middle motor vehicle",
+    meaning: "Semi-middle motor vehicle",
+    exam_note: ""
+  },
+  {
+    id: "veh-06",
+    category: "Vehicle Abbreviations",
+    number: "6",
+    japanese: "普通",
+    romaji: "Futsū",
+    english: "Regular motor vehicle",
+    meaning: "Regular motor vehicle",
+    exam_note: ""
+  },
+  {
+    id: "veh-07",
+    category: "Vehicle Abbreviations",
+    number: "7",
+    japanese: "大特",
+    romaji: "Daitoku",
+    english: "Special heavy equipment",
+    meaning: "Special heavy equipment",
+    exam_note: ""
+  },
+  {
+    id: "veh-08",
+    category: "Vehicle Abbreviations",
+    number: "8",
+    japanese: "自二輪",
+    romaji: "Ji nirin",
+    english: "Large and regular motorcycle",
+    meaning: "Large and regular motorcycle",
+    exam_note: ""
+  },
+  {
+    id: "veh-09",
+    category: "Vehicle Abbreviations",
+    number: "9",
+    japanese: "軽",
+    romaji: "Kei",
+    english: "Regular motor vehicles 3.4m or shorter in length, 1.48m or narrower in width, and 2.0m or lower in height. (For motor vehicles with internal-combustion engines, limited to vehicles with a total displacement of less than 660cc.)",
+    meaning: "Regular motor vehicles 3.4m or shorter in length, 1.48m or narrower in width, and 2.0m or lower in height. (For motor vehicles with internal-combustion engines, limited to vehicles with a total displacement of less than 660cc.)",
+    exam_note: ""
+  },
+  {
+    id: "veh-10",
+    category: "Vehicle Abbreviations",
+    number: "10",
+    japanese: "小特",
+    romaji: "Shōtoku",
+    english: "Special light equipment",
+    meaning: "Special light equipment",
+    exam_note: ""
+  },
+  {
+    id: "veh-11",
+    category: "Vehicle Abbreviations",
+    number: "11",
+    japanese: "原付",
+    romaji: "Gen-tsuki",
+    english: "General motorized bicycle",
+    meaning: "General motorized bicycle",
+    exam_note: ""
+  },
+  {
+    id: "veh-12",
+    category: "Vehicle Abbreviations",
+    number: "12",
+    japanese: "特定原付",
+    romaji: "Tokutei gen-tsuki",
+    english: "Specified small motorized bicycle",
+    meaning: "Specified small motorized bicycle",
+    exam_note: ""
+  },
+  {
+    id: "veh-13",
+    category: "Vehicle Abbreviations",
+    number: "13",
+    japanese: "小二輪",
+    romaji: "Shō nirin",
+    english: "Small two-wheel motor vehicle and general motorized bicycle",
+    meaning: "Small two-wheel motor vehicle and general motorized bicycle",
+    exam_note: ""
+  },
+  {
+    id: "veh-14",
+    category: "Vehicle Abbreviations",
+    number: "14",
+    japanese: "二輪",
+    romaji: "Nirin",
+    english: "Light motorcycle and general motorized bicycle",
+    meaning: "Light motorcycle and general motorized bicycle",
+    exam_note: ""
+  },
+  {
+    id: "veh-15",
+    category: "Vehicle Abbreviations",
+    number: "15",
+    japanese: "自転車",
+    romaji: "Jitensha",
+    english: "Regular bicycle",
+    meaning: "Regular bicycle",
+    exam_note: ""
+  },
+  {
+    id: "veh-16",
+    category: "Vehicle Abbreviations",
+    number: "16",
+    japanese: "乗用",
+    romaji: "Jōyō",
+    english: "Motor vehicle for transporting passengers",
+    meaning: "Motor vehicle for transporting passengers",
+    exam_note: ""
+  },
+  {
+    id: "veh-17",
+    category: "Vehicle Abbreviations",
+    number: "17",
+    japanese: "大乗",
+    romaji: "Daijō",
+    english: "Large-size passenger vehicle",
+    meaning: "Large-size passenger vehicle",
+    exam_note: ""
+  },
+  {
+    id: "veh-18",
+    category: "Vehicle Abbreviations",
+    number: "18",
+    japanese: "中乗",
+    romaji: "Chūjō",
+    english: "Middle-size passenger vehicle",
+    meaning: "Middle-size passenger vehicle",
+    exam_note: ""
+  },
+  {
+    id: "veh-19",
+    category: "Vehicle Abbreviations",
+    number: "19",
+    japanese: "特定中乗",
+    romaji: "Tokutei chūjō",
+    english: "Specific middle-size passenger vehicle",
+    meaning: "Specific middle-size passenger vehicle",
+    exam_note: ""
+  },
+  {
+    id: "veh-20",
+    category: "Vehicle Abbreviations",
+    number: "20",
+    japanese: "準中乗",
+    romaji: "Jun chūjō",
+    english: "Semi-middle-size passenger vehicle",
+    meaning: "Semi-middle-size passenger vehicle",
+    exam_note: ""
+  },
+  {
+    id: "veh-21",
+    category: "Vehicle Abbreviations",
+    number: "21",
+    japanese: "バス",
+    romaji: "Basu",
+    english: "Large-size passenger vehicle and specific middle-size passenger vehicle",
+    meaning: "Large-size passenger vehicle and specific middle-size passenger vehicle",
+    exam_note: ""
+  },
+  {
+    id: "veh-22",
+    category: "Vehicle Abbreviations",
+    number: "22",
+    japanese: "大型バス",
+    romaji: "Ōgata basu",
+    english: "Large-size passenger vehicle with a capacity of more than 30 passengers",
+    meaning: "Large-size passenger vehicle with a capacity of more than 30 passengers",
+    exam_note: ""
+  },
+  {
+    id: "veh-23",
+    category: "Vehicle Abbreviations",
+    number: "23",
+    japanese: "マイクロ",
+    romaji: "Maikuro",
+    english: "Large-size passenger vehicle and specific middle-size passenger vehicle other than large bus",
+    meaning: "Large-size passenger vehicle and specific middle-size passenger vehicle other than large bus",
+    exam_note: ""
+  },
+  {
+    id: "veh-24",
+    category: "Vehicle Abbreviations",
+    number: "24",
+    japanese: "路線バス",
+    romaji: "Rosen basu",
+    english: "Regular route service-use motor vehicle for general transportation of passengers",
+    meaning: "Regular route service-use motor vehicle for general transportation of passengers",
+    exam_note: ""
+  },
+  {
+    id: "veh-25",
+    category: "Vehicle Abbreviations",
+    number: "25",
+    japanese: "営業",
+    romaji: "Eigyō",
+    english: "Regular passenger vehicle",
+    meaning: "Regular passenger vehicle",
+    exam_note: ""
+  },
+  {
+    id: "veh-26",
+    category: "Vehicle Abbreviations",
+    number: "26",
+    japanese: "タクシー",
+    romaji: "Takushī",
+    english: "Business-use vehicle used to transport general passengers as stipulated by the Road Transportation Law",
+    meaning: "Business-use vehicle used to transport general passengers as stipulated by the Road Transportation Law",
+    exam_note: ""
+  },
+  {
+    id: "veh-27",
+    category: "Vehicle Abbreviations",
+    number: "27",
+    japanese: "貨物",
+    romaji: "Kamotsu",
+    english: "Truck (Motor vehicles other than passenger motor vehicles)",
+    meaning: "Truck (Motor vehicles other than passenger motor vehicles)",
+    exam_note: ""
+  },
+  {
+    id: "veh-28",
+    category: "Vehicle Abbreviations",
+    number: "28",
+    japanese: "大貨",
+    romaji: "Daika",
+    english: "Large-size truck",
+    meaning: "Large-size truck",
+    exam_note: ""
+  },
+  {
+    id: "veh-29",
+    category: "Vehicle Abbreviations",
+    number: "29",
+    japanese: "大貨等",
+    romaji: "Daika-tō",
+    english: "Large-size truck, specific middle-size truck and special heavy equipment",
+    meaning: "Large-size truck, specific middle-size truck and special heavy equipment",
+    exam_note: ""
+  },
+  {
+    id: "veh-30",
+    category: "Vehicle Abbreviations",
+    number: "30",
+    japanese: "中貨",
+    romaji: "Chūka",
+    english: "Middle-size truck",
+    meaning: "Middle-size truck",
+    exam_note: ""
+  },
+  {
+    id: "veh-31",
+    category: "Vehicle Abbreviations",
+    number: "31",
+    japanese: "特定中貨",
+    romaji: "Tokutei chūka",
+    english: "Specific middle-size truck",
+    meaning: "Specific middle-size truck",
+    exam_note: ""
+  },
+  {
+    id: "veh-32",
+    category: "Vehicle Abbreviations",
+    number: "32",
+    japanese: "準中貨",
+    romaji: "Jun chūka",
+    english: "Semi-middle-size truck",
+    meaning: "Semi-middle-size truck",
+    exam_note: ""
+  },
+  {
+    id: "veh-33",
+    category: "Vehicle Abbreviations",
+    number: "33",
+    japanese: "けん引",
+    romaji: "Ken'in",
+    english: "Towing motor vehicle (towing a vehicle total weight exceeding 750kg)",
+    meaning: "Towing motor vehicle (towing a vehicle total weight exceeding 750kg)",
+    exam_note: ""
+  },
+  {
+    id: "veh-34",
+    category: "Vehicle Abbreviations",
+    number: "34",
+    japanese: "標車",
+    romaji: "Hyōsha",
+    english: "Motor vehicles with senior driver's sign, etc.",
+    meaning: "Motor vehicles with senior driver's sign, etc.",
+    exam_note: ""
+  },
+  {
+    id: "veh-35",
+    category: "Vehicle Abbreviations",
+    number: "35",
+    japanese: "遠隔小型",
+    romaji: "Enkaku kogata",
+    english: "Motor vehicles with senior driver's sign, etc.",
+    meaning: "Motor vehicles with senior driver's sign, etc.",
+    exam_note: ""
+  }
+];
+
 // Flashcard categories with sign data
 const FLASHCARD_CATEGORIES = {
   'regulatory-signs': {
@@ -1791,6 +2209,16 @@ const FLASHCARD_CATEGORIES = {
     name: 'Instruction Signs (指示標識)',
     description: 'Directional and informational signs',
     signs: [] // Will be populated
+  },
+  'enforcement-signs': {
+    name: 'Enforcement-Based Signs (法令に基づく標識)',
+    description: 'Signs based on Road Traffic Law and Fire Defense Law (not traffic sign ordinances)',
+    signs: ENFORCEMENT_SIGNS
+  },
+  'vehicle-abbreviations': {
+    name: 'Vehicle Abbreviations (車両略称表)',
+    description: 'Vehicle designation abbreviations used on signs',
+    signs: VEHICLE_ABBREVIATIONS
   }
 };
 
