@@ -10,18 +10,52 @@ import { toast } from '@/hooks/use-toast';
 
 const FLASHCARD_CATEGORIES = [
   {
-    id: 'road-signs',
-    name: 'Road Signs',
-    nameJp: '標識',
-    description: 'Traffic signs and regulatory signs',
+    id: 'regulatory-signs',
+    name: 'Regulatory Signs',
+    nameJp: '規制標識',
+    description: 'Traffic signs and regulatory signs (59 signs)',
     icon: '🚦',
+    count: 59,
+  },
+  {
+    id: 'warning-signs',
+    name: 'Warning Signs',
+    nameJp: '警戒標識',
+    description: 'Warning and caution signs (52 signs)',
+    icon: '⚠️',
+    count: 52,
+  },
+  {
+    id: 'indication-signs',
+    name: 'Indication Signs',
+    nameJp: '指示標識',
+    description: 'Directional and informational signs (26 signs)',
+    icon: '📍',
+    count: 26,
+  },
+  {
+    id: 'guidance-signs',
+    name: 'Guidance Signs',
+    nameJp: '案内標識',
+    description: 'Guidance and information signs (39 signs)',
+    icon: '🗺️',
+    count: 39,
+  },
+  {
+    id: 'auxiliary-signs',
+    name: 'Auxiliary Signs',
+    nameJp: '補助標識',
+    description: 'Auxiliary plates and supplementary signs (21 signs)',
+    icon: '📋',
+    count: 21,
   },
   {
     id: 'road-markings',
     name: 'Road Markings',
     nameJp: '道路標示',
-    description: 'Pavement markings and lane indicators',
+    description: 'Regulatory road markings (29 signs)',
     icon: '🛤️',
+    count: 29,
   },
   {
     id: 'traffic-signals',
@@ -29,27 +63,7 @@ const FLASHCARD_CATEGORIES = [
     nameJp: '信号機',
     description: 'Traffic lights and signal meanings',
     icon: '🔴',
-  },
-  {
-    id: 'warning-signs',
-    name: 'Warning Signs',
-    nameJp: '警戒標識',
-    description: 'Warning and caution signs',
-    icon: '⚠️',
-  },
-  {
-    id: 'prohibition-signs',
-    name: 'Prohibition Signs',
-    nameJp: '禁止標識',
-    description: 'Signs indicating restrictions',
-    icon: '🚫',
-  },
-  {
-    id: 'instruction-signs',
-    name: 'Instruction Signs',
-    nameJp: '指示標識',
-    description: 'Directional and informational signs',
-    icon: '📍',
+    count: 0, // Will be added
   },
 ] as const;
 
@@ -163,6 +177,9 @@ export default function Flashcards() {
                   <div className="text-3xl mb-2">{category.icon}</div>
                   <h3 className="font-semibold text-sm mb-1">{category.name}</h3>
                   <p className="text-xs text-muted-foreground">{category.nameJp}</p>
+                  {category.count > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">{category.count} signs</p>
+                  )}
                   {selectedCategory === category.id && (
                     <Badge className="mt-2 bg-blue-600">Selected</Badge>
                   )}
@@ -177,16 +194,24 @@ export default function Flashcards() {
           <section className="mb-8">
             <h2 className="font-bold text-lg mb-4">Number of Cards</h2>
             <div className="flex gap-3 flex-wrap">
-              {CARD_COUNTS.map((count) => (
-                <Button
-                  key={count}
-                  variant={selectedCount === count ? 'default' : 'outline'}
-                  className={selectedCount === count ? 'bg-blue-600 hover:bg-blue-700' : ''}
-                  onClick={() => setSelectedCount(count)}
-                >
-                  {count} Cards
-                </Button>
-              ))}
+              {CARD_COUNTS.map((count) => {
+                const categoryData = FLASHCARD_CATEGORIES.find(c => c.id === selectedCategory);
+                const maxCount = categoryData?.count || 50;
+                const availableCount = Math.min(count, maxCount);
+                
+                return (
+                  <Button
+                    key={count}
+                    variant={selectedCount === count ? 'default' : 'outline'}
+                    className={selectedCount === count ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                    onClick={() => setSelectedCount(availableCount)}
+                    disabled={count > maxCount && maxCount > 0}
+                  >
+                    {availableCount} Cards
+                    {count > maxCount && maxCount > 0 && ` (max: ${maxCount})`}
+                  </Button>
+                );
+              })}
             </div>
           </section>
         )}
