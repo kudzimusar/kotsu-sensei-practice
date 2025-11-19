@@ -2462,6 +2462,160 @@ const REGULATORY_MARKINGS: SignData[] = [
   }
 ];
 
+// Indication Road Markings Data (15 markings)
+const INDICATION_MARKINGS: SignData[] = [
+  {
+    id: "indmark-01",
+    category: "Indication Markings",
+    number: "1",
+    japanese: "横断歩道",
+    romaji: "Ōdan hodō",
+    english: "Pedestrian crossing",
+    meaning: "Indicates a pedestrian crossing.",
+    exam_note: ""
+  },
+  {
+    id: "indmark-02",
+    category: "Indication Markings",
+    number: "2",
+    japanese: "斜め横断可",
+    romaji: "Naname ōdan ka",
+    english: "Diagonal crossing permitted",
+    meaning: "① Permitted during designated hours. ② Permitted throughout the day.",
+    exam_note: "Very frequently tested – know both versions"
+  },
+  {
+    id: "indmark-03",
+    category: "Indication Markings",
+    number: "3",
+    japanese: "自転車横断帯",
+    romaji: "Jitensha ōdan-tai",
+    english: "Bicycle crossing zone",
+    meaning: "Indicates a bicycle crossing zone.",
+    exam_note: ""
+  },
+  {
+    id: "indmark-04",
+    category: "Indication Markings",
+    number: "4",
+    japanese: "道路の右側部分通行",
+    romaji: "Dōro no migi-gawa bubun tsūkō",
+    english: "Use the right part of the road",
+    meaning: "Indicates vehicles can drive right of the center of the road (marked near corners on steep inclines).",
+    exam_note: ""
+  },
+  {
+    id: "indmark-05",
+    category: "Indication Markings",
+    number: "5",
+    japanese: "停止線",
+    romaji: "Teishi-sen",
+    english: "Stop line",
+    meaning: "Indicates the location for vehicles to stop.",
+    exam_note: ""
+  },
+  {
+    id: "indmark-06",
+    category: "Indication Markings",
+    number: "6",
+    japanese: "二輪・四輪車の停止線",
+    romaji: "Nirin / yonrin-sha no teishi-sen",
+    english: "Stop line for two and four-wheeled vehicles",
+    meaning: "Indicates the location for two or four-wheeled vehicles.",
+    exam_note: ""
+  },
+  {
+    id: "indmark-07",
+    category: "Indication Markings",
+    number: "7",
+    japanese: "進行方向別通行区分",
+    romaji: "Shinkō hōkō-betsu tsūkō kubun",
+    english: "Lane direction",
+    meaning: "Indicates the directions in which vehicles can proceed.",
+    exam_note: ""
+  },
+  {
+    id: "indmark-08",
+    category: "Indication Markings",
+    number: "8",
+    japanese: "中央線",
+    romaji: "Chūō-sen",
+    english: "Centerline",
+    meaning: "Indicates the center of the road or centerline.\n① When necessary to indicate that no vehicle may cross to the right hand side of the road.\n② Where there is a centerline on a road other than the road mentioned in ①\n   (1) Established by paint markings, etc.\n   (2) Established by road cat eyes, stones, etc.\n③ When there is a centerline (not in center of the road).\n   (1) Any time\n   (2) Day or time limited. Marking pipe, marking fence or road cat eyes with amber light.\n④ Where special caution is required.",
+    exam_note: "Extremely important – know all four situations"
+  },
+  {
+    id: "indmark-09",
+    category: "Indication Markings",
+    number: "9",
+    japanese: "車線境界線",
+    romaji: "Shasen kyōkai-sen",
+    english: "Borderline of vehicle lane",
+    meaning: "Indicates the borderline of a vehicle lane on a road with four lanes or more.\n① Established by paint, etc.\n② Established by road cat eyes, stones, etc.",
+    exam_note: ""
+  },
+  {
+    id: "indmark-10",
+    category: "Indication Markings",
+    number: "10",
+    japanese: "安全地帯",
+    romaji: "Anzen chitai",
+    english: "Safety zone",
+    meaning: "Indicates a safety zone.",
+    exam_note: ""
+  },
+  {
+    id: "indmark-11",
+    category: "Indication Markings",
+    number: "11",
+    japanese: "安全地帯又は障害物に接近",
+    romaji: "Anzen chitai mata wa shōgaibutsu ni sekkin",
+    english: "Approach to safety zone or an obstruction",
+    meaning: "Indicates a safety zone or obstruction ahead.\n① Pass the designated side.\n② Pass either side.",
+    exam_note: ""
+  },
+  {
+    id: "indmark-12",
+    category: "Indication Markings",
+    number: "12",
+    japanese: "導流帯",
+    romaji: "Dōryū-tai",
+    english: "Channeling zone",
+    meaning: "The channeling zone is the portion of a road established to guide traffic safely and smoothly by preventing vehicles from passing.",
+    exam_note: ""
+  },
+  {
+    id: "indmark-13",
+    category: "Indication Markings",
+    number: "13",
+    japanese: "路面電車停留場",
+    romaji: "Romen densha teiryūjo",
+    english: "Streetcar stop",
+    meaning: "Indicates a streetcar stop.",
+    exam_note: ""
+  },
+  {
+    id: "indmark-14",
+    category: "Indication Markings",
+    number: "14",
+    japanese: "横断歩道・自転車横断帯あり",
+    romaji: "Ōdan hodō / jitensha ōdan-tai ari",
+    english: "Pedestrian crossing or bicycle crossing zone ahead",
+    meaning: "Indicates a pedestrian crossing or bicycle crossing zone is ahead.",
+    exam_note: ""
+  },
+  {
+    id: "indmark-15",
+    category: "Indication Markings",
+    number: "15",
+    japanese: "優先道路",
+    romaji: "Yūsen dōro",
+    english: "Right-of-way ahead",
+    meaning: "Indicates the intersecting road ahead is a priority road.",
+    exam_note: ""
+  }
+];
+
 // Flashcard categories with sign data
 const FLASHCARD_CATEGORIES = {
   'regulatory-signs': {
@@ -2513,6 +2667,11 @@ const FLASHCARD_CATEGORIES = {
     name: 'Vehicle Abbreviations (車両略称表)',
     description: 'Vehicle designation abbreviations used on signs',
     signs: VEHICLE_ABBREVIATIONS
+  },
+  'indication-markings': {
+    name: 'Indication Road Markings (指示の路面標識)',
+    description: 'Indication pavement markings and guides',
+    signs: INDICATION_MARKINGS
   }
 };
 
