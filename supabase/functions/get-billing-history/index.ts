@@ -149,7 +149,7 @@ serve(async (req) => {
     }
 
     // Format invoices for frontend
-    const formattedInvoices = invoices.data.map((invoice) => ({
+    const formattedInvoices = invoices.data.map((invoice: any) => ({
       id: invoice.id,
       amount: invoice.amount_paid || invoice.amount_due,
       currency: invoice.currency,

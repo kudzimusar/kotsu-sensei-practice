@@ -82,7 +82,6 @@ const ShareReferral = () => {
         shareUrl,
         {
           width: 280,
-          height: 280,
           margin: 2,
           color: {
             dark: '#1a73e8',

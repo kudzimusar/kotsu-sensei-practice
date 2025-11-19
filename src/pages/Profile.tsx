@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { getProfile } from "@/lib/supabase/profiles";
 import { getAllPerformance } from "@/lib/supabase/performance";
 import { getTestHistory } from "@/lib/supabase/tests";
-import { getInstructorByUserId } from "@/lib/supabase/instructors";
 import { getMonthSchedule, autoCompletePastEvents } from "@/lib/supabase/drivingSchedule";
 import { getUserCurriculum, getCurriculumProgress, autoCompletePastLectures } from "@/lib/supabase/curriculum";
 import { useQuery } from "@tanstack/react-query";
@@ -237,11 +236,13 @@ const Profile = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  const { data: instructor } = useQuery({
-    queryKey: ["instructor-profile", user?.id],
-    queryFn: () => getInstructorByUserId(user!.id),
-    enabled: !!user,
-  });
+  // Instructor features are currently disabled
+  // const { data: instructor } = useQuery({
+  //   queryKey: ["instructor-profile", user?.id],
+  //   queryFn: () => getInstructorByUserId(user!.id),
+  //   enabled: !!user,
+  // });
+
 
   const isLoading = profileLoading || performanceLoading || testHistoryLoading || scheduleLoading || curriculumLoading;
 
@@ -295,9 +296,7 @@ const Profile = () => {
     { icon: GraduationCap, label: "Book Instructor", description: "Get personalized lessons", onClick: () => navigate('/book-instructor'), highlight: true },
     { icon: Users, label: "Practice Rooms", description: "Join group study sessions", onClick: () => navigate('/practice-rooms'), highlight: true },
     { icon: BookOpen, label: "My Bookings", description: "View your sessions", onClick: () => navigate('/my-bookings') },
-    ...(instructor && instructor.status === 'approved' ? [
-      { icon: GraduationCap, label: "Instructor Dashboard", description: "Manage your instructor profile", onClick: () => navigate('/instructor/dashboard'), highlight: true }
-    ] : []),
+    // Instructor dashboard removed - instructor features not yet implemented
     { icon: CreditCard, label: "Account", description: "Subscription & billing", onClick: () => navigate('/account'), highlight: isPremium },
     { icon: Settings, label: "Settings", description: "App preferences", onClick: () => setSettingsOpen(true) },
     { icon: Bell, label: "Notifications", description: "Manage alerts", onClick: () => setNotificationsOpen(true) },

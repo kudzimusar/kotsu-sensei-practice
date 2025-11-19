@@ -430,121 +430,15 @@ const Lectures = () => {
   );
 };
 
-// Instructors Tab Component
+// Instructors Tab Component - Currently disabled as instructor features are not implemented yet
 function InstructorsTab({ user, navigate }: { user: any; navigate: any }) {
-  const { data: instructor } = useQuery({
-    queryKey: ["instructor-profile", user?.id],
-    queryFn: () => getInstructorByUserId(user!.id),
-    enabled: !!user,
-  });
-
-  const instructorFeatures = [
-    {
-      title: "Book an Instructor",
-      description: "Get personalized one-on-one lessons from certified instructors",
-      icon: GraduationCap,
-      color: "from-blue-500/10 to-blue-500/5",
-      borderColor: "border-blue-500/20",
-      iconColor: "text-blue-600",
-      onClick: () => navigate("/book-instructor"),
-      highlight: true,
-    },
-    {
-      title: "Practice Rooms",
-      description: "Join group study sessions with other students and instructors",
-      icon: Users,
-      color: "from-purple-500/10 to-purple-500/5",
-      borderColor: "border-purple-500/20",
-      iconColor: "text-purple-600",
-      onClick: () => navigate("/practice-rooms"),
-      highlight: true,
-    },
-    {
-      title: "My Bookings",
-      description: "View and manage your scheduled sessions",
-      icon: BookOpen,
-      color: "from-green-500/10 to-green-500/5",
-      borderColor: "border-green-500/20",
-      iconColor: "text-green-600",
-      onClick: () => navigate("/my-bookings"),
-    },
-  ];
-
-  if (instructor && instructor.status === 'approved') {
-    instructorFeatures.push({
-      title: "Instructor Dashboard",
-      description: "Manage your instructor profile and bookings",
-      icon: MessageSquare,
-      color: "from-amber-500/10 to-amber-500/5",
-      borderColor: "border-amber-500/20",
-      iconColor: "text-amber-600",
-      onClick: () => navigate("/instructor/dashboard"),
-      highlight: true,
-    });
-  } else if (user) {
-    instructorFeatures.push({
-      title: "Become an Instructor",
-      description: "Apply to teach and help other students",
-      icon: GraduationCap,
-      color: "from-orange-500/10 to-orange-500/5",
-      borderColor: "border-orange-500/20",
-      iconColor: "text-orange-600",
-      onClick: () => navigate("/become-instructor"),
-    });
-  }
-
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl sm:text-2xl">Get Help from Instructors</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
-            Book personalized lessons or join group practice sessions with certified instructors
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {instructorFeatures.map((feature, index) => {
-            const Icon = feature.icon;
-            return (
-              <Card
-                key={index}
-                className={`p-5 bg-gradient-to-br ${feature.color} hover:shadow-lg transition-shadow cursor-pointer border-2 ${feature.borderColor} ${
-                  feature.highlight ? 'ring-2 ring-offset-2 ring-primary/20' : ''
-                }`}
-                onClick={feature.onClick}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${feature.color} flex items-center justify-center shrink-0`}>
-                      <Icon className={feature.iconColor} size={24} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-sm sm:text-base mb-1">{feature.title}</h3>
-                      <p className="text-xs sm:text-sm text-muted-foreground">{feature.description}</p>
-                    </div>
-                  </div>
-                  <span className={`${feature.iconColor} font-bold text-xs sm:text-sm shrink-0 ml-2`}>
-                    Open →
-                  </span>
-                </div>
-              </Card>
-            );
-          })}
-        </CardContent>
-      </Card>
-
-      {!user && (
-        <Card className="p-6 text-center border-2">
-          <GraduationCap className="h-16 w-16 mx-auto mb-4 text-primary" />
-          <h2 className="text-xl font-bold mb-3">Sign In Required</h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            Please sign in to book instructors or join practice rooms
-          </p>
-          <Button onClick={() => navigate("/auth")}>
-            Sign In
-          </Button>
-        </Card>
-      )}
+    <div className="flex flex-col items-center justify-center p-8">
+      <GraduationCap className="w-12 h-12 text-muted-foreground mb-4" />
+      <h3 className="text-lg font-semibold mb-2">Instructor Features</h3>
+      <p className="text-muted-foreground text-center">
+        Instructor booking features are coming soon.
+      </p>
     </div>
   );
 }
