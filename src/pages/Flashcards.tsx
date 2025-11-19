@@ -29,9 +29,9 @@ const FLASHCARD_CATEGORIES = [
     id: 'indication-signs',
     name: 'Indication Signs',
     nameJp: '指示標識',
-    description: 'Directional and informational signs (26 signs)',
+    description: 'Directional and informational signs (14 signs)',
     icon: '📍',
-    count: 26,
+    count: 14,
   },
   {
     id: 'guidance-signs',

@@ -734,6 +734,414 @@ const REGULATORY_SIGNS: SignData[] = [
   }
 ];
 
+// Indication Signs Data (14 signs)
+const INDICATION_SIGNS: SignData[] = [
+  {
+    id: "ind-01",
+    category: "Indication Signs",
+    number: "1",
+    japanese: "並進可",
+    romaji: "Heishin ka",
+    english: "Riding abreast permitted",
+    meaning: "Bicycles are permitted to travel side by side.",
+    exam_note: ""
+  },
+  {
+    id: "ind-02",
+    category: "Indication Signs",
+    number: "2",
+    japanese: "軌道敷内通行可",
+    romaji: "Kidōjiki-nai tsūkō ka",
+    english: "Driving on streetcar tracks permitted",
+    meaning: "Motor vehicles can drive on the streetcar tracks (restricted to motor vehicles designated by auxiliary sign).",
+    exam_note: ""
+  },
+  {
+    id: "ind-03",
+    category: "Indication Signs",
+    number: "3",
+    japanese: "高齢運転者等標章自動車駐車可",
+    romaji: "Kōrei untensha-tō hyōshō jidōsha chūsha ka",
+    english: "Parking permitted for motor vehicles with senior driver's sign, etc.",
+    meaning: "Motor vehicles with senior driver's sign, etc. are permitted to park. (Refer to p262 for motor vehicles with senior driver's sign, etc.)",
+    exam_note: ""
+  },
+  {
+    id: "ind-04",
+    category: "Indication Signs",
+    number: "4",
+    japanese: "駐車可",
+    romaji: "Chūsha ka",
+    english: "Parking permitted",
+    meaning: "Vehicles are permitted to park.",
+    exam_note: ""
+  },
+  {
+    id: "ind-05",
+    category: "Indication Signs",
+    number: "5",
+    japanese: "高齢運転者等標章自動車停車可",
+    romaji: "Kōrei untensha-tō hyōshō jidōsha teisha ka",
+    english: "Stopping permitted for motor vehicles with senior driver's sign, etc.",
+    meaning: "Motor vehicles with senior driver's sign, etc. are permitted to stop. (Refer to p262 for motor vehicles with senior driver's sign, etc.)",
+    exam_note: ""
+  },
+  {
+    id: "ind-06",
+    category: "Indication Signs",
+    number: "6",
+    japanese: "停車可",
+    romaji: "Teisha ka",
+    english: "Stopping permitted",
+    meaning: "Vehicles are permitted to stop.",
+    exam_note: ""
+  },
+  {
+    id: "ind-07",
+    category: "Indication Signs",
+    number: "7",
+    japanese: "優先道路",
+    romaji: "Yūsen dōro",
+    english: "Right-of-way",
+    meaning: "Indicates the road has the right of way.",
+    exam_note: ""
+  },
+  {
+    id: "ind-08",
+    category: "Indication Signs",
+    number: "8",
+    japanese: "中央線",
+    romaji: "Chūōsen",
+    english: "Centerline",
+    meaning: "Indicates the center of the road or centerline.",
+    exam_note: ""
+  },
+  {
+    id: "ind-09",
+    category: "Indication Signs",
+    number: "9",
+    japanese: "停止線",
+    romaji: "Teishi-sen",
+    english: "Stop line",
+    meaning: "Indicates the line where vehicles are required to stop.",
+    exam_note: ""
+  },
+  {
+    id: "ind-10",
+    category: "Indication Signs",
+    number: "10",
+    japanese: "横断歩道",
+    romaji: "Ōdan hodō",
+    english: "Pedestrian crossing",
+    meaning: "Indicates the pedestrian crossing.",
+    exam_note: ""
+  },
+  {
+    id: "ind-11",
+    category: "Indication Signs",
+    number: "11",
+    japanese: "自転車横断帯",
+    romaji: "Jitensha ōdan-tai",
+    english: "Bicycle crossing zone",
+    meaning: "Indicates the bicycle crossing zone.",
+    exam_note: ""
+  },
+  {
+    id: "ind-12",
+    category: "Indication Signs",
+    number: "12",
+    japanese: "横断歩道・自転車横断帯",
+    romaji: "Ōdan hodō / Jitensha ōdan-tai",
+    english: "Pedestrian crossing and bicycle crossing zone",
+    meaning: "Indicates the pedestrian crossing and the bicycle crossing zone.",
+    exam_note: ""
+  },
+  {
+    id: "ind-13",
+    category: "Indication Signs",
+    number: "13",
+    japanese: "安全地帯",
+    romaji: "Anzen chitai",
+    english: "Safety zone",
+    meaning: "Indicates a safety zone.",
+    exam_note: ""
+  },
+  {
+    id: "ind-14",
+    category: "Indication Signs",
+    number: "14",
+    japanese: "規制予告",
+    romaji: "Kisei yokoku",
+    english: "Advance warning",
+    meaning: "Indicates advance warning that there is a traffic regulation ahead on the road.",
+    exam_note: ""
+  }
+];
+
+// Warning Signs Data (26 signs provided, 52 total expected)
+const WARNING_SIGNS: SignData[] = [
+  {
+    id: "warn-01",
+    category: "Warning Signs",
+    number: "1",
+    japanese: "交差点あり",
+    romaji: "Kōsaten ari",
+    english: "Intersection",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-02",
+    category: "Warning Signs",
+    number: "2",
+    japanese: "右（左）方道路合流",
+    romaji: "Migi (hidari) hō dōro gōryū",
+    english: "Road Branch Right (or Left)",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-03",
+    category: "Warning Signs",
+    number: "3",
+    japanese: "Ｔ字路",
+    romaji: "T-jirō",
+    english: "T Intersection",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-04",
+    category: "Warning Signs",
+    number: "4",
+    japanese: "Ｙ字路",
+    romaji: "Y-jirō",
+    english: "Y-Junction",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-05",
+    category: "Warning Signs",
+    number: "5",
+    japanese: "ロータリーあり",
+    romaji: "Rōtari ari",
+    english: "Rotary",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-06",
+    category: "Warning Signs",
+    number: "6",
+    japanese: "右（左）方屈曲",
+    romaji: "Migi (hidari) hō kukyoku",
+    english: "Right (Left) Bend",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-07",
+    category: "Warning Signs",
+    number: "7",
+    japanese: "右（左）方屈折",
+    romaji: "Migi (hidari) hō kussetsu",
+    english: "Sharp Right (Left) Turn",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-08",
+    category: "Warning Signs",
+    number: "8",
+    japanese: "右（左）連続屈曲",
+    romaji: "Migi (hidari) renzoku kukyoku",
+    english: "Right (Left) Double Bend",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-09",
+    category: "Warning Signs",
+    number: "9",
+    japanese: "右（左）方鋭角屈曲",
+    romaji: "Migi (hidari) hō eikaku kukyoku",
+    english: "Sharp Right (Left) Double Turn",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-10",
+    category: "Warning Signs",
+    number: "10",
+    japanese: "蛇行道路",
+    romaji: "Jakō dōro",
+    english: "Zigzag Road",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-11",
+    category: "Warning Signs",
+    number: "11",
+    japanese: "踏切あり",
+    romaji: "Fumikiri ari",
+    english: "Railway Crossing",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-12",
+    category: "Warning Signs",
+    number: "12",
+    japanese: "学校、幼稚園、保育園あり",
+    romaji: "Gakkō, yōchien, hoikuen ari",
+    english: "School, Kindergarten, Nursery",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-13",
+    category: "Warning Signs",
+    number: "13",
+    japanese: "信号機あり",
+    romaji: "Shingōki ari",
+    english: "Traffic Signal",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-14",
+    category: "Warning Signs",
+    number: "14",
+    japanese: "すべりやすい",
+    romaji: "Suberiyasui",
+    english: "Slippery Road",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-15",
+    category: "Warning Signs",
+    number: "15",
+    japanese: "落石のおそれあり",
+    romaji: "Rakuseki no osore ari",
+    english: "Falling or fallen rock",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-16",
+    category: "Warning Signs",
+    number: "16",
+    japanese: "くぼみあり",
+    romaji: "Kubomi ari",
+    english: "Hump or Dip",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-17",
+    category: "Warning Signs",
+    number: "17",
+    japanese: "左（右）方道路進入",
+    romaji: "Hidari (migi) hō dōro shinnyū",
+    english: "Road Entry Left",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-18",
+    category: "Warning Signs",
+    number: "18",
+    japanese: "車線減少",
+    romaji: "Shasen genshō",
+    english: "Fewer Lanes",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-19",
+    category: "Warning Signs",
+    number: "19",
+    japanese: "幅員減少",
+    romaji: "Fukuin genshō",
+    english: "Road Narrows",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-20",
+    category: "Warning Signs",
+    number: "20",
+    japanese: "二方向交通",
+    romaji: "Ni-hōkō kōtsū",
+    english: "Two-way Traffic",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-21",
+    category: "Warning Signs",
+    number: "21",
+    japanese: "上り急勾配",
+    romaji: "Nobori kyū kōhai",
+    english: "Steep Upgrade",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-22",
+    category: "Warning Signs",
+    number: "22",
+    japanese: "下り急勾配",
+    romaji: "Kudari kyū kōhai",
+    english: "Steep Downgrade",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-23",
+    category: "Warning Signs",
+    number: "23",
+    japanese: "工事中",
+    romaji: "Kōji-chū",
+    english: "Road Construction",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-24",
+    category: "Warning Signs",
+    number: "24",
+    japanese: "横風注意",
+    romaji: "Yokofū chūi",
+    english: "Side Winds",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-25",
+    category: "Warning Signs",
+    number: "25",
+    japanese: "動物横断",
+    romaji: "Dōbutsu ōdan",
+    english: "Animal Crossing",
+    meaning: "",
+    exam_note: ""
+  },
+  {
+    id: "warn-26",
+    category: "Warning Signs",
+    number: "26",
+    japanese: "その他の危険",
+    romaji: "Sono hoka no kiken",
+    english: "Other Dangers",
+    meaning: "",
+    exam_note: ""
+  }
+];
+
 // Flashcard categories with sign data
 const FLASHCARD_CATEGORIES = {
   'regulatory-signs': {
@@ -741,7 +1149,16 @@ const FLASHCARD_CATEGORIES = {
     description: 'Traffic signs and regulatory signs',
     signs: REGULATORY_SIGNS
   },
-  // Placeholder for other categories - will be added
+  'warning-signs': {
+    name: 'Warning Signs (警戒標識)',
+    description: 'Warning and caution signs',
+    signs: WARNING_SIGNS
+  },
+  'indication-signs': {
+    name: 'Indication Signs (指示標識)',
+    description: 'Directional and informational signs',
+    signs: INDICATION_SIGNS
+  },
   'road-markings': {
     name: 'Road Markings (道路標示)',
     description: 'Pavement markings and lane indicators',
@@ -751,16 +1168,6 @@ const FLASHCARD_CATEGORIES = {
     name: 'Traffic Signals (信号機)',
     description: 'Traffic lights and signal meanings',
     signs: [] // Will be populated
-  },
-  'warning-signs': {
-    name: 'Warning Signs (警戒標識)',
-    description: 'Warning and caution signs',
-    signs: [] // Will be populated with 52 signs
-  },
-  'indication-signs': {
-    name: 'Indication Signs (指示標識)',
-    description: 'Directional and informational signs',
-    signs: [] // Will be populated with 26 signs
   },
   'guidance-signs': {
     name: 'Guidance Signs (案内標識)',
@@ -849,7 +1256,7 @@ serve(async (req) => {
 
         return {
           ...flashcard,
-          imageUrl: imageUrl || null
+          imageUrl
         };
       })
     );
