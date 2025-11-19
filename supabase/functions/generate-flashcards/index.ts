@@ -1536,6 +1536,220 @@ const GUIDANCE_SIGNS: SignData[] = [
   }
 ];
 
+// Auxiliary Signs Data (21 signs)
+const AUXILIARY_SIGNS: SignData[] = [
+  {
+    id: "aux-01",
+    category: "Auxiliary Signs",
+    number: "1",
+    japanese: "距離・区域",
+    romaji: "Kyori / Kuiki",
+    english: "Distance/area",
+    meaning: "Indicates the distance, section and zone up to the location shown by the main sign.",
+    exam_note: "Examples: この先100m / 市内全域 / ここから500m"
+  },
+  {
+    id: "aux-02",
+    category: "Auxiliary Signs",
+    number: "2",
+    japanese: "曜日・時間",
+    romaji: "Yōbi / Jikan",
+    english: "Day/time",
+    meaning: "Indicates the day and time of the traffic regulation shown by the main sign.",
+    exam_note: "Examples: 日曜・休日を除く 8－20"
+  },
+  {
+    id: "aux-03",
+    category: "Auxiliary Signs",
+    number: "3",
+    japanese: "車両の種類",
+    romaji: "Sharyō no shurui",
+    english: "Type of vehicles",
+    meaning: "Indicates the type of vehicle subject to the traffic regulation shown by the main sign.",
+    exam_note: "Very important – know the exact vehicle symbols:\n• 大貨 = Large truck (max load ≥3t or special heavy equipment)\n• 標車専用 = Large-size passenger vehicle\n• 原付を除く = Large-size truck, specific middle-size trucks and special heavy equipment"
+  },
+  {
+    id: "aux-04",
+    category: "Auxiliary Signs",
+    number: "4",
+    japanese: "駐車余地",
+    romaji: "Chūsha yochi",
+    english: "Parking room",
+    meaning: "When parking, leave the designated distance on the right side.",
+    exam_note: "Example: 駐車余地6m"
+  },
+  {
+    id: "aux-05",
+    category: "Auxiliary Signs",
+    number: "5",
+    japanese: "駐車時間制限",
+    romaji: "Chūsha jikan seigen",
+    english: "Parking time restrictions",
+    meaning: "Duration of continuous parking is until the time shown on parking meter or parking ticket.",
+    exam_note: "Examples: 連続2時間まで / 最高2時間まで"
+  },
+  {
+    id: "aux-06",
+    category: "Auxiliary Signs",
+    number: "6",
+    japanese: "規制交通開始",
+    romaji: "Kisei kōtsū kaishi",
+    english: "Start of regulated traffic",
+    meaning: "Indicates the beginning of the section or zone where the traffic regulation shown by the main sign begins.",
+    exam_note: "Examples: 区域 ここから / ここから"
+  },
+  {
+    id: "aux-07",
+    category: "Auxiliary Signs",
+    number: "7",
+    japanese: "規制交通区間",
+    romaji: "Kisei kōtsū kukan",
+    english: "Traffic regulated section",
+    meaning: "Indicates the zone where the traffic regulation shown by the main sign is applied.",
+    exam_note: "Example: 区域内"
+  },
+  {
+    id: "aux-08",
+    category: "Auxiliary Signs",
+    number: "8",
+    japanese: "規制交通終了",
+    romaji: "Kisei kōtsū shūryō",
+    english: "End of regulated traffic",
+    meaning: "Indicates the end of the section or zone where the traffic regulation shown by the main sign ends.",
+    exam_note: "Examples: 区域 ここまで / ここまで"
+  },
+  {
+    id: "aux-09",
+    category: "Auxiliary Signs",
+    number: "9",
+    japanese: "通学路",
+    romaji: "Tsūgakuro",
+    english: "School zone",
+    meaning: "Indicates a zone which children pass through on their way to elementary school, kindergarten or nursery.",
+    exam_note: ""
+  },
+  {
+    id: "aux-10",
+    category: "Auxiliary Signs",
+    number: "10",
+    japanese: "追越し禁止",
+    romaji: "Oikoshi kinshi",
+    english: "No overtaking",
+    meaning: "Vehicles are prohibited from overtaking.",
+    exam_note: ""
+  },
+  {
+    id: "aux-11",
+    category: "Auxiliary Signs",
+    number: "11",
+    japanese: "前方優先道路",
+    romaji: "Mae hō yūsen dōro",
+    english: "Right-of-way ahead",
+    meaning: "Indicates the intersecting road ahead is a priority road.",
+    exam_note: ""
+  },
+  {
+    id: "aux-12",
+    category: "Auxiliary Signs",
+    number: "12",
+    japanese: "踏切注意",
+    romaji: "Fumikiri chūi",
+    english: "Railway crossing",
+    meaning: "Indicates attention is required due to a railway crossing.",
+    exam_note: ""
+  },
+  {
+    id: "aux-13",
+    category: "Auxiliary Signs",
+    number: "13",
+    japanese: "横風注意",
+    romaji: "Yokofū chūi",
+    english: "Side winds",
+    meaning: "Indicates attention is required due to strong side winds.",
+    exam_note: ""
+  },
+  {
+    id: "aux-14",
+    category: "Auxiliary Signs",
+    number: "14",
+    japanese: "動物注意",
+    romaji: "Dōbutsu chūi",
+    english: "Animals",
+    meaning: "Indicates attention is required because animals may enter the road.",
+    exam_note: ""
+  },
+  {
+    id: "aux-15",
+    category: "Auxiliary Signs",
+    number: "15",
+    japanese: "注意",
+    romaji: "Chūi",
+    english: "Caution",
+    meaning: "Must exercise special caution when driving in this area.",
+    exam_note: ""
+  },
+  {
+    id: "aux-16",
+    category: "Auxiliary Signs",
+    number: "16",
+    japanese: "注意（特記理由）",
+    romaji: "Chūi (tokki riyū)",
+    english: "Caution (special reason)",
+    meaning: "Indicates the reason for particular attention by vehicles and streetcars.",
+    exam_note: "Example: 路肩弱し 30"
+  },
+  {
+    id: "aux-17",
+    category: "Auxiliary Signs",
+    number: "17",
+    japanese: "必符者横断多し 対向車多し 騒音防止区間",
+    romaji: "Hitsu-fu-sha ōdan ōshi / Taikōsha ōshi / Sōon bōshi kukan",
+    english: "Regulatory reasons",
+    meaning: "Indicates the reason for the traffic regulation shown by the main sign.",
+    exam_note: "Common examples: 必符者横断多し / 対向車多し / 騒音防止区間"
+  },
+  {
+    id: "aux-18",
+    category: "Auxiliary Signs",
+    number: "18",
+    japanese: "方面",
+    romaji: "Hōmen",
+    english: "Direction",
+    meaning: "Indicates the direction of the route, facility and location shown by the main sign.",
+    exam_note: "Red arrow pointing the way"
+  },
+  {
+    id: "aux-19",
+    category: "Auxiliary Signs",
+    number: "19",
+    japanese: "地名",
+    romaji: "Chimei",
+    english: "Place name",
+    meaning: "Indicates the name of the place.",
+    exam_note: "Examples: 小諸市 / 本町"
+  },
+  {
+    id: "aux-20",
+    category: "Auxiliary Signs",
+    number: "20",
+    japanese: "始点",
+    romaji: "Shiten",
+    english: "Starting point",
+    meaning: "Indicates the starting point of the designated road sign.",
+    exam_note: ""
+  },
+  {
+    id: "aux-21",
+    category: "Auxiliary Signs",
+    number: "21",
+    japanese: "終点",
+    romaji: "Shūten",
+    english: "End point",
+    meaning: "Indicates the end point of the designated road sign.",
+    exam_note: ""
+  }
+];
+
 // Flashcard categories with sign data
 const FLASHCARD_CATEGORIES = {
   'regulatory-signs': {
@@ -1571,7 +1785,7 @@ const FLASHCARD_CATEGORIES = {
   'auxiliary-signs': {
     name: 'Auxiliary Signs (補助標識)',
     description: 'Auxiliary plates and supplementary signs',
-    signs: [] // Will be populated with 21 signs
+    signs: AUXILIARY_SIGNS
   },
   'instruction-signs': {
     name: 'Instruction Signs (指示標識)',
