@@ -1142,6 +1142,400 @@ const WARNING_SIGNS: SignData[] = [
   }
 ];
 
+// Guidance Signs Data (39 signs)
+const GUIDANCE_SIGNS: SignData[] = [
+  {
+    id: "guide-01",
+    category: "Guidance Signs",
+    number: "1",
+    japanese: "市町村",
+    romaji: "Shichōson",
+    english: "Municipality",
+    meaning: "Indicates the name of the city, town or village",
+    exam_note: ""
+  },
+  {
+    id: "guide-02",
+    category: "Guidance Signs",
+    number: "2",
+    japanese: "都道府県",
+    romaji: "Todōfuken",
+    english: "Prefecture",
+    meaning: "Indicates the name of the prefecture",
+    exam_note: ""
+  },
+  {
+    id: "guide-03",
+    category: "Guidance Signs",
+    number: "3",
+    japanese: "都道府県",
+    romaji: "Todōfuken",
+    english: "Prefecture",
+    meaning: "Indicates the name of the prefecture (different design)",
+    exam_note: ""
+  },
+  {
+    id: "guide-04",
+    category: "Guidance Signs",
+    number: "4",
+    japanese: "高速自動車国道等方面",
+    romaji: "Kōsoku jidōsha kokudō-tō hōmen",
+    english: "Direction to Expressway",
+    meaning: "Shows direction and distance to expressway entrance",
+    exam_note: ""
+  },
+  {
+    id: "guide-05",
+    category: "Guidance Signs",
+    number: "5",
+    japanese: "高速自動車国道等予告",
+    romaji: "Kōsoku jidōsha kokudō-tō yokoku",
+    english: "Advance notice of entrance to Expressway",
+    meaning: "Advance notice of upcoming expressway entrance",
+    exam_note: ""
+  },
+  {
+    id: "guide-06",
+    category: "Guidance Signs",
+    number: "6",
+    japanese: "総重量緩和指定道路",
+    romaji: "Sōjūryō kanwa shitei dōro",
+    english: "Designated road with alleviated total weight limit",
+    meaning: "Road where higher total vehicle weight is permitted",
+    exam_note: ""
+  },
+  {
+    id: "guide-07",
+    category: "Guidance Signs",
+    number: "7",
+    japanese: "高さ制限なし道路",
+    romaji: "Takasa seigen nashi dōro",
+    english: "No height restriction road",
+    meaning: "Road with no height restriction",
+    exam_note: ""
+  },
+  {
+    id: "guide-08",
+    category: "Guidance Signs",
+    number: "8",
+    japanese: "方面及び距離",
+    romaji: "Hōmen oyobi kyori",
+    english: "Direction and distance",
+    meaning: "Shows direction and distance to destinations",
+    exam_note: ""
+  },
+  {
+    id: "guide-09",
+    category: "Guidance Signs",
+    number: "9",
+    japanese: "方面及び車線",
+    romaji: "Hōmen oyobi shasen",
+    english: "Direction and lane",
+    meaning: "Shows direction and recommended lane",
+    exam_note: ""
+  },
+  {
+    id: "guide-10",
+    category: "Guidance Signs",
+    number: "10",
+    japanese: "出口予告",
+    romaji: "Deguchi yokoku",
+    english: "Advance notice of exit",
+    meaning: "Advance notice of upcoming exit",
+    exam_note: ""
+  },
+  {
+    id: "guide-11",
+    category: "Guidance Signs",
+    number: "11",
+    japanese: "方面、方向及び道路の予告",
+    romaji: "Hōmen, hōkō oyobi dōro no yokoku",
+    english: "Advance notice of destination and direction",
+    meaning: "Advance notice of destination and direction",
+    exam_note: ""
+  },
+  {
+    id: "guide-12",
+    category: "Guidance Signs",
+    number: "12",
+    japanese: "方面及び方向",
+    romaji: "Hōmen oyobi hōkō",
+    english: "Destination and direction",
+    meaning: "Shows destination and direction",
+    exam_note: ""
+  },
+  {
+    id: "guide-13",
+    category: "Guidance Signs",
+    number: "13",
+    japanese: "方面、方向及び距離",
+    romaji: "Hōmen, hōkō oyobi kyori",
+    english: "Direction, bearings and distance",
+    meaning: "Shows direction, bearings and distance to places",
+    exam_note: ""
+  },
+  {
+    id: "guide-14",
+    category: "Guidance Signs",
+    number: "14",
+    japanese: "方面及び方向の予告",
+    romaji: "Hōmen oyobi hōkō no yokoku",
+    english: "Advance notice of direction and road name",
+    meaning: "Advance notice of direction and road name",
+    exam_note: ""
+  },
+  {
+    id: "guide-15",
+    category: "Guidance Signs",
+    number: "15",
+    japanese: "方面及び道路名",
+    romaji: "Hōmen oyobi dōromei",
+    english: "Direction and road name",
+    meaning: "Shows direction and road name",
+    exam_note: ""
+  },
+  {
+    id: "guide-16",
+    category: "Guidance Signs",
+    number: "16",
+    japanese: "方向及び出口の予告",
+    romaji: "Hōkō oyobi deguchi no yokoku",
+    english: "Advance notice of direction and exit",
+    meaning: "Advance notice of direction and exit",
+    exam_note: ""
+  },
+  {
+    id: "guide-17",
+    category: "Guidance Signs",
+    number: "17",
+    japanese: "方面、車線及び出口の予告",
+    romaji: "Hōmen, shasen oyobi deguchi no yokoku",
+    english: "Advance notice of direction, lane and exit",
+    meaning: "Advance notice of direction, lane and exit",
+    exam_note: ""
+  },
+  {
+    id: "guide-18",
+    category: "Guidance Signs",
+    number: "18",
+    japanese: "方面及び出口",
+    romaji: "Hōmen oyobi deguchi",
+    english: "Direction and exit",
+    meaning: "Shows direction and exit",
+    exam_note: ""
+  },
+  {
+    id: "guide-19",
+    category: "Guidance Signs",
+    number: "19",
+    japanese: "出口",
+    romaji: "Deguchi",
+    english: "Exit",
+    meaning: "Indicates the exit",
+    exam_note: ""
+  },
+  {
+    id: "guide-20",
+    category: "Guidance Signs",
+    number: "20",
+    japanese: "著名地点",
+    romaji: "Chomei chiten",
+    english: "Landmark",
+    meaning: "Shows famous or important locations",
+    exam_note: ""
+  },
+  {
+    id: "guide-21",
+    category: "Guidance Signs",
+    number: "21",
+    japanese: "著名地点",
+    romaji: "Chomei chiten",
+    english: "Major location",
+    meaning: "Shows major locations",
+    exam_note: ""
+  },
+  {
+    id: "guide-22",
+    category: "Guidance Signs",
+    number: "22",
+    japanese: "料金所",
+    romaji: "Ryōkinjo",
+    english: "Toll gate",
+    meaning: "Indicates toll gate ahead",
+    exam_note: ""
+  },
+  {
+    id: "guide-23",
+    category: "Guidance Signs",
+    number: "23",
+    japanese: "非常施設・路側駅等までの距離",
+    romaji: "Hijō shisetsu, rosoku-eki-tō made no kyori",
+    english: "Distances to Service areas, Roadside stations",
+    meaning: "Shows distances to service areas and roadside stations",
+    exam_note: ""
+  },
+  {
+    id: "guide-24",
+    category: "Guidance Signs",
+    number: "24",
+    japanese: "非常施設・路側駅等予告",
+    romaji: "Hijō shisetsu, rosoku-eki-tō yokoku",
+    english: "Advance notice of Service areas, Roadside stations",
+    meaning: "Advance notice of service areas and roadside stations",
+    exam_note: ""
+  },
+  {
+    id: "guide-25",
+    category: "Guidance Signs",
+    number: "25",
+    japanese: "サービスエリア",
+    romaji: "Sābisu eria",
+    english: "Service area",
+    meaning: "Indicates service area (rest area on expressway)",
+    exam_note: ""
+  },
+  {
+    id: "guide-26",
+    category: "Guidance Signs",
+    number: "26",
+    japanese: "非常電話",
+    romaji: "Hijō denwa",
+    english: "Emergency telephone",
+    meaning: "Indicates location of emergency telephone",
+    exam_note: ""
+  },
+  {
+    id: "guide-27",
+    category: "Guidance Signs",
+    number: "27",
+    japanese: "待避所",
+    romaji: "Taihisho",
+    english: "Shelter",
+    meaning: "Indicates shelter or turnout",
+    exam_note: ""
+  },
+  {
+    id: "guide-28",
+    category: "Guidance Signs",
+    number: "28",
+    japanese: "非常駐車帯",
+    romaji: "Hijō chūshatai",
+    english: "Emergency parking zone",
+    meaning: "Emergency parking zone on expressway",
+    exam_note: ""
+  },
+  {
+    id: "guide-29",
+    category: "Guidance Signs",
+    number: "29",
+    japanese: "駐車場",
+    romaji: "Chūshajō",
+    english: "Parking",
+    meaning: "Indicates parking area",
+    exam_note: ""
+  },
+  {
+    id: "guide-30",
+    category: "Guidance Signs",
+    number: "30",
+    japanese: "本線車道への入口",
+    romaji: "Honsen shadō e no iriguchi",
+    english: "Entrance to main traffic lane from a service area or a parking lot",
+    meaning: "Entrance to main traffic lane from service area/parking lot",
+    exam_note: ""
+  },
+  {
+    id: "guide-31",
+    category: "Guidance Signs",
+    number: "31",
+    japanese: "登坂車線",
+    romaji: "Tōhan shasen",
+    english: "Slower traffic / Climbing lane",
+    meaning: "Indicates slower traffic or climbing lane",
+    exam_note: ""
+  },
+  {
+    id: "guide-32",
+    category: "Guidance Signs",
+    number: "32",
+    japanese: "国道番号",
+    romaji: "Kokudō bangō",
+    english: "National route number",
+    meaning: "Shows national route number",
+    exam_note: ""
+  },
+  {
+    id: "guide-33",
+    category: "Guidance Signs",
+    number: "33",
+    japanese: "都道府県道番号",
+    romaji: "Todōfuken-dō bangō",
+    english: "Prefectural route number",
+    meaning: "Shows prefectural route number",
+    exam_note: ""
+  },
+  {
+    id: "guide-34",
+    category: "Guidance Signs",
+    number: "34",
+    japanese: "高速自動車国道番号",
+    romaji: "Kōsoku jidōsha kokudō bangō",
+    english: "Number of the expressway",
+    meaning: "Expressway route number (E + number or C + number)",
+    exam_note: ""
+  },
+  {
+    id: "guide-35",
+    category: "Guidance Signs",
+    number: "35",
+    japanese: "道路名",
+    romaji: "Dōromei",
+    english: "Road name",
+    meaning: "Shows the name of the road",
+    exam_note: ""
+  },
+  {
+    id: "guide-36",
+    category: "Guidance Signs",
+    number: "36",
+    japanese: "う回",
+    romaji: "Ukai",
+    english: "Detour",
+    meaning: "Indicates detour route",
+    exam_note: ""
+  },
+  {
+    id: "guide-37",
+    category: "Guidance Signs",
+    number: "37",
+    japanese: "勾配",
+    romaji: "Kōbai",
+    english: "Sloping road",
+    meaning: "Indicates sloping road (gradient)",
+    exam_note: ""
+  },
+  {
+    id: "guide-38",
+    category: "Guidance Signs",
+    number: "38",
+    japanese: "バス停",
+    romaji: "Basu-tei",
+    english: "Bus stop",
+    meaning: "Indicates bus stop",
+    exam_note: ""
+  },
+  {
+    id: "guide-39",
+    category: "Guidance Signs",
+    number: "39",
+    japanese: "電車停留場",
+    romaji: "Densha teiryūjo",
+    english: "Train stop / Tram stop",
+    meaning: "Indicates train or tram stop",
+    exam_note: ""
+  }
+];
+
 // Flashcard categories with sign data
 const FLASHCARD_CATEGORIES = {
   'regulatory-signs': {
@@ -1172,7 +1566,7 @@ const FLASHCARD_CATEGORIES = {
   'guidance-signs': {
     name: 'Guidance Signs (案内標識)',
     description: 'Guidance and information signs',
-    signs: [] // Will be populated with 39 signs
+    signs: GUIDANCE_SIGNS
   },
   'auxiliary-signs': {
     name: 'Auxiliary Signs (補助標識)',
