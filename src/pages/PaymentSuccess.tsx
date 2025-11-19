@@ -39,6 +39,7 @@ export default function PaymentSuccess() {
   const [countdown, setCountdown] = useState(15); // Increased to 15 seconds
   const [autoRedirect, setAutoRedirect] = useState(false); // Disabled by default
   const [subscriptionConfirmed, setSubscriptionConfirmed] = useState(false); // Track when subscription is confirmed
+  const [toastShown, setToastShown] = useState(false); // Track if welcome toast has been shown
 
   // Plan details mapping
   const planDetails: Record<string, { name: string; price: number; period: string; features: string[] }> = {
@@ -192,7 +193,12 @@ export default function PaymentSuccess() {
             setSubscriptionConfirmed(true); // Mark subscription as confirmed
             setAutoRedirect(true); // Enable auto-redirect now that subscription is confirmed
             setCountdown(15); // Reset countdown to 15 seconds
-            toast.success("Welcome to Premium! 🎉");
+            
+            // Only show toast once
+            if (!toastShown) {
+              setToastShown(true);
+              toast.success("Welcome to Premium! 🎉");
+            }
             return;
           }
 
@@ -257,11 +263,20 @@ export default function PaymentSuccess() {
     : subscription?.trial_end 
       ? parseISO(subscription.trial_end) 
       : null;
-  const nextPaymentDate = sessionDetails?.next_payment_date
-    ? parseISO(sessionDetails.next_payment_date)
-    : subscription?.current_period_end
-      ? parseISO(subscription.current_period_end)
-      : null;
+  
+  // For first charge date: if in trial, use trial_end; otherwise use current_period_end
+  const nextPaymentDate = (() => {
+    if (trialEnd && new Date() < trialEnd) {
+      // If in trial, first charge is when trial ends
+      return trialEnd;
+    }
+    // Otherwise, use the billing period end
+    return sessionDetails?.next_payment_date
+      ? parseISO(sessionDetails.next_payment_date)
+      : subscription?.current_period_end
+        ? parseISO(subscription.current_period_end)
+        : null;
+  })();
 
   const isTrialActive = trialEnd && new Date() < trialEnd;
   const daysRemaining = trialEnd ? Math.ceil((trialEnd.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;

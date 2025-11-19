@@ -49,15 +49,31 @@ export default function Account() {
 
       setIsLoadingBilling(true);
       try {
+        if (!subscription.stripe_customer_id) {
+          console.error("No stripe_customer_id found in subscription");
+          toast.error("Customer ID not found. Please contact support.");
+          return [];
+        }
+
         const { data, error } = await supabase.functions.invoke("get-billing-history", {
           body: { customer_id: subscription.stripe_customer_id },
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error from billing history function:", error);
+          throw error;
+        }
+
+        if (!data) {
+          console.warn("No data returned from billing history function");
+          return [];
+        }
+
         return data?.invoices || [];
       } catch (error) {
         console.error("Error fetching billing history:", error);
-        toast.error("Failed to load billing history");
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        toast.error(`Failed to load billing history: ${errorMessage}`);
         return [];
       } finally {
         setIsLoadingBilling(false);
@@ -72,28 +88,37 @@ export default function Account() {
       return;
     }
 
-    setIsLoadingPortal(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-customer-portal-session", {
-        body: {
-          customer_id: subscription.stripe_customer_id,
-          return_url: window.location.origin + "/account",
-        },
-      });
+      setIsLoadingPortal(true);
+      try {
+        // Include base path for GitHub Pages
+        const basePath = import.meta.env.MODE === 'production' ? '/kotsu-sensei-practice' : '';
+        const returnUrl = `${window.location.origin}${basePath}/account`;
+        
+        const { data, error } = await supabase.functions.invoke("create-customer-portal-session", {
+          body: {
+            customer_id: subscription.stripe_customer_id,
+            return_url: returnUrl,
+          },
+        });
 
-      if (error) throw error;
+        if (error) {
+          console.error("Error from portal session function:", error);
+          throw error;
+        }
 
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        toast.error("Failed to create portal session");
+        if (data?.url) {
+          window.location.href = data.url;
+        } else {
+          console.error("No URL returned from portal session:", data);
+          toast.error("Failed to create portal session. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error creating portal session:", error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        toast.error(`Failed to open payment management: ${errorMessage}`);
+      } finally {
+        setIsLoadingPortal(false);
       }
-    } catch (error) {
-      console.error("Error creating portal session:", error);
-      toast.error("Failed to open payment management");
-    } finally {
-      setIsLoadingPortal(false);
-    }
   };
 
   const handleCancelSubscription = async () => {

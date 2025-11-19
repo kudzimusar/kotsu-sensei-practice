@@ -78,10 +78,21 @@ serve(async (req) => {
     }
 
     // Create the customer portal session
+    // Use the provided return_url or construct one
+    const finalReturnUrl = return_url || 
+      `${Deno.env.get('SITE_URL') || 'http://localhost:5173'}/account`;
+    
+    console.log('Creating customer portal session:', {
+      customer_id,
+      return_url: finalReturnUrl,
+    });
+
     const session = await stripe.billingPortal.sessions.create({
       customer: customer_id,
-      return_url: return_url || `${Deno.env.get('SITE_URL') || 'http://localhost:5173'}/account`,
+      return_url: finalReturnUrl,
     });
+
+    console.log('Customer portal session created:', session.id);
 
     return new Response(
       JSON.stringify({ url: session.url }),

@@ -70,7 +70,16 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (subError || !subscription) {
+    if (subError) {
+      console.error('Error verifying subscription:', subError);
+      return new Response(
+        JSON.stringify({ error: 'Error verifying subscription access' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!subscription) {
+      console.error('Subscription not found for customer:', customer_id, 'user:', user.id);
       return new Response(
         JSON.stringify({ error: 'Subscription not found or access denied' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -78,10 +87,24 @@ serve(async (req) => {
     }
 
     // Fetch invoices from Stripe
-    const invoices = await stripe.invoices.list({
-      customer: customer_id,
-      limit: 100, // Get up to 100 invoices
-    });
+    console.log('Fetching invoices for customer:', customer_id);
+    let invoices;
+    try {
+      invoices = await stripe.invoices.list({
+        customer: customer_id,
+        limit: 100, // Get up to 100 invoices
+      });
+      console.log('Found', invoices.data.length, 'invoices');
+    } catch (stripeError) {
+      console.error('Error fetching invoices from Stripe:', stripeError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to fetch invoices from Stripe',
+          details: stripeError instanceof Error ? stripeError.message : 'Unknown error'
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Format invoices for frontend
     const formattedInvoices = invoices.data.map((invoice) => ({
