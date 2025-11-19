@@ -95,6 +95,18 @@ serve(async (req) => {
       );
     }
 
+    // Check if this is a test customer ID (from "Create Test Sub" button)
+    if (customer_id.startsWith('test_customer_')) {
+      console.log('Test customer ID detected, cannot create portal session');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Test subscription detected. Please complete a real payment to manage your subscription.',
+          is_test: true
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Verify the customer belongs to this user
     const { data: subscription, error: subError } = await supabaseClient
       .from('subscriptions')

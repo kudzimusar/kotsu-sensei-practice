@@ -95,6 +95,15 @@ serve(async (req) => {
       );
     }
 
+    // Check if this is a test customer ID (from "Create Test Sub" button)
+    if (customer_id.startsWith('test_customer_')) {
+      console.log('Test customer ID detected, returning empty billing history');
+      return new Response(
+        JSON.stringify({ invoices: [] }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Verify the customer belongs to this user
     const { data: subscription, error: subError } = await supabaseClient
       .from('subscriptions')

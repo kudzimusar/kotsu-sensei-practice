@@ -88,37 +88,59 @@ export default function Account() {
       return;
     }
 
-      setIsLoadingPortal(true);
-      try {
-        // Include base path for GitHub Pages
-        const basePath = import.meta.env.MODE === 'production' ? '/kotsu-sensei-practice' : '';
-        const returnUrl = `${window.location.origin}${basePath}/account`;
-        
-        const { data, error } = await supabase.functions.invoke("create-customer-portal-session", {
-          body: {
-            customer_id: subscription.stripe_customer_id,
-            return_url: returnUrl,
-          },
-        });
+    // Check if this is a test subscription
+    if (subscription.stripe_customer_id.startsWith('test_customer_')) {
+      toast.error("This is a test subscription. Please complete a real payment to manage your subscription.");
+      return;
+    }
 
-        if (error) {
-          console.error("Error from portal session function:", error);
-          throw error;
-        }
+    setIsLoadingPortal(true);
+    try {
+      // Include base path for GitHub Pages
+      const basePath = import.meta.env.MODE === 'production' ? '/kotsu-sensei-practice' : '';
+      const returnUrl = `${window.location.origin}${basePath}/account`;
+      
+      const { data, error } = await supabase.functions.invoke("create-customer-portal-session", {
+        body: {
+          customer_id: subscription.stripe_customer_id,
+          return_url: returnUrl,
+        },
+      });
 
-        if (data?.url) {
-          window.location.href = data.url;
-        } else {
-          console.error("No URL returned from portal session:", data);
-          toast.error("Failed to create portal session. Please try again.");
+      if (error) {
+        console.error("Error from portal session function:", error);
+        // Check if it's a test subscription error
+        if (error.message?.includes('Test subscription') || error.message?.includes('is_test')) {
+          toast.error("This is a test subscription. Please complete a real payment to manage your subscription.");
+          return;
         }
-      } catch (error) {
-        console.error("Error creating portal session:", error);
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        toast.error(`Failed to open payment management: ${errorMessage}`);
-      } finally {
-        setIsLoadingPortal(false);
+        throw error;
       }
+
+      if (data?.is_test) {
+        toast.error("This is a test subscription. Please complete a real payment to manage your subscription.");
+        setIsLoadingPortal(false);
+        return;
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("No URL returned from portal session:", data);
+        toast.error("Failed to create portal session. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error creating portal session:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      // Check if it's a test subscription error
+      if (errorMessage.includes('Test subscription') || errorMessage.includes('is_test')) {
+        toast.error("This is a test subscription. Please complete a real payment to manage your subscription.");
+      } else {
+        toast.error(`Failed to open payment management: ${errorMessage}`);
+      }
+    } finally {
+      setIsLoadingPortal(false);
+    }
   };
 
   const handleCancelSubscription = async () => {
