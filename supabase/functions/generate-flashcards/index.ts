@@ -64,8 +64,9 @@ async function generateImageWithGoogleAI(sign: SignData): Promise<string | null>
   }
 }
 
-// Fetch a single image for a specific query using Serper API (fallback)
-async function fetchImage(query: string): Promise<string | null> {
+// Fetch a single REAL image for a specific query using Serper API
+// Only searches for actual photos of Japanese road signs, not AI-generated images
+async function fetchImage(query: string, sign: SignData): Promise<string | null> {
   try {
     const SERPER_API_KEY = Deno.env.get('SERPER_API_KEY');
     
@@ -74,70 +75,104 @@ async function fetchImage(query: string): Promise<string | null> {
       return null;
     }
 
-    const response = await fetch('https://google.serper.dev/images', {
-      method: 'POST',
-      headers: {
-        'X-API-KEY': SERPER_API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        q: `${query} japan driving traffic road sign`,
-        num: 1
-      })
-    });
+    // Build multiple search queries to find real photos
+    // Priority: real photos, actual signs, Japanese road signs
+    const searchQueries = [
+      // Most specific: Japanese term + "real photo" + "actual sign"
+      `${sign.japanese} 実物 写真 日本の道路標識`,
+      // Japanese term + "photo" + "Japan road sign"
+      `${sign.japanese} 写真 日本 道路標識`,
+      // English + Japanese + "real photo" + "actual"
+      `${sign.english} ${sign.japanese} real photo actual sign japan`,
+      // Fallback: English + "japan road sign photo"
+      `${sign.english} japan road sign photo real`,
+      // Last resort: simple query
+      `${query} japan road sign photo`
+    ];
 
-    if (!response.ok) {
-      console.error('Serper API error:', response.status);
-      return null;
+    // Try each query in order until we find a real image
+    for (const searchQuery of searchQueries) {
+      try {
+        const response = await fetch('https://google.serper.dev/images', {
+          method: 'POST',
+          headers: {
+            'X-API-KEY': SERPER_API_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            q: searchQuery,
+            num: 5, // Get more results to filter for real photos
+            // Add filters to prefer real photos
+            safe: 'active',
+            gl: 'jp', // Focus on Japan results
+            hl: 'ja' // Japanese language results
+          })
+        });
+
+        if (!response.ok) {
+          console.error('Serper API error:', response.status);
+          continue; // Try next query
+        }
+
+        const data = await response.json();
+        const images = data.images || [];
+        
+        // Filter for real photos - prefer images from photo sites, Wikipedia, official sources
+        for (const image of images) {
+          const imageUrl = image.imageUrl || image.link;
+          if (!imageUrl) continue;
+          
+          // Check if URL suggests it's a real photo (not AI-generated)
+          const urlLower = imageUrl.toLowerCase();
+          const titleLower = (image.title || '').toLowerCase();
+          
+          // Skip if it looks like AI-generated or illustration sites
+          if (urlLower.includes('ai-generated') || 
+              urlLower.includes('illustration') ||
+              urlLower.includes('vector') ||
+              urlLower.includes('clip-art') ||
+              titleLower.includes('illustration') ||
+              titleLower.includes('vector') ||
+              titleLower.includes('ai-generated')) {
+            continue;
+          }
+          
+          // Prefer real photo sources
+          if (urlLower.includes('wikipedia') ||
+              urlLower.includes('flickr') ||
+              urlLower.includes('commons.wikimedia') ||
+              urlLower.includes('photo') ||
+              urlLower.includes('写真') ||
+              urlLower.includes('実物') ||
+              titleLower.includes('photo') ||
+              titleLower.includes('写真')) {
+            console.log(`Found real photo for ${sign.japanese}: ${imageUrl}`);
+            return imageUrl;
+          }
+        }
+        
+        // If no filtered result, use first image (but log warning)
+        if (images.length > 0) {
+          const firstImage = images[0].imageUrl || images[0].link;
+          console.log(`Using first result for ${sign.japanese} (may not be verified real photo): ${firstImage}`);
+          return firstImage;
+        }
+      } catch (queryError) {
+        console.error(`Error with query "${searchQuery}":`, queryError);
+        continue; // Try next query
+      }
     }
 
-    const data = await response.json();
-    return data.images?.[0]?.imageUrl || null;
+    console.log(`No real photo found for ${sign.japanese}`);
+    return null;
   } catch (error) {
     console.error('Error fetching image:', error);
     return null;
   }
 }
 
-// Use Lovable gateway with Gemini image generation (primary method)
-async function generateImageWithLovableGateway(sign: SignData): Promise<string | null> {
-  try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      return null;
-    }
-
-    const imagePrompt = `Generate a clear, educational illustration of a Japanese road sign for a driving test flashcard: ${sign.english} (${sign.japanese}). 
-    Style: Clean vector graphic suitable for a driving test, high contrast, educational, accurate colors.`;
-    
-    const imageResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image-preview',
-        messages: [{
-          role: 'user',
-          content: imagePrompt
-        }],
-        modalities: ['image', 'text']
-      })
-    });
-
-    if (imageResponse.ok) {
-      const imageData = await imageResponse.json();
-      return imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url || null;
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error generating image with Lovable gateway:', error);
-    return null;
-  }
-}
+// NOTE: AI image generation disabled - we only use real photos from Serper API
+// This ensures flashcards show actual Japanese road signs, not fabricated images
 
 // Regulatory Signs Data (59 signs)
 const REGULATORY_SIGNS: SignData[] = [
@@ -2729,19 +2764,12 @@ serve(async (req) => {
       };
     });
 
-    // Fetch/generate images for each flashcard
-    console.log(`Fetching/generating images for ${flashcards.length} flashcards...`);
+    // Fetch REAL images for each flashcard (only actual photos, no AI-generated)
+    console.log(`Fetching real photos for ${flashcards.length} flashcards...`);
     const flashcardsWithImages = await Promise.all(
       flashcards.map(async (flashcard) => {
-        let imageUrl = null;
-        
-        // Try Google AI Studio first (via Lovable gateway)
-        imageUrl = await generateImageWithLovableGateway(flashcard.signData);
-        
-        // Fallback to Serper API if Google AI Studio fails
-        if (!imageUrl) {
-          imageUrl = await fetchImage(flashcard.imageQuery);
-        }
+        // Only use Serper API to find real photos of actual Japanese road signs
+        const imageUrl = await fetchImage(flashcard.imageQuery, flashcard.signData);
 
         return {
           ...flashcard,
