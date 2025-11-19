@@ -2168,6 +2168,300 @@ const VEHICLE_ABBREVIATIONS: SignData[] = [
   }
 ];
 
+// Regulatory Road Markings Data (29 markings)
+const REGULATORY_MARKINGS: SignData[] = [
+  {
+    id: "regmark-01",
+    category: "Regulatory Markings",
+    number: "1",
+    japanese: "Ｕターン禁止",
+    romaji: "Yū-tān kinshi",
+    english: "No U-turn",
+    meaning: "Vehicles are prohibited from making a U-turn (the number indicates the time period to prohibit U-turns).",
+    exam_note: ""
+  },
+  {
+    id: "regmark-02",
+    category: "Regulatory Markings",
+    number: "2",
+    japanese: "追越し禁止",
+    romaji: "Oikoshi kinshi",
+    english: "Overtaking on the right hand side is prohibited",
+    meaning: "Neither a vehicle in lane A nor B must enter the right hand side of the road to overtake.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-03",
+    category: "Regulatory Markings",
+    number: "3",
+    japanese: "車線変更禁止",
+    romaji: "Shasen henkō kinshi",
+    english: "Lane change prohibited",
+    meaning: "Vehicles in lane A must not change to lane B, and vehicles in lane B must not change to lane A.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-04",
+    category: "Regulatory Markings",
+    number: "4",
+    japanese: "駐車・停車禁止",
+    romaji: "Chūsha / teisha kinshi",
+    english: "No parking or stopping",
+    meaning: "Vehicles are prohibited from parking or stopping.",
+    exam_note: "Yellow grid pattern"
+  },
+  {
+    id: "regmark-05",
+    category: "Regulatory Markings",
+    number: "5",
+    japanese: "駐車禁止",
+    romaji: "Chūsha kinshi",
+    english: "No parking",
+    meaning: "Vehicles are prohibited from parking.",
+    exam_note: "Yellow grid pattern"
+  },
+  {
+    id: "regmark-06",
+    category: "Regulatory Markings",
+    number: "6",
+    japanese: "最高速度",
+    romaji: "Saikō sokudo",
+    english: "Maximum speed limit",
+    meaning: "Vehicles and streetcars must not exceed the posted speed limit. Mopeds and motor vehicles towing another vehicle by rope must not exceed the legal speed limit for towing even when the posted speed is higher than the legal speed limit.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-07",
+    category: "Regulatory Markings",
+    number: "7",
+    japanese: "車両進入禁止区域",
+    romaji: "Sharyō shinnyū kinshi kuiki",
+    english: "No entry zone",
+    meaning: "Vehicles are prohibited from entering the area indicated by this marking.",
+    exam_note: "Yellow diagonal band"
+  },
+  {
+    id: "regmark-08",
+    category: "Regulatory Markings",
+    number: "8",
+    japanese: "停車禁止区域",
+    romaji: "Teisha kinshi kuiki",
+    english: "No stopping zone",
+    meaning: "Vehicle and streetcars are prohibited from entering the area indicated by this marking if there is a possibility they may have to stop on it due to the conditions ahead.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-09",
+    category: "Regulatory Markings",
+    number: "9",
+    japanese: "側帯",
+    romaji: "Sokutai",
+    english: "Side strip",
+    meaning: "① Pedestrians and special specific small motorized bicycle can pass. ② Where the side strip is wide it is possible to park on the side strip. (Refer to p.263)",
+    exam_note: ""
+  },
+  {
+    id: "regmark-10",
+    category: "Regulatory Markings",
+    number: "10",
+    japanese: "駐車又は停車禁止の側帯",
+    romaji: "Chūsha mata wa teisha kinshi no sokutai",
+    english: "Side strip where parking or stopping is prohibited",
+    meaning: "① Pedestrians and special specific small motorized bicycle can pass. ② Vehicles are prohibited from parking or stopping on the side strip. (Refer to p.263)",
+    exam_note: ""
+  },
+  {
+    id: "regmark-11",
+    category: "Regulatory Markings",
+    number: "11",
+    japanese: "歩行者専用側帯",
+    romaji: "Hokōsha sen'yō sokutai",
+    english: "Side strip for pedestrians only",
+    meaning: "① Only pedestrians can pass. ② Vehicles are prohibited from parking or stopping on the side strip. (Refer to p.263)",
+    exam_note: ""
+  },
+  {
+    id: "regmark-12",
+    category: "Regulatory Markings",
+    number: "12",
+    japanese: "車線",
+    romaji: "Shasen",
+    english: "Vehicle lanes",
+    meaning: "(1) Vehicle lanes established on roads other than national expressways. (2) Vehicle lanes established by road cat eyes, etc.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-13",
+    category: "Regulatory Markings",
+    number: "13",
+    japanese: "優先車線",
+    romaji: "Yūsen shasen",
+    english: "Right of way designation",
+    meaning: "Indicates the main lane ahead has the right of way when two main lanes merge.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-14",
+    category: "Regulatory Markings",
+    number: "14",
+    japanese: "車線境界",
+    romaji: "Shasen kyōkai",
+    english: "Lane distinction",
+    meaning: "Indicates differences in vehicle lanes by type of vehicles. Vehicles must drive in their designated lanes.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-15",
+    category: "Regulatory Markings",
+    number: "15",
+    japanese: "車両種別通行区分",
+    romaji: "Sharyō shubetsu tsūkō kubun",
+    english: "Lane distinction for specific types of vehicles",
+    meaning: "Large-size trucks, specific middle-size trucks and special heavy equipment must travel in the far left hand lane.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-16",
+    category: "Regulatory Markings",
+    number: "16",
+    japanese: "牽引自動車の通行帯",
+    romaji: "Ken'in jidōsha no tsūkō-tai",
+    english: "Lane for towing motor vehicles on national expressways",
+    meaning: "Towing motor vehicles must travel in the specified vehicle lane.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-17",
+    category: "Regulatory Markings",
+    number: "17",
+    japanese: "専用通行帯",
+    romaji: "Sen'yō tsūkō-tai",
+    english: "Exclusive lane",
+    meaning: "Indicates the lane is for the exclusive use of the marked type of vehicle (in this case, exclusive lane for buses between 7:00 to 9:00).",
+    exam_note: ""
+  },
+  {
+    id: "regmark-18",
+    category: "Regulatory Markings",
+    number: "18",
+    japanese: "バス優先通行帯",
+    romaji: "Basu yūsen tsūkō-tai",
+    english: "Priority lane for buses",
+    meaning: "Indicates the lane is for the priority use of buses (in this case, road with right-of-way for buses between 7:00 to 9:00).",
+    exam_note: ""
+  },
+  {
+    id: "regmark-19",
+    category: "Regulatory Markings",
+    number: "19",
+    japanese: "高速自動車国道等牽引自動車の専用通行帯",
+    romaji: "Kōsoku jidōsha kokudō-tō ken'in jidōsha no sen'yō tsūkō-tai",
+    english: "First lane designated zone on motorways for tow trucks",
+    meaning: "Towing motor vehicle must travel in the far left hand vehicle lane.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-20",
+    category: "Regulatory Markings",
+    number: "20",
+    japanese: "進行方向別通行区分",
+    romaji: "Shinkō hōkō-betsu tsūkō kubun",
+    english: "Lane direction",
+    meaning: "Vehicles must travel in the vehicle lane indicating the direction ahead at the intersection.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-21",
+    category: "Regulatory Markings",
+    number: "21",
+    japanese: "右（左）折車線",
+    romaji: "Migi (hidari) setsu shasen",
+    english: "Right (left) turning route",
+    meaning: "① Methods of turning right ② Methods of turning left",
+    exam_note: ""
+  },
+  {
+    id: "regmark-22",
+    category: "Regulatory Markings",
+    number: "22",
+    japanese: "ロータリーにおける左折等",
+    romaji: "Rōtari ni okeru sasetsu tō",
+    english: "How to left turn, etc. at a roundabout",
+    meaning: "When making left turn, right turn, going straight or U-turn at a roundabout, vehicles must drive along the direction indicated by the arrow.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-23",
+    category: "Regulatory Markings",
+    number: "23",
+    japanese: "平行駐車",
+    romaji: "Heikō chūsha",
+    english: "Parallel parking",
+    meaning: "Indicates the area where vehicles must enter and park parallel to the edge of the road.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-24",
+    category: "Regulatory Markings",
+    number: "24",
+    japanese: "直角駐車",
+    romaji: "Chokkaku chūsha",
+    english: "Rectangular parking",
+    meaning: "Indicates the area where vehicles must enter and park perpendicular to the edge of the road.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-25",
+    category: "Regulatory Markings",
+    number: "25",
+    japanese: "斜め駐車",
+    romaji: "Naname chūsha",
+    english: "Diagonal parking",
+    meaning: "Indicates the area where vehicles must enter and park diagonally to the edge of the road.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-26",
+    category: "Regulatory Markings",
+    number: "26",
+    japanese: "普通自転車等専用通行帯",
+    romaji: "Futsū jitensha-tō sen'yō tsūkō-tai",
+    english: "Special specific small motorized bicycle and regular bicycles zone",
+    meaning: "Special specific small motorized bicycle and regular bicycles permitted to drive on the sidewalk.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-27",
+    category: "Regulatory Markings",
+    number: "27",
+    japanese: "普通自転車等及び歩行者専用",
+    romaji: "Futsū jitensha-tō oyobi hokōsha sen'yō",
+    english: "Special specific small motorized bicycle and regular bicycles zone inside the sidewalk",
+    meaning: "It shows that special specific small motorized bicycle and regular bicycles can drive and use when driving on the sidewalk.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-28",
+    category: "Regulatory Markings",
+    number: "28",
+    japanese: "普通自転車専用通行帯",
+    romaji: "Futsū jitensha sen'yō tsūkō-tai",
+    english: "No entry for regular bicycles into the intersection",
+    meaning: "Regular bicycles must not enter beyond this marking.",
+    exam_note: ""
+  },
+  {
+    id: "regmark-29",
+    category: "Regulatory Markings",
+    number: "29",
+    japanese: "規制の終わり",
+    romaji: "Kisei no owari",
+    english: "End of traffic regulation",
+    meaning: "The end of the traffic regulated zone indicated by the regulatory marking.",
+    exam_note: ""
+  }
+];
+
 // Flashcard categories with sign data
 const FLASHCARD_CATEGORIES = {
   'regulatory-signs': {
@@ -2186,9 +2480,9 @@ const FLASHCARD_CATEGORIES = {
     signs: INDICATION_SIGNS
   },
   'road-markings': {
-    name: 'Road Markings (道路標示)',
-    description: 'Pavement markings and lane indicators',
-    signs: [] // Will be populated with 29 regulatory markings
+    name: 'Regulatory Road Markings (規制の路面標識)',
+    description: 'Regulatory pavement markings and lane indicators',
+    signs: REGULATORY_MARKINGS
   },
   'traffic-signals': {
     name: 'Traffic Signals (信号機)',
