@@ -1,0 +1,181 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    );
+
+    const {
+      data: { user },
+    } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { fileName, fileType, folder = 'certifications' } = await req.json();
+
+    if (!fileName || !fileType) {
+      return new Response(
+        JSON.stringify({ error: 'fileName and fileType are required' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const AWS_ACCESS_KEY_ID = Deno.env.get('AWS_ACCESS_KEY_ID');
+    const AWS_SECRET_ACCESS_KEY = Deno.env.get('AWS_SECRET_ACCESS_KEY');
+    const AWS_REGION = Deno.env.get('AWS_REGION');
+    const AWS_S3_BUCKET = Deno.env.get('AWS_S3_BUCKET');
+
+    if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY || !AWS_REGION || !AWS_S3_BUCKET) {
+      console.error('Missing AWS credentials');
+      return new Response(
+        JSON.stringify({ error: 'AWS configuration error' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Generate unique file name
+    const timestamp = new Date().getTime();
+    const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const key = `${folder}/${user.id}/${timestamp}-${sanitizedFileName}`;
+
+    // Create presigned URL using AWS Signature V4
+    const date = new Date();
+    const dateString = date.toISOString().slice(0, 10).replace(/-/g, '');
+    const amzDate = date.toISOString().replace(/[:-]|\.\d{3}/g, '');
+    
+    const credential = `${AWS_ACCESS_KEY_ID}/${dateString}/${AWS_REGION}/s3/aws4_request`;
+    
+    const params = new URLSearchParams({
+      'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
+      'X-Amz-Credential': credential,
+      'X-Amz-Date': amzDate,
+      'X-Amz-Expires': '3600',
+      'X-Amz-SignedHeaders': 'host',
+    });
+
+    const canonicalRequest = [
+      'PUT',
+      `/${key}`,
+      params.toString(),
+      `host:${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com`,
+      '',
+      'host',
+      'UNSIGNED-PAYLOAD',
+    ].join('\n');
+
+    const encoder = new TextEncoder();
+    const hashedRequest = await crypto.subtle.digest(
+      'SHA-256',
+      encoder.encode(canonicalRequest)
+    );
+    const hashedRequestHex = Array.from(new Uint8Array(hashedRequest))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    const stringToSign = [
+      'AWS4-HMAC-SHA256',
+      amzDate,
+      `${dateString}/${AWS_REGION}/s3/aws4_request`,
+      hashedRequestHex,
+    ].join('\n');
+
+    // Create signing key
+    const getSignatureKey = async (key: string, dateStamp: string, regionName: string, serviceName: string) => {
+      const kDate = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(`AWS4${key}`),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      const kDateSigned = await crypto.subtle.sign('HMAC', kDate, encoder.encode(dateStamp));
+      
+      const kRegion = await crypto.subtle.importKey(
+        'raw',
+        kDateSigned,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      const kRegionSigned = await crypto.subtle.sign('HMAC', kRegion, encoder.encode(regionName));
+      
+      const kService = await crypto.subtle.importKey(
+        'raw',
+        kRegionSigned,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      const kServiceSigned = await crypto.subtle.sign('HMAC', kService, encoder.encode(serviceName));
+      
+      const kSigning = await crypto.subtle.importKey(
+        'raw',
+        kServiceSigned,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      return kSigning;
+    };
+
+    const signingKey = await getSignatureKey(AWS_SECRET_ACCESS_KEY, dateString, AWS_REGION, 's3');
+    const signature = await crypto.subtle.sign('HMAC', signingKey, encoder.encode(stringToSign));
+    const signatureHex = Array.from(new Uint8Array(signature))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    params.append('X-Amz-Signature', signatureHex);
+
+    const presignedUrl = `https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${key}?${params.toString()}`;
+    const publicUrl = `https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${key}`;
+
+    console.log('Generated presigned URL for:', key);
+
+    return new Response(
+      JSON.stringify({
+        presignedUrl,
+        publicUrl,
+        key,
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  } catch (error) {
+    console.error('Error generating presigned URL:', error);
+    return new Response(
+      JSON.stringify({ error: (error as Error).message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  }
+});

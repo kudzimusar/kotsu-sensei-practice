@@ -23,6 +23,8 @@ import Account from "./pages/Account";
 import ShareReferral from "./pages/ShareReferral";
 import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import BecomeInstructor from "./pages/BecomeInstructor";
+import BookInstructor from "./pages/BookInstructor";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +52,8 @@ const App = () => (
           <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
           <Route path="/share-referral" element={<ProtectedRoute><ShareReferral /></ProtectedRoute>} />
           <Route path="/generate" element={<ProtectedRoute><QuestionGenerator /></ProtectedRoute>} />
+          <Route path="/become-instructor" element={<ProtectedRoute><BecomeInstructor /></ProtectedRoute>} />
+          <Route path="/book-instructor" element={<ProtectedRoute><BookInstructor /></ProtectedRoute>} />
           <Route path="/about" element={<About />} />
           <Route path="/support" element={<Support />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />

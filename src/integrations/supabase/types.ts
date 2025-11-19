@@ -423,6 +423,8 @@ export type Database = {
         Row: {
           availability_schedule: Json | null
           bio: string | null
+          certification_filename: string | null
+          certification_url: string | null
           created_at: string
           email: string
           hourly_rate: number
@@ -438,6 +440,8 @@ export type Database = {
         Insert: {
           availability_schedule?: Json | null
           bio?: string | null
+          certification_filename?: string | null
+          certification_url?: string | null
           created_at?: string
           email: string
           hourly_rate?: number
@@ -453,6 +457,8 @@ export type Database = {
         Update: {
           availability_schedule?: Json | null
           bio?: string | null
+          certification_filename?: string | null
+          certification_url?: string | null
           created_at?: string
           email?: string
           hourly_rate?: number

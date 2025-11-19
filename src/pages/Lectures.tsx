@@ -430,15 +430,36 @@ const Lectures = () => {
   );
 };
 
-// Instructors Tab Component - Currently disabled as instructor features are not implemented yet
+// Instructors Tab Component
 function InstructorsTab({ user, navigate }: { user: any; navigate: any }) {
   return (
-    <div className="flex flex-col items-center justify-center p-8">
-      <GraduationCap className="w-12 h-12 text-muted-foreground mb-4" />
-      <h3 className="text-lg font-semibold mb-2">Instructor Features</h3>
-      <p className="text-muted-foreground text-center">
-        Instructor booking features are coming soon.
-      </p>
+    <div className="flex flex-col items-center justify-center p-8 space-y-6">
+      <GraduationCap className="w-16 h-16 text-primary mb-4" />
+      <div className="text-center space-y-2">
+        <h3 className="text-2xl font-bold">Professional Driving Instructors</h3>
+        <p className="text-muted-foreground max-w-md">
+          Book one-on-one sessions with certified instructors or join our team of professionals
+        </p>
+      </div>
+      <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+        <Button 
+          onClick={() => navigate("/book-instructor")}
+          className="flex-1"
+          size="lg"
+        >
+          <Users className="mr-2 h-5 w-5" />
+          Book an Instructor
+        </Button>
+        <Button 
+          variant="outline" 
+          onClick={() => navigate("/become-instructor")}
+          className="flex-1"
+          size="lg"
+        >
+          <MessageSquare className="mr-2 h-5 w-5" />
+          Become an Instructor
+        </Button>
+      </div>
     </div>
   );
 }
