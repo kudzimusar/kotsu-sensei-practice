@@ -24,21 +24,6 @@ import Account from "./pages/Account";
 import ShareReferral from "./pages/ShareReferral";
 import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
-import BecomeInstructor from "./pages/BecomeInstructor";
-import AdminInstructors from "./pages/AdminInstructors";
-import InstructorProfile from "./pages/InstructorProfile";
-import BookInstructor from "./pages/BookInstructor";
-import BookingFlow from "./pages/BookingFlow";
-import BookingPayment from "./pages/BookingPayment";
-import BookingSuccess from "./pages/BookingSuccess";
-import MyBookings from "./pages/MyBookings";
-import InstructorDashboard from "./pages/InstructorDashboard";
-import BookingReview from "./pages/BookingReview";
-import BookingDetails from "./pages/BookingDetails";
-import PracticeRooms from "./pages/PracticeRooms";
-import PracticeRoomDetails from "./pages/PracticeRoomDetails";
-import PracticeRoomPayment from "./pages/PracticeRoomPayment";
-import PracticeRoomSuccess from "./pages/PracticeRoomSuccess";
 
 const queryClient = new QueryClient();
 
