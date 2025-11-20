@@ -367,9 +367,8 @@ Topics you can help with:
     // Return detailed error response
     return new Response(
       JSON.stringify({ 
-        error: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? errorStack : undefined
-      }), 
+        error: errorMessage
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
