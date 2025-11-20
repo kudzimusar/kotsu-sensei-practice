@@ -211,30 +211,21 @@ export async function uploadCertification(file: File): Promise<string> {
 }
 
 /**
- * Upload certification document
+ * Upload certification document to AWS S3
  */
 export async function uploadCertificationDocument(
   file: File,
   userId: string
 ): Promise<string> {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${userId}/${Date.now()}.${fileExt}`;
-  const filePath = `instructor-certifications/${fileName}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from('instructor-certifications')
-    .upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: false,
-    });
-
-  if (uploadError) throw uploadError;
-
-  const { data } = supabase.storage
-    .from('instructor-certifications')
-    .getPublicUrl(filePath);
-
-  return data.publicUrl;
+  try {
+    // Use S3 upload via Edge Function
+    const { uploadToS3 } = await import('@/lib/aws/s3-upload');
+    const result = await uploadToS3(file, 'instructor-certifications');
+    return result.publicUrl;
+  } catch (error: any) {
+    console.error('S3 upload failed:', error);
+    throw new Error(`Failed to upload certification: ${error.message || 'S3 upload failed. Please ensure AWS credentials are configured.`}`);
+  }
 }
 
 /**
