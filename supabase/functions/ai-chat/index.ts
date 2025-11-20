@@ -164,13 +164,30 @@ Topics you can help with:
     if (useFallback && GOOGLE_AI_STUDIO_API_KEY) {
       console.log("Using GOOGLE_AI_STUDIO_API_KEY fallback");
       try {
-        const allMessages = [
-          { role: "user", parts: [{ text: systemPrompt }] },
-          ...messages.map((msg: any) => ({
-            role: msg.role === "assistant" ? "model" : "user",
-            parts: [{ text: msg.content }]
-          }))
-        ];
+        // Build messages for Gemini API format
+        // Combine system prompt with user messages
+        const conversationHistory: any[] = [];
+        
+        // Add system prompt as first user message
+        conversationHistory.push({
+          role: "user",
+          parts: [{ text: systemPrompt }]
+        });
+        
+        // Add conversation history
+        for (const msg of messages) {
+          if (msg.role === "assistant") {
+            conversationHistory.push({
+              role: "model",
+              parts: [{ text: msg.content || "" }]
+            });
+          } else {
+            conversationHistory.push({
+              role: "user",
+              parts: [{ text: msg.content || "" }]
+            });
+          }
+        }
 
         response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_AI_STUDIO_API_KEY}`,
@@ -180,30 +197,38 @@ Topics you can help with:
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              contents: allMessages,
+              contents: conversationHistory,
               generationConfig: {
                 temperature: 0.7,
+                topK: 40,
+                topP: 0.95,
+                maxOutputTokens: 2048,
               }
             })
           }
         );
 
         if (!response.ok) {
-          throw new Error(`Fallback API error: ${response.status}`);
+          const errorText = await response.text();
+          console.error("Fallback API error:", response.status, errorText);
+          throw new Error(`Fallback API error: ${response.status} - ${errorText.substring(0, 200)}`);
         }
 
         const data = await response.json();
         assistantMessage = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        
+        if (!assistantMessage) {
+          console.error("Fallback API returned empty response:", JSON.stringify(data));
+          throw new Error("Fallback API returned empty response");
+        }
+        
+        console.log("Fallback API succeeded, response length:", assistantMessage.length);
       } catch (error) {
         console.error("Both API keys failed:", error);
-        throw new Error("All AI services are currently unavailable. Please try again later.");
+        throw new Error(`All AI services are currently unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     } else if (useFallback) {
       throw new Error("No AI API keys are configured");
-    }
-
-    if (!assistantMessage) {
-      throw new Error("No response from AI");
     }
 
     if (!assistantMessage) {
