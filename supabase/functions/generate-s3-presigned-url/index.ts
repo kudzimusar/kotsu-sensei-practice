@@ -60,6 +60,22 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Validate AWS region format (must be like us-east-1, eu-west-1, etc.)
+    if (!AWS_REGION.match(/^[a-z0-9-]+$/)) {
+      console.error('Invalid AWS_REGION format:', AWS_REGION);
+      return new Response(
+        JSON.stringify({ 
+          error: `Invalid AWS region: "${AWS_REGION}". Must be a valid AWS region like "us-east-1"` 
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    console.log('AWS Configuration - Region:', AWS_REGION, 'Bucket:', AWS_S3_BUCKET, 'Folder:', folder);
+
     // Generate unique file name
     const timestamp = new Date().getTime();
     const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
@@ -169,9 +185,15 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error generating presigned URL:', error);
+    console.error('========== S3 PRESIGNED URL ERROR ==========');
+    console.error('Error:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('===========================================');
+    
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
