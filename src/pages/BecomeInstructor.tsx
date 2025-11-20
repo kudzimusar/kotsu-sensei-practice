@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { createInstructor, uploadCertification } from "@/lib/supabase/instructors";
+import { registerAsInstructor, uploadCertification } from "@/lib/supabase/instructors";
 import { ArrowLeft, Upload, FileText } from "lucide-react";
 
 const BecomeInstructor = () => {
@@ -57,15 +57,19 @@ const BecomeInstructor = () => {
       }
 
       // Create instructor profile
-      await createInstructor({
-        name: formData.name,
+      await registerAsInstructor({
+        full_name: formData.name,
         email: formData.email,
         phone: formData.phone || undefined,
         bio: formData.bio || undefined,
-        hourly_rate: parseFloat(formData.hourly_rate),
         languages: formData.languages.split(',').map(l => l.trim()),
-        certification_url: certificationUrl || undefined,
-        certification_filename: certificationFilename || undefined,
+        certification_documents: certificationUrl ? [certificationUrl] : [],
+        specializations: [],
+        years_experience: 0,
+        available_for_video: true,
+        available_for_in_person: false,
+        available_for_practice_rooms: true,
+        max_practice_room_size: 8,
       });
 
       toast({

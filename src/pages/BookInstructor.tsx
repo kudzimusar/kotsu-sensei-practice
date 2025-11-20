@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { getInstructors, type Instructor } from "@/lib/supabase/instructors";
+import { getApprovedInstructors, type Instructor } from "@/lib/supabase/instructors";
 import { ArrowLeft, Star, Globe, DollarSign } from "lucide-react";
 
 const BookInstructor = () => {
@@ -18,7 +18,7 @@ const BookInstructor = () => {
 
   const loadInstructors = async () => {
     try {
-      const data = await getInstructors();
+      const data = await getApprovedInstructors();
       setInstructors(data);
     } catch (error) {
       console.error("Error loading instructors:", error);
