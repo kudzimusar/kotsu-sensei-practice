@@ -10,6 +10,12 @@ export async function uploadToS3(
   folder: string = 'certifications'
 ): Promise<S3UploadResult> {
   try {
+    // Ensure user is authenticated
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session) {
+      throw new Error('User must be authenticated to upload files');
+    }
+
     // Get presigned URL from our edge function
     const { data, error } = await supabase.functions.invoke(
       'generate-s3-presigned-url',

@@ -38,3 +38,6 @@ verify_jwt = true
 
 [functions.get-checkout-session]
 verify_jwt = true
+
+[functions.generate-s3-presigned-url]
+verify_jwt = true
