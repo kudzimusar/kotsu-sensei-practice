@@ -72,12 +72,12 @@ const BookInstructor = () => {
                 <Card key={instructor.id} className="p-6 hover:shadow-lg transition-shadow">
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-xl font-semibold text-foreground">{instructor.name}</h3>
+                      <h3 className="text-xl font-semibold text-foreground">{instructor.full_name}</h3>
                       {instructor.rating && (
                         <div className="flex items-center gap-1 mt-2">
                           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                           <span className="text-sm text-muted-foreground">
-                            {instructor.rating.toFixed(1)} ({instructor.total_sessions || 0} sessions)
+                            {instructor.rating.toFixed(1)} ({instructor.total_reviews || 0} reviews)
                           </span>
                         </div>
                       )}
@@ -98,12 +98,6 @@ const BookInstructor = () => {
                           </span>
                         </div>
                       )}
-                      <div className="flex items-center gap-2 text-sm">
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-semibold text-foreground">
-                          ¥{instructor.hourly_rate.toLocaleString()}/hour
-                        </span>
-                      </div>
                     </div>
 
                     <Button

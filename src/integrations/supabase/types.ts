@@ -172,6 +172,98 @@ export type Database = {
         }
         Relationships: []
       }
+      bookings: {
+        Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          completed_at: string | null
+          created_at: string
+          duration_minutes: number
+          id: string
+          instructor_id: string
+          instructor_notes: string | null
+          meeting_address: string | null
+          meeting_location: string | null
+          payment_status: string
+          price_yen: number
+          refund_amount: number | null
+          scheduled_date: string
+          scheduled_time: string
+          session_type: string
+          status: string
+          stripe_payment_intent_id: string | null
+          student_notes: string | null
+          timezone: string
+          updated_at: string
+          user_id: string
+          video_call_link: string | null
+          video_call_provider: string | null
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          instructor_id: string
+          instructor_notes?: string | null
+          meeting_address?: string | null
+          meeting_location?: string | null
+          payment_status?: string
+          price_yen: number
+          refund_amount?: number | null
+          scheduled_date: string
+          scheduled_time: string
+          session_type: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          student_notes?: string | null
+          timezone?: string
+          updated_at?: string
+          user_id: string
+          video_call_link?: string | null
+          video_call_provider?: string | null
+        }
+        Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          instructor_id?: string
+          instructor_notes?: string | null
+          meeting_address?: string | null
+          meeting_location?: string | null
+          payment_status?: string
+          price_yen?: number
+          refund_amount?: number | null
+          scheduled_date?: string
+          scheduled_time?: string
+          session_type?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          student_notes?: string | null
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+          video_call_link?: string | null
+          video_call_provider?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_performance: {
         Row: {
           category: string
@@ -348,6 +440,196 @@ export type Database = {
         }
         Relationships: []
       }
+      instructor_availability: {
+        Row: {
+          booking_type: string | null
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          instructor_id: string
+          is_active: boolean
+          session_type: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          booking_type?: string | null
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          instructor_id: string
+          is_active?: boolean
+          session_type: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          booking_type?: string | null
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          instructor_id?: string
+          is_active?: boolean
+          session_type?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instructor_availability_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instructor_blocked_dates: {
+        Row: {
+          blocked_date: string
+          created_at: string
+          id: string
+          instructor_id: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_date: string
+          created_at?: string
+          id?: string
+          instructor_id: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_date?: string
+          created_at?: string
+          id?: string
+          instructor_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instructor_blocked_dates_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instructor_pricing: {
+        Row: {
+          booking_type: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          instructor_id: string
+          is_active: boolean
+          price_yen: number
+          session_type: string
+          updated_at: string
+        }
+        Insert: {
+          booking_type: string
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          instructor_id: string
+          is_active?: boolean
+          price_yen: number
+          session_type: string
+          updated_at?: string
+        }
+        Update: {
+          booking_type?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          instructor_id?: string
+          is_active?: boolean
+          price_yen?: number
+          session_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instructor_pricing_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instructor_reviews: {
+        Row: {
+          admin_response: string | null
+          booking_id: string | null
+          created_at: string
+          helpful_count: number | null
+          id: string
+          instructor_id: string
+          is_verified: boolean | null
+          practice_room_id: string | null
+          rating: number
+          review_text: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_response?: string | null
+          booking_id?: string | null
+          created_at?: string
+          helpful_count?: number | null
+          id?: string
+          instructor_id: string
+          is_verified?: boolean | null
+          practice_room_id?: string | null
+          rating: number
+          review_text?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_response?: string | null
+          booking_id?: string | null
+          created_at?: string
+          helpful_count?: number | null
+          id?: string
+          instructor_id?: string
+          is_verified?: boolean | null
+          practice_room_id?: string | null
+          rating?: number
+          review_text?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instructor_reviews_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instructor_reviews_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instructor_reviews_practice_room_id_fkey"
+            columns: ["practice_room_id"]
+            isOneToOne: false
+            referencedRelation: "practice_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       instructor_sessions: {
         Row: {
           completed_at: string | null
@@ -422,56 +704,252 @@ export type Database = {
       instructors: {
         Row: {
           availability_schedule: Json | null
+          available_for_in_person: boolean | null
+          available_for_practice_rooms: boolean | null
+          available_for_video: boolean | null
           bio: string | null
+          certification_documents: string[] | null
           certification_filename: string | null
           certification_url: string | null
           created_at: string
           email: string
+          full_name: string | null
           hourly_rate: number
           id: string
           is_active: boolean | null
           languages: string[] | null
+          location_city: string | null
+          location_coordinates: unknown
+          location_prefecture: string | null
+          max_practice_room_size: number | null
           name: string
           phone: string | null
           rating: number | null
+          specializations: string[] | null
+          status: string | null
+          total_reviews: number | null
           total_sessions: number | null
           updated_at: string
+          user_id: string | null
+          years_experience: number | null
         }
         Insert: {
           availability_schedule?: Json | null
+          available_for_in_person?: boolean | null
+          available_for_practice_rooms?: boolean | null
+          available_for_video?: boolean | null
           bio?: string | null
+          certification_documents?: string[] | null
           certification_filename?: string | null
           certification_url?: string | null
           created_at?: string
           email: string
+          full_name?: string | null
           hourly_rate?: number
           id?: string
           is_active?: boolean | null
           languages?: string[] | null
+          location_city?: string | null
+          location_coordinates?: unknown
+          location_prefecture?: string | null
+          max_practice_room_size?: number | null
           name: string
           phone?: string | null
           rating?: number | null
+          specializations?: string[] | null
+          status?: string | null
+          total_reviews?: number | null
           total_sessions?: number | null
           updated_at?: string
+          user_id?: string | null
+          years_experience?: number | null
         }
         Update: {
           availability_schedule?: Json | null
+          available_for_in_person?: boolean | null
+          available_for_practice_rooms?: boolean | null
+          available_for_video?: boolean | null
           bio?: string | null
+          certification_documents?: string[] | null
           certification_filename?: string | null
           certification_url?: string | null
           created_at?: string
           email?: string
+          full_name?: string | null
           hourly_rate?: number
           id?: string
           is_active?: boolean | null
           languages?: string[] | null
+          location_city?: string | null
+          location_coordinates?: unknown
+          location_prefecture?: string | null
+          max_practice_room_size?: number | null
           name?: string
           phone?: string | null
           rating?: number | null
+          specializations?: string[] | null
+          status?: string | null
+          total_reviews?: number | null
           total_sessions?: number | null
           updated_at?: string
+          user_id?: string | null
+          years_experience?: number | null
         }
         Relationships: []
+      }
+      practice_room_participants: {
+        Row: {
+          created_at: string
+          id: string
+          is_host: boolean
+          joined_at: string | null
+          left_at: string | null
+          payment_status: string
+          practice_room_id: string
+          price_paid_yen: number
+          stripe_payment_intent_id: string | null
+          student_notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_host?: boolean
+          joined_at?: string | null
+          left_at?: string | null
+          payment_status?: string
+          practice_room_id: string
+          price_paid_yen: number
+          stripe_payment_intent_id?: string | null
+          student_notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_host?: boolean
+          joined_at?: string | null
+          left_at?: string | null
+          payment_status?: string
+          practice_room_id?: string
+          price_paid_yen?: number
+          stripe_payment_intent_id?: string | null
+          student_notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_room_participants_practice_room_id_fkey"
+            columns: ["practice_room_id"]
+            isOneToOne: false
+            referencedRelation: "practice_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practice_rooms: {
+        Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          completed_at: string | null
+          created_at: string
+          current_participants: number
+          description: string | null
+          duration_minutes: number
+          id: string
+          instructor_id: string
+          instructor_notes: string | null
+          language: string
+          max_participants: number
+          meeting_address: string | null
+          meeting_location: string | null
+          min_participants: number
+          price_per_participant_yen: number
+          scheduled_date: string
+          scheduled_time: string
+          session_type: string
+          status: string
+          timezone: string
+          title: string
+          topic_focus: string[] | null
+          total_price_yen: number
+          updated_at: string
+          video_call_link: string | null
+          video_call_provider: string | null
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          current_participants?: number
+          description?: string | null
+          duration_minutes: number
+          id?: string
+          instructor_id: string
+          instructor_notes?: string | null
+          language?: string
+          max_participants: number
+          meeting_address?: string | null
+          meeting_location?: string | null
+          min_participants?: number
+          price_per_participant_yen: number
+          scheduled_date: string
+          scheduled_time: string
+          session_type: string
+          status?: string
+          timezone?: string
+          title: string
+          topic_focus?: string[] | null
+          total_price_yen: number
+          updated_at?: string
+          video_call_link?: string | null
+          video_call_provider?: string | null
+        }
+        Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          current_participants?: number
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          instructor_id?: string
+          instructor_notes?: string | null
+          language?: string
+          max_participants?: number
+          meeting_address?: string | null
+          meeting_location?: string | null
+          min_participants?: number
+          price_per_participant_yen?: number
+          scheduled_date?: string
+          scheduled_time?: string
+          session_type?: string
+          status?: string
+          timezone?: string
+          title?: string
+          topic_focus?: string[] | null
+          total_price_yen?: number
+          updated_at?: string
+          video_call_link?: string | null
+          video_call_provider?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_rooms_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -1276,6 +1754,17 @@ export type Database = {
       initialize_user_curriculum: {
         Args: { p_user_id: string }
         Returns: undefined
+      }
+      is_instructor_available: {
+        Args: {
+          p_booking_type?: string
+          p_date: string
+          p_duration_minutes: number
+          p_instructor_id: string
+          p_session_type: string
+          p_time: string
+        }
+        Returns: boolean
       }
       is_user_premium: { Args: { p_user_id: string }; Returns: boolean }
       mark_schedule_event_complete: {
