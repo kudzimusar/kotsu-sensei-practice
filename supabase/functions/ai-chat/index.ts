@@ -69,15 +69,22 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const body = await req.json();
+    const { messages } = body;
+    
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      throw new Error("Messages array is required and must not be empty");
+    }
+    
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const GOOGLE_AI_STUDIO_API_KEY = Deno.env.get("GOOGLE_AI_STUDIO_API_KEY");
+    
+    console.log('AI Chat request received with', messages.length, 'messages');
+    console.log('API Keys available: LOVABLE=', !!LOVABLE_API_KEY, 'GOOGLE_AI_STUDIO=', !!GOOGLE_AI_STUDIO_API_KEY);
     
     if (!LOVABLE_API_KEY && !GOOGLE_AI_STUDIO_API_KEY) {
       throw new Error("Neither LOVABLE_API_KEY nor GOOGLE_AI_STUDIO_API_KEY is configured");
     }
-
-    console.log('AI Chat request received with', messages.length, 'messages');
 
     const systemPrompt = `You are a friendly and knowledgeable Japanese driving instructor assistant named "Kōtsū Sensei" (交通先生). Your role is to help students understand Japanese traffic laws, road signs, driving techniques, and test preparation.
 
@@ -121,12 +128,13 @@ Topics you can help with:
 - Common mistakes to avoid`;
 
     // Try LOVABLE_API_KEY first, fallback to GOOGLE_AI_STUDIO_API_KEY
-    let response: Response;
-    let assistantMessage: string;
+    let response: Response | null = null;
+    let assistantMessage: string | null = null;
     let useFallback = false;
 
     if (LOVABLE_API_KEY) {
       try {
+        console.log("Attempting primary API (LOVABLE_API_KEY)");
         response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -144,19 +152,39 @@ Topics you can help with:
         });
 
         if (!response.ok) {
-          if (response.status === 429 || response.status === 402) {
-            throw new Error(`Primary API error: ${response.status}`);
+          let errorText = '';
+          try {
+            errorText = await response.text();
+          } catch (e) {
+            errorText = `Failed to read error response: ${e instanceof Error ? e.message : 'Unknown'}`;
           }
-          throw new Error(`Primary API error: ${response.status}`);
+          console.error("Primary API error:", response.status, errorText.substring(0, 200));
+          throw new Error(`Primary API error: ${response.status} - ${errorText.substring(0, 100)}`);
         }
 
-        const data = await response.json();
+        let data: any;
+        try {
+          data = await response.json();
+        } catch (e) {
+          console.error("Failed to parse primary API response:", e);
+          throw new Error(`Primary API returned invalid JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        }
+        
         assistantMessage = data.choices?.[0]?.message?.content;
+        
+        if (!assistantMessage) {
+          console.error("Primary API returned empty response:", JSON.stringify(data));
+          throw new Error("Primary API returned empty response");
+        }
+        
+        console.log("Primary API succeeded, response length:", assistantMessage.length);
       } catch (error) {
         console.warn("LOVABLE_API_KEY failed, trying fallback:", error);
         useFallback = true;
+        assistantMessage = null;
       }
     } else {
+      console.log("LOVABLE_API_KEY not available, using fallback");
       useFallback = true;
     }
 
@@ -209,12 +237,24 @@ Topics you can help with:
         );
 
         if (!response.ok) {
-          const errorText = await response.text();
+          let errorText = '';
+          try {
+            errorText = await response.text();
+          } catch (e) {
+            errorText = `Failed to read error response: ${e instanceof Error ? e.message : 'Unknown'}`;
+          }
           console.error("Fallback API error:", response.status, errorText);
           throw new Error(`Fallback API error: ${response.status} - ${errorText.substring(0, 200)}`);
         }
 
-        const data = await response.json();
+        let data: any;
+        try {
+          data = await response.json();
+        } catch (e) {
+          console.error("Failed to parse fallback API response:", e);
+          throw new Error(`Fallback API returned invalid JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        }
+        
         assistantMessage = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
         
         if (!assistantMessage) {
@@ -225,14 +265,16 @@ Topics you can help with:
         console.log("Fallback API succeeded, response length:", assistantMessage.length);
       } catch (error) {
         console.error("Both API keys failed:", error);
-        throw new Error(`All AI services are currently unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        throw new Error(`All AI services are currently unavailable: ${errorMsg}`);
       }
     } else if (useFallback) {
       throw new Error("No AI API keys are configured");
     }
 
-    if (!assistantMessage) {
-      throw new Error("No response from AI");
+    if (!assistantMessage || assistantMessage.trim() === "") {
+      console.error("No assistant message received from any API");
+      throw new Error("No response from AI - all services returned empty responses");
     }
 
     console.log('AI Chat response generated successfully');
@@ -287,8 +329,14 @@ Topics you can help with:
     );
   } catch (error) {
     console.error("Error in ai-chat function:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    console.error("Error details:", errorMessage);
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error occurred" }), 
+      JSON.stringify({ 
+        error: errorMessage
+      }), 
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
