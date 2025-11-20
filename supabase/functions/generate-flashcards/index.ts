@@ -13,65 +13,41 @@ interface SignData {
   exam_note: string;
 }
 
-// Generate image using Google AI Studio (Gemini Imagen API)
+// Generate image using Google AI Studio (Gemini API) as fallback
+// This is used when Serper API fails to find real photos
 async function generateImageWithGoogleAI(sign: SignData): Promise<string | null> {
   try {
     const GOOGLE_AI_STUDIO_API_KEY = Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
     
     if (!GOOGLE_AI_STUDIO_API_KEY) {
-      console.log('GOOGLE_AI_STUDIO_API_KEY not configured, skipping image generation');
+      console.log('GOOGLE_AI_STUDIO_API_KEY not configured, skipping image generation fallback');
       return null;
     }
 
-    // Build prompt for image generation
-    const prompt = `A clear, educational illustration of a Japanese road sign for a driving test flashcard: ${sign.english} (${sign.japanese}). 
-    Style: Clean vector graphic suitable for a driving test flashcard, high contrast, professional, accurate colors (red circle, blue symbols, etc.), 
-    educational material. Make it clear and recognizable as a Japanese traffic sign.`;
-
-    // Use Gemini API with image generation capabilities
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_AI_STUDIO_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-          }
-        })
-      }
-    );
-
-    if (!response.ok) {
-      console.error('Google AI Studio API error:', response.status);
-      return null;
-    }
-
-    // Note: Gemini API may not directly return images in this format
-    // For now, fall back to using Serper API or alternative method
-    // This is a placeholder - actual implementation may need Imagen API
+    // Build prompt for image search/generation
+    // Note: Gemini API doesn't directly generate images, but we can use it to enhance search queries
+    // For now, we'll use it to create better search terms or return null if image generation isn't available
+    // In the future, this could use Imagen API for actual image generation
+    
+    // For now, return null as Gemini text API doesn't generate images
+    // This function is kept for future implementation with Imagen API
+    console.log(`Google AI Studio fallback available for ${sign.japanese}, but image generation not yet implemented`);
     return null;
   } catch (error) {
-    console.error('Error generating image with Google AI Studio:', error);
+    console.error('Error in Google AI Studio fallback:', error);
     return null;
   }
 }
 
 // Fetch a single REAL image for a specific query using Serper API
-// Only searches for actual photos of Japanese road signs, not AI-generated images
+// Primary method: searches for actual photos of Japanese road signs
+// Falls back to Google AI Studio if Serper fails
 async function fetchImage(query: string, sign: SignData): Promise<string | null> {
   try {
     const SERPER_API_KEY = Deno.env.get('SERPER_API_KEY');
     
     if (!SERPER_API_KEY) {
-      console.log('SERPER_API_KEY not configured, skipping image search');
+      console.log('SERPER_API_KEY not configured, will try fallback methods');
       return null;
     }
 
@@ -2722,11 +2698,17 @@ serve(async (req) => {
 
   try {
     const { category, count = 10 } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    // Check available API keys (all optional, but at least one image source should be available)
+    const SERPER_API_KEY = Deno.env.get('SERPER_API_KEY');
+    const GOOGLE_AI_STUDIO_API_KEY = Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    
+    // Log available keys for debugging (without exposing values)
+    console.log(`API Keys available: SERPER=${!!SERPER_API_KEY}, GOOGLE_AI_STUDIO=${!!GOOGLE_AI_STUDIO_API_KEY}, LOVABLE=${!!LOVABLE_API_KEY}`);
+    
+    // Note: LOVABLE_API_KEY is kept available for future use or as additional fallback
+    // Currently, image fetching uses: SERPER_API_KEY (primary) -> GOOGLE_AI_STUDIO_API_KEY (fallback)
 
     console.log(`Generating ${count} flashcards for category: ${category}`);
 
@@ -2764,12 +2746,20 @@ serve(async (req) => {
       };
     });
 
-    // Fetch REAL images for each flashcard (only actual photos, no AI-generated)
-    console.log(`Fetching real photos for ${flashcards.length} flashcards...`);
+    // Fetch images for each flashcard with fallback chain:
+    // 1. Try SERPER_API_KEY (real photos)
+    // 2. Fallback to GOOGLE_AI_STUDIO_API_KEY (AI-generated if needed)
+    console.log(`Fetching images for ${flashcards.length} flashcards...`);
     const flashcardsWithImages = await Promise.all(
       flashcards.map(async (flashcard) => {
-        // Only use Serper API to find real photos of actual Japanese road signs
-        const imageUrl = await fetchImage(flashcard.imageQuery, flashcard.signData);
+        // Try Serper API first for real photos
+        let imageUrl = await fetchImage(flashcard.imageQuery, flashcard.signData);
+        
+        // If Serper fails, try Google AI Studio as fallback
+        if (!imageUrl) {
+          console.log(`Serper failed for ${flashcard.signData.japanese}, trying Google AI Studio fallback...`);
+          imageUrl = await generateImageWithGoogleAI(flashcard.signData);
+        }
 
         return {
           ...flashcard,

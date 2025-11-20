@@ -71,9 +71,10 @@ serve(async (req) => {
   try {
     const { messages } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const GOOGLE_AI_STUDIO_API_KEY = Deno.env.get("GOOGLE_AI_STUDIO_API_KEY");
     
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!LOVABLE_API_KEY && !GOOGLE_AI_STUDIO_API_KEY) {
+      throw new Error("Neither LOVABLE_API_KEY nor GOOGLE_AI_STUDIO_API_KEY is configured");
     }
 
     console.log('AI Chat request received with', messages.length, 'messages');
@@ -119,49 +120,91 @@ Topics you can help with:
 - Test preparation strategies
 - Common mistakes to avoid`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        stream: false,
-      }),
-    });
+    // Try LOVABLE_API_KEY first, fallback to GOOGLE_AI_STUDIO_API_KEY
+    let response: Response;
+    let assistantMessage: string;
+    let useFallback = false;
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), 
-          {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (LOVABLE_API_KEY) {
+      try {
+        response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: systemPrompt },
+              ...messages,
+            ],
+            stream: false,
+          }),
+        });
+
+        if (!response.ok) {
+          if (response.status === 429 || response.status === 402) {
+            throw new Error(`Primary API error: ${response.status}`);
           }
-        );
+          throw new Error(`Primary API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        assistantMessage = data.choices?.[0]?.message?.content;
+      } catch (error) {
+        console.warn("LOVABLE_API_KEY failed, trying fallback:", error);
+        useFallback = true;
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI service quota exceeded. Please contact support." }), 
-          {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-      
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
+    } else {
+      useFallback = true;
     }
 
-    const data = await response.json();
-    const assistantMessage = data.choices?.[0]?.message?.content;
+    // Fallback to GOOGLE_AI_STUDIO_API_KEY
+    if (useFallback && GOOGLE_AI_STUDIO_API_KEY) {
+      console.log("Using GOOGLE_AI_STUDIO_API_KEY fallback");
+      try {
+        const allMessages = [
+          { role: "user", parts: [{ text: systemPrompt }] },
+          ...messages.map((msg: any) => ({
+            role: msg.role === "assistant" ? "model" : "user",
+            parts: [{ text: msg.content }]
+          }))
+        ];
+
+        response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_AI_STUDIO_API_KEY}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: allMessages,
+              generationConfig: {
+                temperature: 0.7,
+              }
+            })
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Fallback API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        assistantMessage = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      } catch (error) {
+        console.error("Both API keys failed:", error);
+        throw new Error("All AI services are currently unavailable. Please try again later.");
+      }
+    } else if (useFallback) {
+      throw new Error("No AI API keys are configured");
+    }
+
+    if (!assistantMessage) {
+      throw new Error("No response from AI");
+    }
 
     if (!assistantMessage) {
       throw new Error("No response from AI");
