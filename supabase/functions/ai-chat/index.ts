@@ -349,14 +349,26 @@ Topics you can help with:
       }
     );
   } catch (error) {
-    console.error("Error in ai-chat function:", error);
+    // Log the full error for debugging
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    console.error("Error details:", errorMessage);
-    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    const errorStack = error instanceof Error ? error.stack : "No stack trace";
     
+    console.error("========== AI-CHAT ERROR ==========");
+    console.error("Error message:", errorMessage);
+    console.error("Error stack:", errorStack);
+    console.error("Error type:", error?.constructor?.name || typeof error);
+    try {
+      console.error("Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    } catch (e) {
+      console.error("Could not stringify error:", e);
+    }
+    console.error("===================================");
+    
+    // Return detailed error response
     return new Response(
       JSON.stringify({ 
-        error: errorMessage
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? errorStack : undefined
       }), 
       {
         status: 500,
