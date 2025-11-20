@@ -69,11 +69,31 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
+    let body: any;
+    try {
+      body = await req.json();
+    } catch (e) {
+      throw new Error(`Invalid request body: ${e instanceof Error ? e.message : 'Failed to parse JSON'}`);
+    }
+    
     const { messages } = body;
     
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       throw new Error("Messages array is required and must not be empty");
+    }
+    
+    // Validate message structure
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i];
+      if (!msg || typeof msg !== 'object') {
+        throw new Error(`Invalid message at index ${i}: must be an object`);
+      }
+      if (!msg.role || (msg.role !== 'user' && msg.role !== 'assistant' && msg.role !== 'system')) {
+        throw new Error(`Invalid message role at index ${i}: ${msg.role}. Must be 'user', 'assistant', or 'system'`);
+      }
+      if (msg.role !== 'system' && (!msg.content || typeof msg.content !== 'string' || msg.content.trim() === '')) {
+        throw new Error(`Invalid message content at index ${i}: must be a non-empty string for user/assistant messages`);
+      }
     }
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
