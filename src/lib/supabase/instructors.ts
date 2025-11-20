@@ -224,7 +224,8 @@ export async function uploadCertificationDocument(
     return result.publicUrl;
   } catch (error: any) {
     console.error('S3 upload failed:', error);
-    throw new Error(`Failed to upload certification: ${error.message || 'S3 upload failed. Please ensure AWS credentials are configured.`}`);
+    const errorMessage = error?.message || 'S3 upload failed. Please ensure AWS credentials are configured.';
+    throw new Error(`Failed to upload certification: ${errorMessage}`);
   }
 }
 
