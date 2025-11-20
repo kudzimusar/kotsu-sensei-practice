@@ -171,11 +171,10 @@ export async function registerAsInstructor(
 
   const { data: instructor, error } = await supabase
     .from('instructors')
-    .insert({
-      user_id: user.id,
+    .insert([{
       ...data,
-      status: 'pending',
-    })
+      name: data.full_name, // Map full_name to name for backward compatibility
+    }])
     .select()
     .single();
 

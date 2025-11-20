@@ -67,8 +67,10 @@ export default function BookingPayment() {
 
       if (error) {
         if (error.message?.includes("payment_method") || error.message?.includes("not available")) {
-          toast.error(`${selectedPaymentMethod === "paypal" ? "PayPal" : selectedPaymentMethod === "paypay" ? "PayPay" : "Konbini"} is not available. Please try card payment.`, {
-            duration: 5000,
+          toast({
+            title: "Error",
+            description: `${selectedPaymentMethod === "paypal" ? "PayPal" : selectedPaymentMethod === "paypay" ? "PayPay" : "Konbini"} is not available. Please try card payment.`,
+            variant: "destructive",
           });
           setSelectedPaymentMethod("card");
           setIsLoading(false);
@@ -80,13 +82,19 @@ export default function BookingPayment() {
       if (data?.url) {
         window.location.href = data.url;
       } else {
-        toast.error("Failed to get checkout URL. Please try again.");
+        toast({
+          title: "Error",
+          description: "Failed to get checkout URL. Please try again.",
+          variant: "destructive",
+        });
         setIsLoading(false);
       }
     } catch (error: any) {
       console.error("Error creating checkout session:", error);
-      toast.error(error.message || "Failed to start checkout. Please try again.", {
-        duration: 6000,
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start checkout. Please try again.",
+        variant: "destructive",
       });
       setIsLoading(false);
     }

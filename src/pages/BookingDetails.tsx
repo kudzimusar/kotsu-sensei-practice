@@ -334,7 +334,7 @@ export default function BookingDetails() {
               <Button
                 variant="destructive"
                 className="flex-1"
-                onClick={() => cancelMutation.mutate()}
+                onClick={() => cancelMutation.mutate(undefined)}
                 disabled={cancelMutation.isPending}
               >
                 {cancelMutation.isPending ? (
