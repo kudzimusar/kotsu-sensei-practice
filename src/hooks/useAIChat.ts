@@ -46,14 +46,16 @@ export const useAIChat = () => {
       });
 
       if (error) {
-        console.error('AI Chat error:', error);
+        console.error('AI Chat invoke error:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         const errorMessage = error.message || 'Unknown error occurred';
         throw new Error(errorMessage);
       }
 
       // Check if response contains an error
       if (data?.error) {
-        console.error('AI Chat returned error:', data.error);
+        console.error('AI Chat returned error in response:', data.error);
+        console.error('Full error response:', JSON.stringify(data, null, 2));
         throw new Error(data.error);
       }
 

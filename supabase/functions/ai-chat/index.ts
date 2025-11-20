@@ -68,6 +68,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Top-level error handler to catch any unhandled errors
   try {
     let body: any;
     try {
