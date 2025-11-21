@@ -52,6 +52,8 @@ const BookInstructor = () => {
             </p>
           </div>
 
+          {/* Removed "Coming Soon" card - booking is now available */}
+
           {isLoading ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
