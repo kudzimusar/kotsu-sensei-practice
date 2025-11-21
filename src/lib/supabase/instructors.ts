@@ -314,8 +314,19 @@ export async function getInstructorPricing(
     .eq('is_active', true)
     .order('duration_minutes', { ascending: true });
 
-  if (error) throw error;
-  return (data || []) as InstructorPricing[];
+  if (error) {
+    console.error('Error fetching instructor pricing:', error);
+    throw error;
+  }
+
+  // Ensure price_yen is a number (Supabase may return it as a string)
+  const pricing = (data || []).map(p => ({
+    ...p,
+    price_yen: typeof p.price_yen === 'string' ? parseFloat(p.price_yen) : p.price_yen,
+  })) as InstructorPricing[];
+
+  console.log('Fetched pricing for instructor:', instructorId, pricing);
+  return pricing;
 }
 
 /**
