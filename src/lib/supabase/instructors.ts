@@ -217,13 +217,41 @@ export async function uploadCertificationDocument(
   userId: string
 ): Promise<string> {
   try {
-    // Use S3 upload via Edge Function
-    const { uploadToS3 } = await import('@/lib/aws/s3-upload');
-    const result = await uploadToS3(file, 'instructor-certifications');
-    return result.publicUrl;
+    // Try S3 upload first if AWS is configured
+    try {
+      const { uploadToS3 } = await import('@/lib/aws/s3-upload');
+      const result = await uploadToS3(file, 'instructor-certifications');
+      console.log('✅ S3 upload successful:', result.publicUrl);
+      return result.publicUrl;
+    } catch (s3Error: any) {
+      console.warn('⚠️ S3 upload failed, falling back to Supabase Storage:', s3Error?.message);
+      
+      // Fallback to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('instructor-certifications')
+        .upload(fileName, file, {
+          contentType: file.type,
+          upsert: false
+        });
+
+      if (error) {
+        console.error('❌ Supabase Storage upload failed:', error);
+        throw error;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('instructor-certifications')
+        .getPublicUrl(data.path);
+
+      console.log('✅ Supabase Storage upload successful:', publicUrl);
+      return publicUrl;
+    }
   } catch (error: any) {
-    console.error('S3 upload failed:', error);
-    const errorMsg = error?.message || 'S3 upload failed. Please ensure AWS credentials are configured.';
+    console.error('❌ All upload methods failed:', error);
+    const errorMsg = error?.message || 'Upload failed';
     throw new Error(`Failed to upload certification: ${errorMsg}`);
   }
 }
