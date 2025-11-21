@@ -457,13 +457,19 @@ export async function rejectInstructor(
  */
 export async function suspendInstructor(
   instructorId: string,
-  reason?: string
+  reason?: string,
+  adminUserId?: string
 ): Promise<Instructor> {
+  const { data: { user } } = await supabase.auth.getUser();
+  const suspendingAdminId = adminUserId || user?.id;
+
   const { data, error } = await supabase
     .from('instructors')
     .update({
       status: 'suspended',
-      rejection_reason: reason,
+      suspension_reason: reason,
+      suspended_at: new Date().toISOString(),
+      suspended_by: suspendingAdminId || null,
     })
     .eq('id', instructorId)
     .select()

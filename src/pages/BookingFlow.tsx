@@ -112,6 +112,21 @@ export default function BookingFlow() {
     );
   }
 
+  // Ensure instructor is approved before allowing booking
+  if (instructor.status !== 'approved') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md p-6">
+          <h2 className="text-2xl font-bold mb-2">Instructor Not Available</h2>
+          <p className="text-muted-foreground mb-4">
+            This instructor is not currently accepting bookings. Status: {instructor.status}
+          </p>
+          <Button onClick={() => navigate("/book-instructor")}>Browse Other Instructors</Button>
+        </div>
+      </div>
+    );
+  }
+
   const handleNext = () => {
     if (step === 1) {
       if (!sessionType) {

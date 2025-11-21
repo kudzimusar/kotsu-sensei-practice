@@ -89,7 +89,7 @@ export default function AdminInstructors() {
 
   const suspendMutation = useMutation({
     mutationFn: ({ instructorId, reason }: { instructorId: string; reason?: string }) =>
-      suspendInstructor(instructorId, reason),
+      suspendInstructor(instructorId, reason, user!.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-instructors"] });
       toast({
