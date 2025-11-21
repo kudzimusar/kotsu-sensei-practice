@@ -40,7 +40,7 @@ serve(async (req) => {
       );
     }
 
-    const { booking_id, success_url, cancel_url, payment_method } = await req.json();
+    const { booking_id, success_url, cancel_url, payment_method, payment_method_id } = await req.json();
 
     if (!booking_id || !success_url || !cancel_url) {
       return new Response(
