@@ -216,43 +216,33 @@ export async function uploadCertificationDocument(
   file: File,
   userId: string
 ): Promise<string> {
+  console.log('📤 Starting certification upload to AWS S3');
+  console.log('File details:', { name: file.name, type: file.type, size: file.size });
+  
   try {
-    // Try S3 upload first if AWS is configured
-    try {
-      const { uploadToS3 } = await import('@/lib/aws/s3-upload');
-      const result = await uploadToS3(file, 'instructor-certifications');
-      console.log('✅ S3 upload successful:', result.publicUrl);
-      return result.publicUrl;
-    } catch (s3Error: any) {
-      console.warn('⚠️ S3 upload failed, falling back to Supabase Storage:', s3Error?.message);
-      
-      // Fallback to Supabase Storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${userId}/${Date.now()}.${fileExt}`;
-      
-      const { data, error } = await supabase.storage
-        .from('instructor-certifications')
-        .upload(fileName, file, {
-          contentType: file.type,
-          upsert: false
-        });
-
-      if (error) {
-        console.error('❌ Supabase Storage upload failed:', error);
-        throw error;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('instructor-certifications')
-        .getPublicUrl(data.path);
-
-      console.log('✅ Supabase Storage upload successful:', publicUrl);
-      return publicUrl;
-    }
+    const { uploadToS3 } = await import('@/lib/aws/s3-upload');
+    const result = await uploadToS3(file, 'instructor-certifications');
+    console.log('✅ AWS S3 upload successful:', result.publicUrl);
+    return result.publicUrl;
   } catch (error: any) {
-    console.error('❌ All upload methods failed:', error);
-    const errorMsg = error?.message || 'Upload failed';
-    throw new Error(`Failed to upload certification: ${errorMsg}`);
+    console.error('❌ AWS S3 upload failed:', error);
+    
+    // Provide detailed error messages based on the error type
+    const errorMessage = error?.message || '';
+    
+    if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+      throw new Error('Authentication failed. Please log out and log in again, then try uploading.');
+    } else if (errorMessage.includes('403') || errorMessage.includes('Forbidden')) {
+      throw new Error('Access denied to AWS S3. Please contact support to verify your AWS permissions.');
+    } else if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+      throw new Error('Network error or CORS issue. Please verify AWS S3 bucket CORS configuration allows uploads from this domain.');
+    } else if (errorMessage.includes('Bucket not found') || errorMessage.includes('NoSuchBucket')) {
+      throw new Error('AWS S3 bucket not found. Please verify the bucket name and region are correct.');
+    } else if (errorMessage.includes('Invalid AWS region')) {
+      throw new Error('Invalid AWS region configuration. Please contact support to update the AWS region setting.');
+    } else {
+      throw new Error(`Upload failed: ${errorMessage || 'Unknown error occurred. Please try again or contact support.'}`);
+    }
   }
 }
 
