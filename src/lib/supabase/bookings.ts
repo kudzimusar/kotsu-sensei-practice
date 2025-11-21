@@ -242,20 +242,34 @@ export async function getAvailableTimeSlots(
   // Generate available time slots
   const availableSlots: string[] = [];
   
-  availability?.forEach((avail) => {
+  if (!availability || availability.length === 0) {
+    console.warn('⚠️ No availability found for instructor on this day');
+    return [];
+  }
+  
+  availability.forEach((avail) => {
     const start = new Date(`2000-01-01T${avail.start_time}`);
     const end = new Date(`2000-01-01T${avail.end_time}`);
     const duration = durationMinutes * 60 * 1000; // Convert to milliseconds
 
+    console.log('⏰ Generating slots:', {
+      start: avail.start_time,
+      end: avail.end_time,
+      duration: durationMinutes,
+      durationMs: duration
+    });
+
     let currentTime = new Date(start);
+    let slotCount = 0;
+    
     while (currentTime.getTime() + duration <= end.getTime()) {
       const timeString = currentTime.toTimeString().slice(0, 5);
+      const slotEnd = new Date(currentTime.getTime() + duration);
       
       // Check if this slot conflicts with existing bookings
       const hasConflict = bookings?.some((booking) => {
         const bookingStart = new Date(`2000-01-01T${booking.scheduled_time}`);
         const bookingEnd = new Date(bookingStart.getTime() + booking.duration_minutes * 60 * 1000);
-        const slotEnd = new Date(currentTime.getTime() + duration);
         
         return (
           (currentTime >= bookingStart && currentTime < bookingEnd) ||
@@ -266,13 +280,18 @@ export async function getAvailableTimeSlots(
 
       if (!hasConflict) {
         availableSlots.push(timeString);
+        slotCount++;
       }
 
       // Move to next slot (30-minute intervals)
       currentTime = new Date(currentTime.getTime() + 30 * 60 * 1000);
     }
+    
+    console.log(`✅ Generated ${slotCount} available slots from availability window`);
   });
 
-  return availableSlots.sort();
+  const sortedSlots = availableSlots.sort();
+  console.log('📋 Final available slots:', sortedSlots);
+  return sortedSlots;
 }
 

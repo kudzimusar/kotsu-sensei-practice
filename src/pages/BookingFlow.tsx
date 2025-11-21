@@ -349,16 +349,18 @@ export default function BookingFlow() {
                           {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0" align="start" side="bottom">
                         <Calendar
                           mode="single"
                           selected={selectedDate}
                           onSelect={(date) => {
                             setSelectedDate(date);
                             setCalendarOpen(false);
+                            setSelectedTime(""); // Reset time when date changes
                           }}
                           disabled={disabledDates}
                           initialFocus
+                          className="rounded-md border"
                         />
                       </PopoverContent>
                     </Popover>
