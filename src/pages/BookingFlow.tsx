@@ -308,9 +308,12 @@ export default function BookingFlow() {
                       })}
                     </RadioGroup>
                     {!selectedPricing && sessionType && (
-                      <p className="text-sm text-muted-foreground mt-2">
-                        No pricing available for {sessionType} {duration}-minute sessions
-                      </p>
+                      <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                          No pricing available for {sessionType.replace('_', ' ')} {duration}-minute sessions. 
+                          Please contact the instructor or select a different duration.
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>
