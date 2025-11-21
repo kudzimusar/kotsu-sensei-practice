@@ -102,10 +102,7 @@ const BookInstructor = () => {
 
                     <Button
                       className="w-full"
-                      onClick={() => toast({
-                        title: "Coming Soon",
-                        description: "Booking functionality will be available soon!",
-                      })}
+                      onClick={() => navigate(`/book-instructor/${instructor.id}`)}
                     >
                       Book Session
                     </Button>

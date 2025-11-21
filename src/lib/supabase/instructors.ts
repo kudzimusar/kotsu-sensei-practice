@@ -210,21 +210,80 @@ export async function uploadCertification(file: File): Promise<string> {
 }
 
 /**
- * Upload certification document to AWS S3
+ * Upload certification document to AWS S3 with Supabase Storage fallback
  */
 export async function uploadCertificationDocument(
   file: File,
   userId: string
 ): Promise<string> {
   try {
-    // Use S3 upload via Edge Function
+    // Try S3 upload first
     const { uploadToS3 } = await import('@/lib/aws/s3-upload');
     const result = await uploadToS3(file, 'instructor-certifications');
     return result.publicUrl;
-  } catch (error: any) {
-    console.error('S3 upload failed:', error);
-    const errorMsg = error?.message || 'S3 upload failed. Please ensure AWS credentials are configured.';
-    throw new Error(`Failed to upload certification: ${errorMsg}`);
+  } catch (s3Error: any) {
+    console.warn('S3 upload failed, trying Supabase Storage fallback:', s3Error);
+    
+    try {
+      // Fallback to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `instructor-certifications/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('instructor-certifications')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        // If bucket doesn't exist, create it
+        if (error.message.includes('Bucket not found') || error.message.includes('not found')) {
+          console.log('Creating instructor-certifications bucket...');
+          // Try to create the bucket (this might fail if user doesn't have permissions)
+          const { error: createError } = await supabase.storage.createBucket('instructor-certifications', {
+            public: true,
+            fileSizeLimit: 10485760, // 10MB
+            allowedMimeTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']
+          });
+
+          if (createError) {
+            console.error('Failed to create bucket:', createError);
+            // Try upload again after bucket creation attempt
+            const { data: retryData, error: retryError } = await supabase.storage
+              .from('instructor-certifications')
+              .upload(filePath, file);
+
+            if (retryError) {
+              throw new Error(`Supabase Storage upload failed: ${retryError.message}`);
+            }
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('instructor-certifications')
+              .getPublicUrl(filePath);
+
+            return publicUrl;
+          }
+        } else {
+          throw new Error(`Supabase Storage upload failed: ${error.message}`);
+        }
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('instructor-certifications')
+        .getPublicUrl(filePath);
+
+      console.log('Successfully uploaded to Supabase Storage:', publicUrl);
+      return publicUrl;
+    } catch (storageError: any) {
+      console.error('Both S3 and Supabase Storage uploads failed:', storageError);
+      throw new Error(
+        `Failed to upload certification. S3 error: ${s3Error?.message || 'Unknown'}. ` +
+        `Storage fallback error: ${storageError?.message || 'Unknown'}`
+      );
+    }
   }
 }
 
