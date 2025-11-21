@@ -7,11 +7,12 @@ import { buttonVariants } from "@/components/ui/button";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
-function Calendar({ className, classNames, showOutsideDays = true, numberOfMonths = 1, ...props }: CalendarProps) {
+function Calendar({ className, classNames, showOutsideDays = true, numberOfMonths = 1, fixedWeeks = true, ...props }: CalendarProps) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
       numberOfMonths={numberOfMonths}
+      fixedWeeks={fixedWeeks}
       className={cn("p-3 sm:p-4 w-full max-w-full", className)}
       classNames={{
         months: "flex flex-col w-full",

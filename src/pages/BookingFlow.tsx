@@ -364,6 +364,7 @@ export default function BookingFlow() {
                           }}
                           disabled={disabledDates}
                           initialFocus
+                          fixedWeeks={true}
                           className="rounded-md border"
                         />
                       </PopoverContent>

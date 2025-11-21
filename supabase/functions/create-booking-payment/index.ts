@@ -137,6 +137,8 @@ serve(async (req) => {
     // Get instructor name
     const instructorName = (booking.instructors as any)?.full_name || "Instructor";
 
+    const { payment_method_id } = await req.json();
+    
     // Create Stripe Checkout Session
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
@@ -157,7 +159,8 @@ serve(async (req) => {
       mode: "payment",
       success_url: success_url,
       cancel_url: cancel_url,
-      payment_method_collection: "always",
+      payment_method_collection: payment_method_id ? "if_required" : "always",
+      payment_method: payment_method_id || undefined,
       metadata: {
         user_id: user.id,
         booking_id: booking_id,

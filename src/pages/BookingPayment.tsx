@@ -8,11 +8,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Loader2, ArrowLeft, CreditCard, Wallet, Store, CheckCircle2 } from "lucide-react";
+import { Loader2, ArrowLeft, CreditCard, Wallet, Store, CheckCircle2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+
+interface SavedPaymentMethod {
+  id: string;
+  type: string;
+  card: {
+    brand: string;
+    last4: string;
+    expMonth: number;
+    expYear: number;
+  } | null;
+}
 
 export default function BookingPayment() {
   const { id: bookingId } = useParams<{ id: string }>();
@@ -20,13 +32,32 @@ export default function BookingPayment() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("card");
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showAddCard, setShowAddCard] = useState(false);
 
   const { data: booking, isLoading: bookingLoading } = useQuery({
     queryKey: ["booking", bookingId],
     queryFn: () => getBookingById(bookingId!),
     enabled: !!bookingId,
   });
+
+  // Fetch saved payment methods
+  const { data: paymentMethodsData, isLoading: paymentMethodsLoading } = useQuery({
+    queryKey: ["payment-methods", user?.id],
+    queryFn: async () => {
+      if (!user) return { paymentMethods: [] };
+      const { data, error } = await supabase.functions.invoke("get-payment-methods");
+      if (error) {
+        console.error("Error fetching payment methods:", error);
+        return { paymentMethods: [] };
+      }
+      return data as { paymentMethods: SavedPaymentMethod[]; customerId?: string };
+    },
+    enabled: !!user && selectedPaymentMethod === "card",
+  });
+
+  const savedCards = paymentMethodsData?.paymentMethods || [];
 
   useEffect(() => {
     if (booking && booking.payment_status === 'paid') {
@@ -177,24 +208,128 @@ export default function BookingPayment() {
             <CardContent>
               <RadioGroup
                 value={selectedPaymentMethod}
-                onValueChange={setSelectedPaymentMethod}
+                onValueChange={(value) => {
+                  setSelectedPaymentMethod(value);
+                  if (value !== "card") {
+                    setSelectedCardId(null);
+                    setShowAddCard(false);
+                  }
+                }}
                 className="space-y-3"
               >
-                <div className={`flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent ${
-                  isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                }`}>
-                  <RadioGroupItem value="card" id="card" disabled={isLoading} />
-                  <Label htmlFor="card" className={`flex-1 ${isLoading ? "cursor-not-allowed" : "cursor-pointer"}`}>
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5" />
-                      <div>
-                        <p className="font-medium">Credit/Debit Card</p>
-                        <p className="text-xs text-muted-foreground">
-                          Visa, Mastercard, JCB, American Express
-                        </p>
+                <div className="space-y-3">
+                  <div className={`flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent ${
+                    isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                  } ${selectedPaymentMethod === "card" ? "border-primary border-2" : ""}`}>
+                    <RadioGroupItem value="card" id="card" disabled={isLoading} />
+                    <Label htmlFor="card" className={`flex-1 ${isLoading ? "cursor-not-allowed" : "cursor-pointer"}`}>
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-5 w-5" />
+                        <div>
+                          <p className="font-medium">Credit/Debit Card</p>
+                          <p className="text-xs text-muted-foreground">
+                            Visa, Mastercard, JCB, American Express
+                          </p>
+                        </div>
                       </div>
+                    </Label>
+                  </div>
+
+                  {/* Saved Cards Section */}
+                  {selectedPaymentMethod === "card" && (
+                    <div className="ml-8 space-y-2 pl-4 border-l-2 border-muted">
+                      {paymentMethodsLoading ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          <span className="ml-2 text-sm text-muted-foreground">Loading saved cards...</span>
+                        </div>
+                      ) : savedCards.length > 0 ? (
+                        <>
+                          <p className="text-sm font-medium text-muted-foreground mb-2">Saved Cards</p>
+                          {savedCards.map((card) => (
+                            <div
+                              key={card.id}
+                              onClick={() => {
+                                if (!isLoading) {
+                                  setSelectedCardId(card.id);
+                                  setShowAddCard(false);
+                                }
+                              }}
+                              className={`flex items-center space-x-2 rounded-lg border p-3 cursor-pointer transition-colors ${
+                                selectedCardId === card.id
+                                  ? "border-primary border-2 bg-primary/5"
+                                  : "hover:bg-accent"
+                              } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                            >
+                              <RadioGroupItem
+                                value={`card-${card.id}`}
+                                id={`card-${card.id}`}
+                                checked={selectedCardId === card.id}
+                                disabled={isLoading}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!isLoading) {
+                                    setSelectedCardId(card.id);
+                                    setShowAddCard(false);
+                                  }
+                                }}
+                              />
+                              <Label
+                                htmlFor={`card-${card.id}`}
+                                className="flex-1 cursor-pointer flex items-center justify-between"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-2">
+                                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm font-medium capitalize">
+                                      {card.card?.brand || "Card"}
+                                    </span>
+                                  </div>
+                                  <span className="text-sm text-muted-foreground">
+                                    •••• {card.card?.last4}
+                                  </span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {card.card?.expMonth?.toString().padStart(2, '0')}/{card.card?.expYear}
+                                  </Badge>
+                                </div>
+                                {selectedCardId === card.id && (
+                                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                                )}
+                              </Label>
+                            </div>
+                          ))}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full mt-2"
+                            onClick={() => {
+                              setShowAddCard(true);
+                              setSelectedCardId(null);
+                            }}
+                            disabled={isLoading}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add New Card
+                          </Button>
+                        </>
+                      ) : (
+                        <div className="ml-4 p-3 bg-muted rounded-lg">
+                          <p className="text-sm text-muted-foreground mb-2">
+                            No saved cards. You'll be able to save your card during checkout.
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowAddCard(true)}
+                            disabled={isLoading}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Card
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  </Label>
+                  )}
                 </div>
 
                 <div className={`flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent ${
