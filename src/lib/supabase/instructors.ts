@@ -216,16 +216,20 @@ export async function uploadCertificationDocument(
   file: File,
   userId: string
 ): Promise<string> {
+  console.log('📤 Starting certification upload to AWS S3');
+  console.log('File details:', { name: file.name, type: file.type, size: file.size });
+  
   try {
-    // Try S3 upload first
+    // Try S3 upload first (AWS is primary)
     const { uploadToS3 } = await import('@/lib/aws/s3-upload');
     const result = await uploadToS3(file, 'instructor-certifications');
+    console.log('✅ AWS S3 upload successful:', result.publicUrl);
     return result.publicUrl;
   } catch (s3Error: any) {
-    console.warn('S3 upload failed, trying Supabase Storage fallback:', s3Error);
+    console.warn('❌ AWS S3 upload failed, trying Supabase Storage fallback:', s3Error);
     
+    // Fallback to Supabase Storage
     try {
-      // Fallback to Supabase Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `instructor-certifications/${fileName}`;
@@ -238,10 +242,9 @@ export async function uploadCertificationDocument(
         });
 
       if (error) {
-        // If bucket doesn't exist, create it
+        // If bucket doesn't exist, try to create it
         if (error.message.includes('Bucket not found') || error.message.includes('not found')) {
           console.log('Creating instructor-certifications bucket...');
-          // Try to create the bucket (this might fail if user doesn't have permissions)
           const { error: createError } = await supabase.storage.createBucket('instructor-certifications', {
             public: true,
             fileSizeLimit: 10485760, // 10MB
@@ -258,12 +261,6 @@ export async function uploadCertificationDocument(
             if (retryError) {
               throw new Error(`Supabase Storage upload failed: ${retryError.message}`);
             }
-
-            const { data: { publicUrl } } = supabase.storage
-              .from('instructor-certifications')
-              .getPublicUrl(filePath);
-
-            return publicUrl;
           }
         } else {
           throw new Error(`Supabase Storage upload failed: ${error.message}`);
@@ -275,14 +272,30 @@ export async function uploadCertificationDocument(
         .from('instructor-certifications')
         .getPublicUrl(filePath);
 
-      console.log('Successfully uploaded to Supabase Storage:', publicUrl);
+      console.log('✅ Successfully uploaded to Supabase Storage:', publicUrl);
       return publicUrl;
     } catch (storageError: any) {
-      console.error('Both S3 and Supabase Storage uploads failed:', storageError);
-      throw new Error(
-        `Failed to upload certification. S3 error: ${s3Error?.message || 'Unknown'}. ` +
-        `Storage fallback error: ${storageError?.message || 'Unknown'}`
-      );
+      console.error('❌ Both S3 and Supabase Storage uploads failed');
+      
+      // Provide detailed error messages based on the error type
+      const s3ErrorMessage = s3Error?.message || '';
+      const storageErrorMessage = storageError?.message || '';
+      
+      if (s3ErrorMessage.includes('401') || s3ErrorMessage.includes('Unauthorized')) {
+        throw new Error('Authentication failed. Please log out and log in again, then try uploading.');
+      } else if (s3ErrorMessage.includes('403') || s3ErrorMessage.includes('Forbidden')) {
+        throw new Error('Access denied to AWS S3. Please contact support to verify your AWS permissions.');
+      } else if (s3ErrorMessage.includes('Bucket not found') || s3ErrorMessage.includes('NoSuchBucket')) {
+        throw new Error('AWS S3 bucket not found. Please verify the bucket name and region are correct.');
+      } else if (s3ErrorMessage.includes('Invalid AWS region')) {
+        throw new Error('Invalid AWS region configuration. Please contact support to update the AWS region setting.');
+      } else {
+        throw new Error(
+          `Upload failed. S3 error: ${s3ErrorMessage || 'Unknown'}. ` +
+          `Storage fallback error: ${storageErrorMessage || 'Unknown'}. ` +
+          `Please try again or contact support.`
+        );
+      }
     }
   }
 }
