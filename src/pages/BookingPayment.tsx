@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { getBookingById } from "@/lib/supabase/bookings";
@@ -14,6 +14,7 @@ import BottomNav from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { AddCardDialog } from "@/components/AddCardDialog";
 
 interface SavedPaymentMethod {
   id: string;
@@ -31,6 +32,7 @@ export default function BookingPayment() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("card");
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -312,6 +314,26 @@ export default function BookingPayment() {
                             <Plus className="h-4 w-4 mr-2" />
                             Add New Card
                           </Button>
+                        </>
+                      ) : (
+                        <div className="ml-4 p-3 bg-muted rounded-lg">
+                          <p className="text-sm text-muted-foreground mb-2">
+                            No saved cards. Add a card to save it for future payments.
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowAddCard(true)}
+                            disabled={isLoading}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Card
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                         </>
                       ) : (
                         <div className="ml-4 p-3 bg-muted rounded-lg">

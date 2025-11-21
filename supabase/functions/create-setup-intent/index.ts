@@ -40,8 +40,8 @@ serve(async (req) => {
       );
     }
 
-    // Get or find Stripe customer ID
-    let customerId: string | null = null;
+    // Get or create Stripe customer
+    let customerId: string;
     const { data: existingSubscription } = await supabaseClient
       .from("subscriptions")
       .select("stripe_customer_id")
@@ -52,69 +52,43 @@ serve(async (req) => {
       customerId = existingSubscription.stripe_customer_id;
     } else {
       // Check if customer exists in Stripe by email
-      try {
-        const customers = await stripe.customers.list({
-          email: user.email || undefined,
-          limit: 1,
+      const customers = await stripe.customers.list({
+        email: user.email || undefined,
+        limit: 1,
+      });
+
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+      } else {
+        // Create new customer
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: profile?.full_name || undefined,
+          metadata: {
+            supabase_user_id: user.id,
+          },
         });
 
-        if (customers.data.length > 0) {
-          customerId = customers.data[0].id;
-        }
-      } catch (error) {
-        console.error("Error checking for existing customer:", error);
-        // Continue without customer - will return empty array
+        customerId = customer.id;
       }
     }
 
-    // If no customer found, return empty array
-    if (!customerId) {
-      return new Response(
-        JSON.stringify({ paymentMethods: [], customerId: null }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
-    }
-
-    // Get payment methods for the customer
-    let paymentMethods;
-    try {
-      paymentMethods = await stripe.paymentMethods.list({
-        customer: customerId,
-        type: 'card',
-      });
-    } catch (error) {
-      console.error("Error listing payment methods:", error);
-      // Return empty array if there's an error
-      return new Response(
-        JSON.stringify({ 
-          paymentMethods: [], 
-          customerId,
-          error: error instanceof Error ? error.message : "Unknown error"
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
-    }
-
-    const formattedMethods = paymentMethods.data.map((pm) => ({
-      id: pm.id,
-      type: pm.type,
-      card: pm.card ? {
-        brand: pm.card.brand,
-        last4: pm.card.last4,
-        expMonth: pm.card.exp_month,
-        expYear: pm.card.exp_year,
-      } : null,
-    }));
+    // Create Setup Intent for adding a payment method
+    const setupIntent = await stripe.setupIntents.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      usage: 'off_session', // Card will be saved for future use
+    });
 
     return new Response(
       JSON.stringify({ 
-        paymentMethods: formattedMethods,
+        clientSecret: setupIntent.client_secret,
         customerId,
       }),
       {
@@ -123,11 +97,10 @@ serve(async (req) => {
       }
     );
   } catch (error: any) {
-    console.error("Error getting payment methods:", error);
+    console.error("Error creating setup intent:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || "Failed to get payment methods",
-        paymentMethods: [],
+        error: error.message || "Failed to create setup intent",
       }),
       {
         status: 500,
