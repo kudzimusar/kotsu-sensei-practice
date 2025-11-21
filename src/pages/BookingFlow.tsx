@@ -60,13 +60,17 @@ export default function BookingFlow() {
 
   const { data: availableTimeSlots = [], isLoading: slotsLoading } = useQuery({
     queryKey: ["available-slots", instructorId, selectedDate, sessionType, duration],
-    queryFn: () => getAvailableTimeSlots(
-      instructorId!,
-      format(selectedDate!, 'yyyy-MM-dd'),
-      sessionType,
-      duration
-    ),
-    enabled: !!instructorId && !!selectedDate && !!instructor,
+    queryFn: () => {
+      if (!selectedDate) return [];
+      return getAvailableTimeSlots(
+        instructorId!,
+        format(selectedDate, 'yyyy-MM-dd'),
+        sessionType,
+        duration
+      );
+    },
+    enabled: !!instructorId && !!selectedDate && !!instructor && !!sessionType && !!duration,
+    staleTime: 30000, // Cache for 30 seconds
   });
 
   const createBookingMutation = useMutation({
