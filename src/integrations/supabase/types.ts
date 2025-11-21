@@ -703,6 +703,8 @@ export type Database = {
       }
       instructors: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           availability_schedule: Json | null
           available_for_in_person: boolean | null
           available_for_practice_rooms: boolean | null
@@ -725,6 +727,7 @@ export type Database = {
           name: string
           phone: string | null
           rating: number | null
+          rejection_reason: string | null
           specializations: string[] | null
           status: string | null
           total_reviews: number | null
@@ -734,6 +737,8 @@ export type Database = {
           years_experience: number | null
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           availability_schedule?: Json | null
           available_for_in_person?: boolean | null
           available_for_practice_rooms?: boolean | null
@@ -756,6 +761,7 @@ export type Database = {
           name: string
           phone?: string | null
           rating?: number | null
+          rejection_reason?: string | null
           specializations?: string[] | null
           status?: string | null
           total_reviews?: number | null
@@ -765,6 +771,8 @@ export type Database = {
           years_experience?: number | null
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           availability_schedule?: Json | null
           available_for_in_person?: boolean | null
           available_for_practice_rooms?: boolean | null
@@ -787,6 +795,7 @@ export type Database = {
           name?: string
           phone?: string | null
           rating?: number | null
+          rejection_reason?: string | null
           specializations?: string[] | null
           status?: string | null
           total_reviews?: number | null
