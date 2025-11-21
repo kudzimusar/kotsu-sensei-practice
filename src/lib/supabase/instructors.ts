@@ -231,8 +231,9 @@ export async function uploadCertificationDocument(
     // Fallback to Supabase Storage
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `instructor-certifications/${fileName}`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      // File path should be: userId/filename (bucket name is already 'instructor-certifications')
+      const filePath = `${userId}/${fileName}`;
 
       const { data, error } = await supabase.storage
         .from('instructor-certifications')
@@ -428,6 +429,25 @@ export async function approveInstructor(
     .single();
 
   if (error) throw error;
+
+  // Create default pricing if none exists
+  const existingPricing = await getInstructorPricing(instructorId);
+  if (existingPricing.length === 0) {
+    // Set default pricing: 2000 yen per 30 min, 3500 yen per 60 min, 5000 yen per 90 min
+    const defaultPricing = [
+      { duration_minutes: 30, session_type: 'video' as const, booking_type: 'one_on_one' as const, price_yen: 2000, is_active: true },
+      { duration_minutes: 60, session_type: 'video' as const, booking_type: 'one_on_one' as const, price_yen: 3500, is_active: true },
+      { duration_minutes: 90, session_type: 'video' as const, booking_type: 'one_on_one' as const, price_yen: 5000, is_active: true },
+    ];
+    
+    try {
+      await setInstructorPricing(instructorId, defaultPricing);
+    } catch (pricingError) {
+      console.error('Failed to set default pricing:', pricingError);
+      // Don't fail the approval if pricing setup fails
+    }
+  }
+
   return data as Instructor;
 }
 
