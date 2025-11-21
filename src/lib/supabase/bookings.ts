@@ -191,7 +191,17 @@ export async function getAvailableTimeSlots(
   durationMinutes: 30 | 60 | 90
 ): Promise<string[]> {
   // Get instructor availability for the day of week
+  // JavaScript getDay() returns 0 (Sunday) to 6 (Saturday)
+  // Database uses same format: 0 = Sunday, 1 = Monday, etc.
   const dayOfWeek = new Date(date).getDay();
+  
+  console.log('🔍 Fetching availability for:', {
+    instructorId,
+    date,
+    dayOfWeek,
+    sessionType,
+    durationMinutes
+  });
   
   const { data: availability, error } = await supabase
     .from('instructor_availability')
@@ -199,7 +209,10 @@ export async function getAvailableTimeSlots(
     .eq('instructor_id', instructorId)
     .eq('day_of_week', dayOfWeek)
     .eq('session_type', sessionType)
+    .eq('booking_type', 'one_on_one')
     .eq('is_active', true);
+  
+  console.log('📅 Availability found:', availability);
 
   if (error) throw error;
 

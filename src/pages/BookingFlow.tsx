@@ -370,24 +370,40 @@ export default function BookingFlow() {
                       {slotsLoading ? (
                         <div className="flex items-center justify-center py-8">
                           <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                          <span className="ml-2 text-sm text-muted-foreground">Loading available times...</span>
                         </div>
                       ) : availableTimeSlots.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <p>No available time slots for this date.</p>
-                          <p className="text-sm mt-2">Please select another date.</p>
-                        </div>
+                        <Card className="p-6 border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800">
+                          <div className="text-center space-y-2">
+                            <Clock className="h-8 w-8 mx-auto text-yellow-600 dark:text-yellow-400" />
+                            <p className="font-medium text-yellow-900 dark:text-yellow-100">
+                              No available time slots for this date.
+                            </p>
+                            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                              Please select another date or contact the instructor.
+                            </p>
+                          </div>
+                        </Card>
                       ) : (
-                        <div className="grid grid-cols-3 gap-2">
-                          {availableTimeSlots.map((time) => (
-                            <Button
-                              key={time}
-                              variant={selectedTime === time ? "default" : "outline"}
-                              onClick={() => setSelectedTime(time)}
-                              className="h-12"
-                            >
-                              {time}
-                            </Button>
-                          ))}
+                        <div className="space-y-3">
+                          <p className="text-sm text-muted-foreground">
+                            Available time slots for {format(selectedDate, "EEEE, MMMM d, yyyy")}
+                          </p>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {availableTimeSlots.map((time) => (
+                              <Button
+                                key={time}
+                                variant={selectedTime === time ? "default" : "outline"}
+                                onClick={() => setSelectedTime(time)}
+                                className={cn(
+                                  "h-12 font-medium transition-all",
+                                  selectedTime === time && "ring-2 ring-primary ring-offset-2"
+                                )}
+                              >
+                                {time}
+                              </Button>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
