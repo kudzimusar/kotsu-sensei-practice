@@ -435,6 +435,16 @@ export default function BookingPayment() {
         </div>
 
         <BottomNav />
+
+        {/* Add Card Dialog */}
+        <AddCardDialog
+          open={showAddCard}
+          onOpenChange={setShowAddCard}
+          onSuccess={() => {
+            // Refresh payment methods after adding card
+            refetchPaymentMethods();
+          }}
+        />
       </div>
     </ProtectedRoute>
   );

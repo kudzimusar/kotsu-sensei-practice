@@ -42,7 +42,7 @@ function AddCardForm({ onSuccess, onClose }: { onSuccess?: () => void; onClose: 
         return;
       }
 
-      const { error: confirmError } = await stripe.confirmSetup({
+      const { error: confirmError, setupIntent } = await stripe.confirmSetup({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}${import.meta.env.MODE === 'production' ? '/kotsu-sensei-practice' : ''}/payment-success`,
@@ -55,6 +55,25 @@ function AddCardForm({ onSuccess, onClose }: { onSuccess?: () => void; onClose: 
         setIsLoading(false);
         return;
       }
+
+      if (setupIntent && setupIntent.status === 'succeeded') {
+        // Card was successfully saved
+        await queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
+        
+        toast({
+          title: "Card added successfully",
+          description: "Your card has been saved and is ready to use.",
+        });
+
+        onSuccess?.();
+        onClose();
+        setIsLoading(false);
+        return;
+      }
+
+      // If we get here, something unexpected happened
+      setError("Card setup completed but status is unclear. Please refresh and try again.");
+      setIsLoading(false);
     } catch (err: any) {
       setError(err.message || "An error occurred");
       setIsLoading(false);
