@@ -93,6 +93,18 @@ export default function BookingFlow() {
     setSelectedTime("");
   }, [selectedDate, duration]);
 
+  // Debug logging for pricing
+  useEffect(() => {
+    if (pricing.length > 0) {
+      console.log('📊 Pricing loaded:', pricing);
+      console.log('📊 Session type:', sessionType);
+      console.log('📊 Duration:', duration);
+      console.log('📊 Selected pricing:', selectedPricing);
+    } else if (!pricingLoading && instructorId) {
+      console.warn('⚠️ No pricing found for instructor:', instructorId);
+    }
+  }, [pricing, sessionType, duration, selectedPricing, pricingLoading, instructorId]);
+
   if (instructorLoading || pricingLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
