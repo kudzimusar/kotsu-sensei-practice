@@ -41,3 +41,9 @@ verify_jwt = true
 
 [functions.generate-s3-presigned-url]
 verify_jwt = true
+
+[functions.get-payment-methods]
+verify_jwt = true
+
+[functions.create-booking-payment]
+verify_jwt = true
