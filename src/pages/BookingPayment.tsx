@@ -91,6 +91,7 @@ export default function BookingPayment() {
         body: {
           booking_id: bookingId,
           payment_method: selectedPaymentMethod,
+          payment_method_id: selectedPaymentMethod === "card" && selectedCardId ? selectedCardId : undefined,
           success_url: successUrl,
           cancel_url: cancelUrl,
         },
