@@ -101,7 +101,7 @@ serve(async (req) => {
       );
     }
 
-    const formattedMethods = paymentMethods.data.map((pm) => ({
+    const formattedMethods = paymentMethods.data.map((pm: any) => ({
       id: pm.id,
       type: pm.type,
       card: pm.card ? {
