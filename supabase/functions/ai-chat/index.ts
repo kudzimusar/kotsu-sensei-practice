@@ -101,14 +101,14 @@ serve(async (req) => {
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     const GOOGLE_AI_STUDIO_API_KEY = Deno.env.get("GOOGLE_AI_STUDIO_API_KEY");
     
-    // Use GEMINI_API_KEY as primary fallback, then GOOGLE_AI_STUDIO_API_KEY
-    const fallbackApiKey = GEMINI_API_KEY || GOOGLE_AI_STUDIO_API_KEY;
+    // Use GOOGLE_AI_STUDIO_API_KEY as primary fallback, then GEMINI_API_KEY
+    const fallbackApiKey = GOOGLE_AI_STUDIO_API_KEY || GEMINI_API_KEY;
     
     console.log('AI Chat request received with', messages.length, 'messages');
-    console.log('API Keys available: LOVABLE=', !!LOVABLE_API_KEY, 'GEMINI=', !!GEMINI_API_KEY, 'GOOGLE_AI_STUDIO=', !!GOOGLE_AI_STUDIO_API_KEY);
+    console.log('API Keys available: LOVABLE=', !!LOVABLE_API_KEY, 'GOOGLE_AI_STUDIO=', !!GOOGLE_AI_STUDIO_API_KEY, 'GEMINI=', !!GEMINI_API_KEY);
     
     if (!LOVABLE_API_KEY && !fallbackApiKey) {
-      throw new Error("Neither LOVABLE_API_KEY nor GEMINI_API_KEY/GOOGLE_AI_STUDIO_API_KEY is configured");
+      throw new Error("Neither LOVABLE_API_KEY nor GOOGLE_AI_STUDIO_API_KEY/GEMINI_API_KEY is configured");
     }
 
     const systemPrompt = `You are a friendly and knowledgeable Japanese driving instructor assistant named "Kōtsū Sensei" (交通先生). Your role is to help students understand Japanese traffic laws, road signs, driving techniques, and test preparation.
@@ -213,9 +213,9 @@ Topics you can help with:
       useFallback = true;
     }
 
-    // Fallback to GEMINI_API_KEY or GOOGLE_AI_STUDIO_API_KEY
+    // Fallback to GOOGLE_AI_STUDIO_API_KEY or GEMINI_API_KEY
     if (useFallback && fallbackApiKey) {
-      console.log("Using GEMINI_API_KEY/GOOGLE_AI_STUDIO_API_KEY fallback");
+      console.log("Using GOOGLE_AI_STUDIO_API_KEY/GEMINI_API_KEY fallback");
       try {
         // Build messages for Gemini API format
         // Combine system prompt with user messages
