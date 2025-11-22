@@ -136,8 +136,6 @@ serve(async (req) => {
 
     // Get instructor name
     const instructorName = (booking.instructors as any)?.full_name || "Instructor";
-
-    const { payment_method_id } = await req.json();
     
     // Create Stripe Checkout Session
     const sessionParams: Stripe.Checkout.SessionCreateParams = {

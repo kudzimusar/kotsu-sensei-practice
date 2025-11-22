@@ -446,9 +446,9 @@ export async function approveInstructor(
   if (existingPricing.length === 0) {
     // Set default pricing: 2000 yen per 30 min, 3500 yen per 60 min, 5000 yen per 90 min
     const defaultPricing = [
-      { duration_minutes: 30, session_type: 'video' as const, booking_type: 'one_on_one' as const, price_yen: 2000, is_active: true },
-      { duration_minutes: 60, session_type: 'video' as const, booking_type: 'one_on_one' as const, price_yen: 3500, is_active: true },
-      { duration_minutes: 90, session_type: 'video' as const, booking_type: 'one_on_one' as const, price_yen: 5000, is_active: true },
+      { duration_minutes: 30 as const, session_type: 'video' as const, booking_type: 'one_on_one' as const, price_yen: 2000, is_active: true },
+      { duration_minutes: 60 as const, session_type: 'video' as const, booking_type: 'one_on_one' as const, price_yen: 3500, is_active: true },
+      { duration_minutes: 90 as const, session_type: 'video' as const, booking_type: 'one_on_one' as const, price_yen: 5000, is_active: true },
     ];
     
     try {

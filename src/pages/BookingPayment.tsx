@@ -334,26 +334,6 @@ export default function BookingPayment() {
                     </div>
                   )}
                 </div>
-                        </>
-                      ) : (
-                        <div className="ml-4 p-3 bg-muted rounded-lg">
-                          <p className="text-sm text-muted-foreground mb-2">
-                            No saved cards. You'll be able to save your card during checkout.
-                          </p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowAddCard(true)}
-                            disabled={isLoading}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Card
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
 
                 <div className={`flex items-center space-x-2 rounded-lg border p-4 hover:bg-accent ${
                   isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
@@ -441,8 +421,7 @@ export default function BookingPayment() {
           open={showAddCard}
           onOpenChange={setShowAddCard}
           onSuccess={() => {
-            // Refresh payment methods after adding card
-            refetchPaymentMethods();
+            queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
           }}
         />
       </div>

@@ -730,6 +730,9 @@ export type Database = {
           rejection_reason: string | null
           specializations: string[] | null
           status: string | null
+          suspended_at: string | null
+          suspended_by: string | null
+          suspension_reason: string | null
           total_reviews: number | null
           total_sessions: number | null
           updated_at: string
@@ -764,6 +767,9 @@ export type Database = {
           rejection_reason?: string | null
           specializations?: string[] | null
           status?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
           total_reviews?: number | null
           total_sessions?: number | null
           updated_at?: string
@@ -798,6 +804,9 @@ export type Database = {
           rejection_reason?: string | null
           specializations?: string[] | null
           status?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
           total_reviews?: number | null
           total_sessions?: number | null
           updated_at?: string
