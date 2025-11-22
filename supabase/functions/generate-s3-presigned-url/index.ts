@@ -11,98 +11,32 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('========== S3 PRESIGNED URL REQUEST ==========');
-    
-    // Get authorization header
-    const authHeader = req.headers.get('Authorization');
-    console.log('Authorization header present:', !!authHeader);
-    
-    if (!authHeader) {
-      console.error('❌ No Authorization header found');
-      return new Response(JSON.stringify({ 
-        error: 'Unauthorized',
-        message: 'No authorization header. Please ensure you are logged in.'
-      }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Extract token from Bearer format
-    const token = authHeader.replace('Bearer ', '');
-    
-    if (!token || token === authHeader) {
-      console.error('❌ Invalid token format in Authorization header');
-      return new Response(JSON.stringify({ 
-        error: 'Unauthorized',
-        message: 'Invalid authorization token format.'
-      }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Create Supabase client with anon key for user verification
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
-    
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('❌ Missing Supabase configuration');
-      return new Response(JSON.stringify({ 
-        error: 'Configuration error',
-        message: 'Server configuration error. Please contact support.'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: { Authorization: authHeader }
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
       }
-    });
+    );
 
-    // Get user from token
     const {
       data: { user },
-      error: authError,
     } = await supabaseClient.auth.getUser();
 
-    if (authError) {
-      console.error('❌ Auth error:', authError.message);
-      return new Response(JSON.stringify({ 
-        error: 'Unauthorized',
-        message: 'Authentication failed. Please log in again.',
-        details: authError.message
-      }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     if (!user) {
-      console.error('❌ No user found after token verification');
-      return new Response(JSON.stringify({ 
-        error: 'Unauthorized',
-        message: 'User not found. Please log in again.'
-      }), {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
-    console.log('✅ User authenticated:', user.id);
 
     const { fileName, fileType, folder = 'certifications' } = await req.json();
 
     if (!fileName || !fileType) {
-      console.error('❌ Missing required fields:', { fileName: !!fileName, fileType: !!fileType });
       return new Response(
-        JSON.stringify({ 
-          error: 'Missing required fields',
-          message: 'fileName and fileType are required'
-        }),
+        JSON.stringify({ error: 'fileName and fileType are required' }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -110,56 +44,21 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('📁 Upload request:', { fileName, fileType, folder });
-
     const AWS_ACCESS_KEY_ID = Deno.env.get('AWS_ACCESS_KEY_ID');
     const AWS_SECRET_ACCESS_KEY = Deno.env.get('AWS_SECRET_ACCESS_KEY');
     const AWS_REGION = Deno.env.get('AWS_REGION');
     const AWS_S3_BUCKET = Deno.env.get('AWS_S3_BUCKET');
 
-    console.log('🔧 AWS Config Check:', {
-      hasAccessKey: !!AWS_ACCESS_KEY_ID,
-      hasSecretKey: !!AWS_SECRET_ACCESS_KEY,
-      region: AWS_REGION,
-      bucket: AWS_S3_BUCKET
-    });
-
     if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY || !AWS_REGION || !AWS_S3_BUCKET) {
-      console.error('❌ Missing AWS credentials:', {
-        AWS_ACCESS_KEY_ID: !!AWS_ACCESS_KEY_ID,
-        AWS_SECRET_ACCESS_KEY: !!AWS_SECRET_ACCESS_KEY,
-        AWS_REGION: !!AWS_REGION,
-        AWS_S3_BUCKET: !!AWS_S3_BUCKET
-      });
+      console.error('Missing AWS credentials');
       return new Response(
-        JSON.stringify({ 
-          error: 'AWS configuration error',
-          message: 'Missing AWS credentials. Please contact support.'
-        }),
+        JSON.stringify({ error: 'AWS configuration error' }),
         {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
-
-    // Validate AWS region format (must be like us-east-1, eu-west-1, ap-northeast-1, etc.)
-    const regionPattern = /^[a-z]{2}-[a-z]+-\d+$/;
-    if (!regionPattern.test(AWS_REGION)) {
-      console.error('❌ Invalid AWS_REGION format:', AWS_REGION);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Invalid AWS region',
-          message: `AWS region "${AWS_REGION}" is invalid. Must be in format like "us-east-1", "eu-west-1", "ap-northeast-1", etc.`
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    console.log('✅ AWS Configuration valid - Region:', AWS_REGION, 'Bucket:', AWS_S3_BUCKET, 'Folder:', folder);
 
     // Generate unique file name
     const timestamp = new Date().getTime();
@@ -257,10 +156,7 @@ Deno.serve(async (req) => {
     const presignedUrl = `https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${key}?${params.toString()}`;
     const publicUrl = `https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${key}`;
 
-    console.log('✅ Successfully generated presigned URL');
-    console.log('📍 S3 Key:', key);
-    console.log('🔗 Bucket URL:', `https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com`);
-    console.log('==========================================');
+    console.log('Generated presigned URL for:', key);
 
     return new Response(
       JSON.stringify({
@@ -273,15 +169,9 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('========== S3 PRESIGNED URL ERROR ==========');
-    console.error('Error:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('Stack:', error instanceof Error ? error.stack : 'No stack trace');
-    console.error('===========================================');
-    
+    console.error('Error generating presigned URL:', error);
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      }),
+      JSON.stringify({ error: (error as Error).message }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

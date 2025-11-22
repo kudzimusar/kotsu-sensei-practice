@@ -68,44 +68,15 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Top-level error handler to catch any unhandled errors
   try {
-    let body: any;
-    try {
-      body = await req.json();
-    } catch (e) {
-      throw new Error(`Invalid request body: ${e instanceof Error ? e.message : 'Failed to parse JSON'}`);
-    }
-    
-    const { messages } = body;
-    
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      throw new Error("Messages array is required and must not be empty");
-    }
-    
-    // Validate message structure
-    for (let i = 0; i < messages.length; i++) {
-      const msg = messages[i];
-      if (!msg || typeof msg !== 'object') {
-        throw new Error(`Invalid message at index ${i}: must be an object`);
-      }
-      if (!msg.role || (msg.role !== 'user' && msg.role !== 'assistant' && msg.role !== 'system')) {
-        throw new Error(`Invalid message role at index ${i}: ${msg.role}. Must be 'user', 'assistant', or 'system'`);
-      }
-      if (msg.role !== 'system' && (!msg.content || typeof msg.content !== 'string' || msg.content.trim() === '')) {
-        throw new Error(`Invalid message content at index ${i}: must be a non-empty string for user/assistant messages`);
-      }
-    }
-    
+    const { messages } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const GOOGLE_AI_STUDIO_API_KEY = Deno.env.get("GOOGLE_AI_STUDIO_API_KEY");
     
-    console.log('AI Chat request received with', messages.length, 'messages');
-    console.log('API Keys available: LOVABLE=', !!LOVABLE_API_KEY, 'GOOGLE_AI_STUDIO=', !!GOOGLE_AI_STUDIO_API_KEY);
-    
-    if (!LOVABLE_API_KEY && !GOOGLE_AI_STUDIO_API_KEY) {
-      throw new Error("Neither LOVABLE_API_KEY nor GOOGLE_AI_STUDIO_API_KEY is configured");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
+
+    console.log('AI Chat request received with', messages.length, 'messages');
 
     const systemPrompt = `You are a friendly and knowledgeable Japanese driving instructor assistant named "Kōtsū Sensei" (交通先生). Your role is to help students understand Japanese traffic laws, road signs, driving techniques, and test preparation.
 
@@ -148,154 +119,52 @@ Topics you can help with:
 - Test preparation strategies
 - Common mistakes to avoid`;
 
-    // Try LOVABLE_API_KEY first, fallback to GOOGLE_AI_STUDIO_API_KEY
-    let response: Response | null = null;
-    let assistantMessage: string | null = null;
-    let useFallback = false;
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages,
+        ],
+        stream: false,
+      }),
+    });
 
-    if (LOVABLE_API_KEY) {
-      try {
-        console.log("Attempting primary API (LOVABLE_API_KEY)");
-        response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [
-              { role: "system", content: systemPrompt },
-              ...messages,
-            ],
-            stream: false,
-          }),
-        });
-
-        if (!response.ok) {
-          let errorText = '';
-          try {
-            errorText = await response.text();
-          } catch (e) {
-            errorText = `Failed to read error response: ${e instanceof Error ? e.message : 'Unknown'}`;
-          }
-          console.error("Primary API error:", response.status, errorText.substring(0, 200));
-          throw new Error(`Primary API error: ${response.status} - ${errorText.substring(0, 100)}`);
-        }
-
-        let data: any;
-        try {
-          data = await response.json();
-        } catch (e) {
-          console.error("Failed to parse primary API response:", e);
-          throw new Error(`Primary API returned invalid JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
-        }
-        
-        assistantMessage = data.choices?.[0]?.message?.content;
-        
-        if (!assistantMessage) {
-          console.error("Primary API returned empty response:", JSON.stringify(data));
-          throw new Error("Primary API returned empty response");
-        }
-        
-        console.log("Primary API succeeded, response length:", assistantMessage.length);
-      } catch (error) {
-        console.warn("LOVABLE_API_KEY failed, trying fallback:", error);
-        useFallback = true;
-        assistantMessage = null;
-      }
-    } else {
-      console.log("LOVABLE_API_KEY not available, using fallback");
-      useFallback = true;
-    }
-
-    // Fallback to GOOGLE_AI_STUDIO_API_KEY
-    if (useFallback && GOOGLE_AI_STUDIO_API_KEY) {
-      console.log("Using GOOGLE_AI_STUDIO_API_KEY fallback");
-      try {
-        // Build messages for Gemini API format
-        // Combine system prompt with user messages
-        const conversationHistory: any[] = [];
-        
-        // Add system prompt as first user message
-        conversationHistory.push({
-          role: "user",
-          parts: [{ text: systemPrompt }]
-        });
-        
-        // Add conversation history
-        for (const msg of messages) {
-          if (msg.role === "assistant") {
-            conversationHistory.push({
-              role: "model",
-              parts: [{ text: msg.content || "" }]
-            });
-          } else {
-            conversationHistory.push({
-              role: "user",
-              parts: [{ text: msg.content || "" }]
-            });
-          }
-        }
-
-        response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_AI_STUDIO_API_KEY}`,
+    if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), 
           {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              contents: conversationHistory,
-              generationConfig: {
-                temperature: 0.7,
-                topK: 40,
-                topP: 0.95,
-                maxOutputTokens: 2048,
-              }
-            })
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
         );
-
-        if (!response.ok) {
-          let errorText = '';
-          try {
-            errorText = await response.text();
-          } catch (e) {
-            errorText = `Failed to read error response: ${e instanceof Error ? e.message : 'Unknown'}`;
-          }
-          console.error("Fallback API error:", response.status, errorText);
-          throw new Error(`Fallback API error: ${response.status} - ${errorText.substring(0, 200)}`);
-        }
-
-        let data: any;
-        try {
-          data = await response.json();
-        } catch (e) {
-          console.error("Failed to parse fallback API response:", e);
-          throw new Error(`Fallback API returned invalid JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
-        }
-        
-        assistantMessage = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        
-        if (!assistantMessage) {
-          console.error("Fallback API returned empty response:", JSON.stringify(data));
-          throw new Error("Fallback API returned empty response");
-        }
-        
-        console.log("Fallback API succeeded, response length:", assistantMessage.length);
-      } catch (error) {
-        console.error("Both API keys failed:", error);
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        throw new Error(`All AI services are currently unavailable: ${errorMsg}`);
       }
-    } else if (useFallback) {
-      throw new Error("No AI API keys are configured");
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "AI service quota exceeded. Please contact support." }), 
+          {
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+      
+      const errorText = await response.text();
+      console.error("AI gateway error:", response.status, errorText);
+      throw new Error(`AI gateway error: ${response.status}`);
     }
 
-    if (!assistantMessage || assistantMessage.trim() === "") {
-      console.error("No assistant message received from any API");
-      throw new Error("No response from AI - all services returned empty responses");
+    const data = await response.json();
+    const assistantMessage = data.choices?.[0]?.message?.content;
+
+    if (!assistantMessage) {
+      throw new Error("No response from AI");
     }
 
     console.log('AI Chat response generated successfully');
@@ -349,27 +218,9 @@ Topics you can help with:
       }
     );
   } catch (error) {
-    // Log the full error for debugging
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    const errorStack = error instanceof Error ? error.stack : "No stack trace";
-    
-    console.error("========== AI-CHAT ERROR ==========");
-    console.error("Error message:", errorMessage);
-    console.error("Error stack:", errorStack);
-    console.error("Error type:", error?.constructor?.name || typeof error);
-    try {
-      console.error("Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    } catch (e) {
-      console.error("Could not stringify error:", e);
-    }
-    console.error("===================================");
-    
-    // Return detailed error response
+    console.error("Error in ai-chat function:", error);
     return new Response(
-      JSON.stringify({ 
-        error: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? errorStack : undefined
-      }), 
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error occurred" }), 
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

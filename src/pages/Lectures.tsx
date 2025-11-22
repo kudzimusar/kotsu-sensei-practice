@@ -14,8 +14,6 @@ import {
   Circle,
   GraduationCap,
   ShoppingBag,
-  Users,
-  MessageSquare,
 } from "lucide-react";
 import { format } from "date-fns";
 import { curriculumLectures, howToTakeLectures, lectureTimetable } from "@/data/lectureData";
@@ -35,13 +33,12 @@ import { TextbookContent } from "@/components/TextbookContent";
 import { ShopAndEarn } from "@/components/ShopAndEarn";
 import { DrivingScheduleGrid } from "@/components/DrivingScheduleGrid";
 import BottomNav from "@/components/BottomNav";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { TTSButton } from "@/components/ui/tts-button";
 
 const Lectures = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'textbook';
   const [selectedTextbook, setSelectedTextbook] = useState<string | null>(null);
@@ -198,7 +195,7 @@ const Lectures = () => {
           </div>
 
         <Tabs defaultValue={initialTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-4 sm:mb-8 h-auto">
+          <TabsList className="grid w-full grid-cols-4 mb-4 sm:mb-8 h-auto">
             <TabsTrigger value="textbook" className="text-xs sm:text-base py-1.5 sm:py-2 px-2 sm:px-3">
               <BookOpen className="h-3.5 w-3.5 sm:h-5 sm:w-5 mr-0.5 sm:mr-2" />
               <span className="hidden sm:inline">Textbooks</span>
@@ -218,11 +215,6 @@ const Lectures = () => {
               <ShoppingBag className="h-3.5 w-3.5 sm:h-5 sm:w-5 mr-0.5 sm:mr-2" />
               <span className="hidden sm:inline">Shop & Earn</span>
               <span className="sm:hidden">Shop</span>
-            </TabsTrigger>
-            <TabsTrigger value="instructors" className="text-xs sm:text-base py-1.5 sm:py-2 px-2 sm:px-3">
-              <GraduationCap className="h-3.5 w-3.5 sm:h-5 sm:w-5 mr-0.5 sm:mr-2" />
-              <span className="hidden sm:inline">Instructors</span>
-              <span className="sm:hidden">Help</span>
             </TabsTrigger>
           </TabsList>
 
@@ -417,11 +409,6 @@ const Lectures = () => {
           <TabsContent value="shop">
             <ShopAndEarn />
           </TabsContent>
-
-          {/* Instructors Tab */}
-          <TabsContent value="instructors">
-            <InstructorsTab user={user} navigate={navigate} />
-          </TabsContent>
         </Tabs>
       </div>
     </div>
@@ -429,39 +416,5 @@ const Lectures = () => {
     </>
   );
 };
-
-// Instructors Tab Component
-function InstructorsTab({ user, navigate }: { user: any; navigate: any }) {
-  return (
-    <div className="flex flex-col items-center justify-center p-8 space-y-6">
-      <GraduationCap className="w-16 h-16 text-primary mb-4" />
-      <div className="text-center space-y-2">
-        <h3 className="text-2xl font-bold">Professional Driving Instructors</h3>
-        <p className="text-muted-foreground max-w-md">
-          Book one-on-one sessions with certified instructors or join our team of professionals
-        </p>
-      </div>
-      <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-        <Button 
-          onClick={() => navigate("/book-instructor")}
-          className="flex-1"
-          size="lg"
-        >
-          <Users className="mr-2 h-5 w-5" />
-          Book an Instructor
-        </Button>
-        <Button 
-          variant="outline" 
-          onClick={() => navigate("/become-instructor")}
-          className="flex-1"
-          size="lg"
-        >
-          <MessageSquare className="mr-2 h-5 w-5" />
-          Become an Instructor
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 export default Lectures;

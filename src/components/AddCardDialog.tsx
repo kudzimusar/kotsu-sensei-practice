@@ -8,7 +8,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
+// Get Stripe publishable key from environment or use the one from STRIPE_SETUP.md
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_live_51MUuwxAqp8pYwqz4DzaJIdozgNlyIMPpZspvb6gfmxLJ1drgmnx8namGKGUlkpYxQipYX691CBf04hASSzgW4zzk00oluKs5cr";
+
+const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
 interface AddCardDialogProps {
   open: boolean;

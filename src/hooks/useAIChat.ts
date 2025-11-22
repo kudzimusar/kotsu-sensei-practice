@@ -46,17 +46,8 @@ export const useAIChat = () => {
       });
 
       if (error) {
-        console.error('AI Chat invoke error:', error);
-        console.error('Error details:', JSON.stringify(error, null, 2));
-        const errorMessage = error.message || 'Unknown error occurred';
-        throw new Error(errorMessage);
-      }
-
-      // Check if response contains an error
-      if (data?.error) {
-        console.error('AI Chat returned error in response:', data.error);
-        console.error('Full error response:', JSON.stringify(data, null, 2));
-        throw new Error(data.error);
+        console.error('AI Chat error:', error);
+        throw error;
       }
 
       // Handle structured or plain response
@@ -77,13 +68,11 @@ export const useAIChat = () => {
         };
         setMessages((prev) => [...prev, aiMessage]);
       } else {
-        console.error('Unexpected response format:', data);
-        throw new Error('No response from AI - unexpected response format');
+        throw new Error('No response from AI');
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast.error(`Failed to get AI response: ${errorMessage}`);
+      toast.error('Failed to get AI response. Please try again.');
       
       // Remove the user message if the request failed
       setMessages((prev) => prev.slice(0, -1));

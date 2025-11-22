@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { AddCardDialog } from "@/components/AddCardDialog";
+import { AddCardDialog } from "@/components/AddCardDialog";
 
 interface SavedPaymentMethod {
   id: string;
@@ -32,6 +33,7 @@ export default function BookingPayment() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const queryClient = useQueryClient();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("card");
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
@@ -319,26 +321,6 @@ export default function BookingPayment() {
                         <div className="ml-4 p-3 bg-muted rounded-lg">
                           <p className="text-sm text-muted-foreground mb-2">
                             No saved cards. Add a card to save it for future payments.
-                          </p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowAddCard(true)}
-                            disabled={isLoading}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Card
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                        </>
-                      ) : (
-                        <div className="ml-4 p-3 bg-muted rounded-lg">
-                          <p className="text-sm text-muted-foreground mb-2">
-                            No saved cards. You'll be able to save your card during checkout.
                           </p>
                           <Button
                             variant="outline"

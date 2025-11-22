@@ -13,21 +13,11 @@ serve(async (req) => {
 
   try {
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    const GOOGLE_AI_STUDIO_API_KEY = Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    // Use GEMINI_API_KEY as primary, fallback to GOOGLE_AI_STUDIO_API_KEY
-    const apiKey = GEMINI_API_KEY || GOOGLE_AI_STUDIO_API_KEY;
-    
-    if (!apiKey) {
-      throw new Error('Neither GEMINI_API_KEY nor GOOGLE_AI_STUDIO_API_KEY is configured');
-    }
-    
-    const usingFallback = !GEMINI_API_KEY && !!GOOGLE_AI_STUDIO_API_KEY;
-    if (usingFallback) {
-      console.log('Using GOOGLE_AI_STUDIO_API_KEY as fallback for GEMINI_API_KEY');
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY not configured');
     }
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
@@ -45,6 +35,8 @@ serve(async (req) => {
     const { category, difficulty, count, language, concept } = await req.json();
 
     const startTime = Date.now();
+
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     // Build the prompt
     const systemPrompt = `You are an expert Japanese driving test question writer. Generate realistic, accurate practice questions based on official Japanese traffic rules.
@@ -70,9 +62,9 @@ EXAMPLE QUESTIONS:
    A: TRUE
    E: "The vehicle on the side with the obstacle must yield to oncoming traffic."`;
 
-    // Call Gemini API for text generation (using primary or fallback key)
+    // Call Gemini API for text generation
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: {
@@ -137,52 +129,32 @@ Make sure to return valid JSON only, no additional text.`
       questions.map(async (q: any) => {
         let figureUrl = null;
 
-        if (q.needs_image && q.image_description) {
+        if (q.needs_image && q.image_description && LOVABLE_API_KEY) {
           try {
             const imagePrompt = `Generate a clear, simple illustration of: ${q.image_description}. Style: Clean vector graphic suitable for a driving test, high contrast, educational.`;
             
-            // Try LOVABLE_API_KEY first, fallback to GOOGLE_AI_STUDIO_API_KEY
-            if (LOVABLE_API_KEY) {
-              try {
-                const imageResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    model: 'google/gemini-2.5-flash-image-preview',
-                    messages: [{
-                      role: 'user',
-                      content: imagePrompt
-                    }],
-                    modalities: ['image', 'text']
-                  })
-                });
+            const imageResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'google/gemini-2.5-flash-image-preview',
+                messages: [{
+                  role: 'user',
+                  content: imagePrompt
+                }],
+                modalities: ['image', 'text']
+              })
+            });
 
-                if (imageResponse.ok) {
-                  const imageData = await imageResponse.json();
-                  figureUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-                }
-              } catch (lovableError) {
-                console.warn('LOVABLE_API_KEY image generation failed, trying fallback:', lovableError);
-              }
-            }
-            
-            // Fallback to GOOGLE_AI_STUDIO_API_KEY if LOVABLE failed or not available
-            if (!figureUrl && GOOGLE_AI_STUDIO_API_KEY) {
-              try {
-                console.log('Using GOOGLE_AI_STUDIO_API_KEY fallback for image generation');
-                // Note: Google AI Studio doesn't have direct image generation in this API
-                // This is a placeholder for future implementation
-                // For now, we'll skip image generation if LOVABLE fails
-                console.log('Image generation fallback not yet implemented for Google AI Studio');
-              } catch (googleError) {
-                console.error('Google AI Studio fallback also failed:', googleError);
-              }
+            if (imageResponse.ok) {
+              const imageData = await imageResponse.json();
+              figureUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
             }
           } catch (imgError) {
-            console.error('Error in image generation process:', imgError);
+            console.error('Error generating image:', imgError);
           }
         }
 

@@ -1,74 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
-// Sign data interface
-interface SignData {
-  id: string;
-  category: string;
-  number: string;
-  japanese: string;
-  romaji: string;
-  english: string;
-  meaning: string;
-  exam_note: string;
-}
-
-// Generate image using Google AI Studio (Gemini API) as fallback
-// This is used when Serper API fails to find real photos
-async function generateImageWithGoogleAI(sign: SignData): Promise<string | null> {
-  try {
-    const GOOGLE_AI_STUDIO_API_KEY = Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
-    
-    if (!GOOGLE_AI_STUDIO_API_KEY) {
-      console.log('GOOGLE_AI_STUDIO_API_KEY not configured, skipping image generation fallback');
-      return null;
-    }
-
-    // Build prompt for image search/generation
-    // Note: Gemini API doesn't directly generate images, but we can use it to enhance search queries
-    // For now, we'll use it to create better search terms or return null if image generation isn't available
-    // In the future, this could use Imagen API for actual image generation
-    
-    // For now, return null as Gemini text API doesn't generate images
-    // This function is kept for future implementation with Imagen API
-    console.log(`Google AI Studio fallback available for ${sign.japanese}, but image generation not yet implemented`);
-    return null;
-  } catch (error) {
-    console.error('Error in Google AI Studio fallback:', error);
-    return null;
-  }
-}
-
-// Fetch a single REAL image for a specific query using Serper API
-// Primary method: searches for actual photos of Japanese road signs
-// Falls back to Google AI Studio if Serper fails
-async function fetchImage(query: string, sign: SignData): Promise<string | null> {
+// Fetch a single image for a specific query using Serper API
+async function fetchImage(query: string): Promise<string | null> {
   try {
     const SERPER_API_KEY = Deno.env.get('SERPER_API_KEY');
     
     if (!SERPER_API_KEY) {
-      console.log('SERPER_API_KEY not configured, will try fallback methods');
+      console.log('SERPER_API_KEY not configured, skipping image search');
       return null;
     }
 
-    // Build multiple search queries to find real photos
-    // Priority: real photos, actual signs, Japanese road signs
-    const searchQueries = [
-      // Most specific: Japanese term + "real photo" + "actual sign"
-      `${sign.japanese} 実物 写真 日本の道路標識`,
-      // Japanese term + "photo" + "Japan road sign"
-      `${sign.japanese} 写真 日本 道路標識`,
-      // English + Japanese + "real photo" + "actual"
-      `${sign.english} ${sign.japanese} real photo actual sign japan`,
-      // Fallback: English + "japan road sign photo"
-      `${sign.english} japan road sign photo real`,
-      // Last resort: simple query
-      `${query} japan road sign photo`
-    ];
-
-    // Try each query in order until we find a real image
-    for (const searchQuery of searchQueries) {
-      try {
         const response = await fetch('https://google.serper.dev/images', {
           method: 'POST',
           headers: {
@@ -76,2620 +18,108 @@ async function fetchImage(query: string, sign: SignData): Promise<string | null>
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            q: searchQuery,
-            num: 5, // Get more results to filter for real photos
-            // Add filters to prefer real photos
-            safe: 'active',
-            gl: 'jp', // Focus on Japan results
-            hl: 'ja' // Japanese language results
+        q: `${query} japan driving traffic road`,
+        num: 1
           })
         });
 
         if (!response.ok) {
           console.error('Serper API error:', response.status);
-          continue; // Try next query
+      return null;
         }
 
         const data = await response.json();
-        const images = data.images || [];
-        
-        // Filter for real photos - prefer images from photo sites, Wikipedia, official sources
-        for (const image of images) {
-          const imageUrl = image.imageUrl || image.link;
-          if (!imageUrl) continue;
-          
-          // Check if URL suggests it's a real photo (not AI-generated)
-          const urlLower = imageUrl.toLowerCase();
-          const titleLower = (image.title || '').toLowerCase();
-          
-          // Skip if it looks like AI-generated or illustration sites
-          if (urlLower.includes('ai-generated') || 
-              urlLower.includes('illustration') ||
-              urlLower.includes('vector') ||
-              urlLower.includes('clip-art') ||
-              titleLower.includes('illustration') ||
-              titleLower.includes('vector') ||
-              titleLower.includes('ai-generated')) {
-            continue;
-          }
-          
-          // Prefer real photo sources
-          if (urlLower.includes('wikipedia') ||
-              urlLower.includes('flickr') ||
-              urlLower.includes('commons.wikimedia') ||
-              urlLower.includes('photo') ||
-              urlLower.includes('写真') ||
-              urlLower.includes('実物') ||
-              titleLower.includes('photo') ||
-              titleLower.includes('写真')) {
-            console.log(`Found real photo for ${sign.japanese}: ${imageUrl}`);
-            return imageUrl;
-          }
-        }
-        
-        // If no filtered result, use first image (but log warning)
-        if (images.length > 0) {
-          const firstImage = images[0].imageUrl || images[0].link;
-          console.log(`Using first result for ${sign.japanese} (may not be verified real photo): ${firstImage}`);
-          return firstImage;
-        }
-      } catch (queryError) {
-        console.error(`Error with query "${searchQuery}":`, queryError);
-        continue; // Try next query
-      }
-    }
-
-    console.log(`No real photo found for ${sign.japanese}`);
-    return null;
+    return data.images?.[0]?.imageUrl || null;
   } catch (error) {
     console.error('Error fetching image:', error);
     return null;
   }
 }
 
-// NOTE: AI image generation disabled - we only use real photos from Serper API
-// This ensures flashcards show actual Japanese road signs, not fabricated images
-
-// Regulatory Signs Data (59 signs)
-const REGULATORY_SIGNS: SignData[] = [
-  {
-    id: "reg-01",
-    category: "Regulatory Signs",
-    number: "1",
-    japanese: "車両進入禁止",
-    romaji: "Sharyō shinnyū kinshi",
-    english: "Road closed to all vehicles",
-    meaning: "The road is closed to all vehicles (i.e. motor vehicles, mopeds, light vehicles).",
-    exam_note: "Very common in written test"
-  },
-  {
-    id: "reg-02",
-    category: "Regulatory Signs",
-    number: "2",
-    japanese: "閉鎖",
-    romaji: "Heisa",
-    english: "Closed to all vehicles",
-    meaning: "The road is closed to all motor vehicles.",
-    exam_note: ""
-  },
-  {
-    id: "reg-03",
-    category: "Regulatory Signs",
-    number: "3",
-    japanese: "車両進入禁止",
-    romaji: "Sharyō shinnyū kinshi",
-    english: "No entry for vehicles",
-    meaning: "Placed at the exit of a one-way street and vehicles are prohibited to enter.",
-    exam_note: ""
-  },
-  {
-    id: "reg-04",
-    category: "Regulatory Signs",
-    number: "4",
-    japanese: "大型貨物自動車等通行止め",
-    romaji: "Ōgata kamotsu jidōsha tō tsūkōdome",
-    english: "Closed to all vehicles except motorcycles",
-    meaning: "The road is closed to all motor vehicles except motorcycles (large or regular motorcycles, etc.).",
-    exam_note: ""
-  },
-  {
-    id: "reg-05",
-    category: "Regulatory Signs",
-    number: "5",
-    japanese: "大型貨物自動車等通行止め",
-    romaji: "Ōgata kamotsu jidōsha tō tsūkōdome",
-    english: "Closed to large-size trucks, etc.",
-    meaning: "The road is closed to large-size trucks, specific middle-size trucks and special heavy equipment (Refer to P.44 for the specific middle motor vehicle).",
-    exam_note: ""
-  },
-  {
-    id: "reg-06",
-    category: "Regulatory Signs",
-    number: "6",
-    japanese: "大型貨物自動車等通行止め",
-    romaji: "Ōgata kamotsu jidōsha tō tsūkōdome",
-    english: "Closed to trucks, etc. exceeding a specific maximum load capacity",
-    meaning: "This road is closed to trucks exceeding the load capacity shown by the auxiliary sign, and special heavy equipment.",
-    exam_note: ""
-  },
-  {
-    id: "reg-07",
-    category: "Regulatory Signs",
-    number: "7",
-    japanese: "大型乗用自動車等通行止め",
-    romaji: "Ōgata jōyō jidōsha tō tsūkōdome",
-    english: "Closed to large-size passenger vehicles, etc.",
-    meaning: "The road is closed to large-size passenger vehicles and specific middle-size passenger vehicles (Refer to P.44 for the specific middle motor vehicle).",
-    exam_note: ""
-  },
-  {
-    id: "reg-08",
-    category: "Regulatory Signs",
-    number: "8",
-    japanese: "二輪の自動車以外の自動車通行止め",
-    romaji: "Nirin no jidōsha igai no jidōsha tsūkōdome",
-    english: "Closed to motorcycles and general motorized bicycle",
-    meaning: "This road is closed to motorcycles and general motorized bicycle.",
-    exam_note: ""
-  },
-  {
-    id: "reg-09",
-    category: "Regulatory Signs",
-    number: "9",
-    japanese: "軽車両以外の自動車通行止め",
-    romaji: "Kei sharyō igai no jidōsha tsūkōdome",
-    english: "Closed to light vehicles except bicycles",
-    meaning: "This road is closed to light vehicles (carts and rear cars) except for bicycles.",
-    exam_note: ""
-  },
-  {
-    id: "reg-10",
-    category: "Regulatory Signs",
-    number: "10",
-    japanese: "特定中小型貨物自動車等通行止め",
-    romaji: "Tokutei chū/kogata kamotsu jidōsha tō tsūkōdome",
-    english: "Closed to specified small motorized bicycle and bicycles",
-    meaning: "This road is closed to specified small motorized bicycle and bicycles.",
-    exam_note: ""
-  },
-  {
-    id: "reg-11",
-    category: "Regulatory Signs",
-    number: "11",
-    japanese: "自動車・原動機付自転車以外通行止め",
-    romaji: "Jidōsha · genbaiki tsuki jidōsha igai tsūkōdome",
-    english: "Closed to vehicles",
-    meaning: "This road is closed to vehicles indicated by the sign (in this case, closed to motor vehicles including 2-wheelers and general motorized bicycle).",
-    exam_note: ""
-  },
-  {
-    id: "reg-12",
-    category: "Regulatory Signs",
-    number: "12",
-    japanese: "大型自動二輪・普通自動二輪通行止め（同乗者あり）",
-    romaji: "Ōgata jidō nirin · futsū jidō nirin tsūkōdome (dōjōsha ari)",
-    english: "Riding with a passenger on all large and regular motorcycles prohibited",
-    meaning: "Riding with a passenger is prohibited when driving through on a large or regular motorcycle (this does not apply to motorcycles with sidecar attachments).",
-    exam_note: ""
-  },
-  {
-    id: "reg-13",
-    category: "Regulatory Signs",
-    number: "13",
-    japanese: "タイヤチェーンを取り付けていない車両通行止め",
-    romaji: "Taiya chēn o toritsukete inai sharyō tsūkōdome",
-    english: "Closed to all vehicles without tire chains",
-    meaning: "Vehicles without tire chains are not allowed to pass.",
-    exam_note: ""
-  },
-  {
-    id: "reg-14",
-    category: "Regulatory Signs",
-    number: "14",
-    japanese: "指定方向外進行禁止",
-    romaji: "Shitei hōkō gai shinkō kinshi",
-    english: "Only designated direction permitted",
-    meaning: "Vehicles cannot proceed except in the direction indicated by the arrow.",
-    exam_note: ""
-  },
-  {
-    id: "reg-15",
-    category: "Regulatory Signs",
-    number: "15",
-    japanese: "横断禁止",
-    romaji: "Ōdan kinshi",
-    english: "No crossing",
-    meaning: "Vehicles are prohibited from crossing the road (except for vehicles turning left to enter or exit a roadside facility).",
-    exam_note: "Very frequently tested – remember the exception for left turns to roadside facilities"
-  },
-  {
-    id: "reg-16",
-    category: "Regulatory Signs",
-    number: "16",
-    japanese: "転回禁止",
-    romaji: "Tenkai kinshi",
-    english: "No U-turn",
-    meaning: "Vehicles are prohibited from making a U-turn.",
-    exam_note: "The number inside indicates the time period when the U-turn ban applies"
-  },
-  {
-    id: "reg-17",
-    category: "Regulatory Signs",
-    number: "17",
-    japanese: "右折車線からの追越し禁止",
-    romaji: "Migi-sen kara no oikoshi kinshi",
-    english: "No overtaking on the right-hand side of the road",
-    meaning: "Vehicles are prohibited from overtaking on the right-hand side of the road.",
-    exam_note: ""
-  },
-  {
-    id: "reg-18",
-    category: "Regulatory Signs",
-    number: "18",
-    japanese: "追越し禁止",
-    romaji: "Oikoshi kinshi",
-    english: "No overtaking",
-    meaning: "Vehicles are prohibited from overtaking.",
-    exam_note: ""
-  },
-  {
-    id: "reg-19",
-    category: "Regulatory Signs",
-    number: "19",
-    japanese: "駐車及び停車禁止",
-    romaji: "Chūsha oyobi teisha kinshi",
-    english: "No parking or stopping",
-    meaning: "Vehicles are prohibited from parking or stopping (the number indicates the time period; in this case parking prohibited between 8 a.m. to 8 p.m.).",
-    exam_note: "Common question: difference between parking and stopping"
-  },
-  {
-    id: "reg-20",
-    category: "Regulatory Signs",
-    number: "20",
-    japanese: "駐車禁止",
-    romaji: "Chūsha kinshi",
-    english: "No parking",
-    meaning: "Vehicles are prohibited from parking.",
-    exam_note: ""
-  },
-  {
-    id: "reg-21",
-    category: "Regulatory Signs",
-    number: "21",
-    japanese: "駐車余地確保",
-    romaji: "Chūsha yochi kakuho",
-    english: "Designated remaining distance",
-    meaning: "Vehicles must not park unless the remaining open distance shown in the auxiliary sign (in this case 6 m) on the right-hand side of the vehicle is secured.",
-    exam_note: ""
-  },
-  {
-    id: "reg-22",
-    category: "Regulatory Signs",
-    number: "22",
-    japanese: "時間制限駐車区間",
-    romaji: "Jikan seigen chūsha kukan",
-    english: "Time-limited parking zone",
-    meaning: "Parking is permitted in zones where signs are displayed up to the indicated period (in this case, parking must not exceed 60 minutes between 8 a.m. to 8 p.m.).",
-    exam_note: "Parking meters or ticket machines are sometimes installed"
-  },
-  {
-    id: "reg-23",
-    category: "Regulatory Signs",
-    number: "23",
-    japanese: "危険物積載車両通行禁止",
-    romaji: "Kikenbutsu sekisai sharyō tsūkō kinshi",
-    english: "No carrying of dangerous materials",
-    meaning: "The road is closed to vehicles carrying dangerous materials, i.e. gunpowder, explosives, poisons, toxins, etc.",
-    exam_note: ""
-  },
-  {
-    id: "reg-24",
-    category: "Regulatory Signs",
-    number: "24",
-    japanese: "総重量制限",
-    romaji: "Sō-jūryō seigen",
-    english: "Weight limit",
-    meaning: "The road is closed to vehicles whose total weight (total weight of vehicle, load and driver/passengers) exceeds the number indicated by the sign.",
-    exam_note: ""
-  },
-  {
-    id: "reg-25",
-    category: "Regulatory Signs",
-    number: "25",
-    japanese: "高さ制限",
-    romaji: "Takasa seigen",
-    english: "Height limit",
-    meaning: "The road is closed to vehicles whose height (including height of the load) exceeds the number indicated by the sign.",
-    exam_note: ""
-  },
-  {
-    id: "reg-26",
-    category: "Regulatory Signs",
-    number: "26",
-    japanese: "幅員制限",
-    romaji: "Fukuin seigen",
-    english: "Width limit",
-    meaning: "The road is closed to vehicles whose width (including width of the load) exceeds the number indicated by the sign.",
-    exam_note: ""
-  },
-  {
-    id: "reg-27",
-    category: "Regulatory Signs",
-    number: "27",
-    japanese: "最高速度",
-    romaji: "Saikō sokudo",
-    english: "Maximum speed limit",
-    meaning: "Vehicles and streetcars must not exceed the indicated speed limit. General motorized bicycle and motor vehicles towing another vehicle by rope must not exceed the legal speed limit even when the posted speed is higher than the legal speed limit.",
-    exam_note: "Very high-frequency question"
-  },
-  {
-    id: "reg-28",
-    category: "Regulatory Signs",
-    number: "28",
-    japanese: "特定の種類の車両の最高速度",
-    romaji: "Tokutei no shurui no sharyō no saikō sokudo",
-    english: "Maximum speed limit for specific types of vehicles",
-    meaning: "Vehicles specified by the auxiliary sign must not exceed the speed indicated by the main sign.",
-    exam_note: ""
-  },
-  {
-    id: "reg-29",
-    category: "Regulatory Signs",
-    number: "29",
-    japanese: "最低速度",
-    romaji: "Saitei sokudo",
-    english: "Minimum speed limit",
-    meaning: "Motor vehicles must not drive below the minimum speed indicated by the sign.",
-    exam_note: "Only appears on expressways"
-  },
-  {
-    id: "reg-30",
-    category: "Regulatory Signs",
-    number: "30",
-    japanese: "自動車専用",
-    romaji: "Jidōsha sen'yō",
-    english: "Motor vehicles only",
-    meaning: "Designated as national expressways or motorways for motor vehicles only.",
-    exam_note: "Mopeds and light vehicles are NOT allowed"
-  },
-  {
-    id: "reg-31",
-    category: "Regulatory Signs",
-    number: "31",
-    japanese: "特定小型原動機付自転車及び普通自転車専用",
-    romaji: "Tokutei kogata genbaiki-tsuki jitensha oyobi futsū jitensha sen'yō",
-    english: "Specified small motorized bicycle and bicycles only",
-    meaning: "① Designated as a cycle track or road exclusively for bicycles (road constructed for the passage of bicycles only).\n② Vehicles other than general motorized bicycles and regular bicycles, pedestrian and remote-control small-sized vehicle are prohibited.",
-    exam_note: "Very new sign (2023 law change) – appears on recent tests"
-  },
-  {
-    id: "reg-32",
-    category: "Regulatory Signs",
-    number: "32",
-    japanese: "普通自転車及び歩行者専用",
-    romaji: "Futsū jitensha oyobi hokōsha sen'yō",
-    english: "Regular bicycles and pedestrians only",
-    meaning: "① Designated exclusively for bicycles and pedestrians.\n② Vehicle other than specified small motorized bicycles and bicycles that are allowed to pass on bicycle road cannot drive.\n③ Designated sidewalk where specified motorized bicycle are permitted. (Refer to p.27 for regular bicycle)",
-    exam_note: "Often paired with the blue bicycle/pedestrian symbol"
-  },
-  {
-    id: "reg-33",
-    category: "Regulatory Signs",
-    number: "33",
-    japanese: "歩行者専用",
-    romaji: "Hokōsha sen'yō",
-    english: "Pedestrians only",
-    meaning: "① Road constructed exclusively for pedestrians.\n② Road designated for pedestrians.",
-    exam_note: "Bicycles are NOT allowed unless a separate sign permits"
-  },
-  {
-    id: "reg-34",
-    category: "Regulatory Signs",
-    number: "34",
-    japanese: "許可車両のみ通行可",
-    romaji: "Kyoka sharyō nomi tsūkō ka",
-    english: "Permitted vehicles only",
-    meaning: "Indicates the vehicle stop facility (terminal) of the displayed motor vehicle with the permission of the road administrator.",
-    exam_note: "Shows pictures of route bus, chartered bus, taxi, truck, etc."
-  },
-  {
-    id: "reg-35",
-    category: "Regulatory Signs",
-    number: "35",
-    japanese: "許可車両のみ通行可（組み合わせ）",
-    romaji: "Kyoka sharyō nomi tsūkō ka (kumiawase)",
-    english: "Permitted vehicles only (combination)",
-    meaning: "Indicates the vehicle stop facility for the displayed motor vehicles (in this case bus and taxi) with the road administrator's permission.",
-    exam_note: ""
-  },
-  {
-    id: "reg-36",
-    category: "Regulatory Signs",
-    number: "36",
-    japanese: "大規模災害時緊急車両のみ",
-    romaji: "Daikibo saigai-ji kinkyū sharyō nomi",
-    english: "Wide-area disaster emergency response vehicle only",
-    meaning: "It can only be used by vehicles and people that the road administrator deems necessary to implement wide-area disaster emergency response.",
-    exam_note: "Rare but appears on newer tests"
-  },
-  {
-    id: "reg-37",
-    category: "Regulatory Signs",
-    number: "37",
-    japanese: "一方通行",
-    romaji: "Ippō tsūkō",
-    english: "One-way",
-    meaning: "Vehicles must travel only in the direction indicated by the arrow.",
-    exam_note: "Extremely common – know you can't enter against the arrow"
-  },
-  {
-    id: "reg-38",
-    category: "Regulatory Signs",
-    number: "38",
-    japanese: "特定小型原動機付自転車及び普通自転車の一方通行",
-    romaji: "Tokutei kogata genbaiki-tsuki jitensha oyobi futsū jitensha no ippō tsūkō",
-    english: "Specified small motorized bicycle and bicycle's one-way",
-    meaning: "Specified small motorized bicycle and bicycle must travel only in the direction indicated by the arrow.",
-    exam_note: "New 2023 sign"
-  },
-  {
-    id: "reg-39",
-    category: "Regulatory Signs",
-    number: "39",
-    japanese: "車線",
-    romaji: "Shasen",
-    english: "Lane designation",
-    meaning: "Vehicles must travel in the lane indicated by the lane designation sign.",
-    exam_note: ""
-  },
-  {
-    id: "reg-40",
-    category: "Regulatory Signs",
-    number: "40",
-    japanese: "特定の種類の車両の車線",
-    romaji: "Tokutei no shurui no sharyō no shasen",
-    english: "Lane designation for specific types of vehicles",
-    meaning: "Large-size trucks, specific medium-size trucks and special heavy equipment must travel in the far left-hand lane.",
-    exam_note: "Very common on expressways"
-  },
-  {
-    id: "reg-41",
-    category: "Regulatory Signs",
-    number: "41",
-    japanese: "牽引自動車の車線",
-    romaji: "Ken'in jidōsha no shasen",
-    english: "National expressway lane designation for towing motor vehicles",
-    meaning: "Towing motor vehicles must travel in the lane indicated by the lane designation sign.",
-    exam_note: "Towing vehicles = trucks pulling trailers"
-  },
-  {
-    id: "reg-42",
-    category: "Regulatory Signs",
-    number: "42",
-    japanese: "専用通行帯",
-    romaji: "Sen'yō tsūkō-tai",
-    english: "Exclusive lane",
-    meaning: "Exclusive lane for vehicles indicated by the sign.",
-    exam_note: "Examples shown: bus lane, taxi lane, etc."
-  },
-  {
-    id: "reg-43",
-    category: "Regulatory Signs",
-    number: "43",
-    japanese: "普通自転車専用通行帯",
-    romaji: "Futsū jitensha sen'yō tsūkō-tai",
-    english: "Exclusive lane for regular bicycles",
-    meaning: "Indicates exclusive lane for regular bicycles.",
-    exam_note: ""
-  },
-  {
-    id: "reg-44",
-    category: "Regulatory Signs",
-    number: "44",
-    japanese: "路線バス等優先通行帯",
-    romaji: "Rosen basu tō yūsen tsūkō-tai",
-    english: "Priority lane for buses",
-    meaning: "Indicates a lane where route buses, etc. have priority.",
-    exam_note: "Cars may use it but must yield to buses"
-  },
-  {
-    id: "reg-45",
-    category: "Regulatory Signs",
-    number: "45",
-    japanese: "進行方向別通行区分",
-    romaji: "Shinkō hōkō-betsu tsūkō kubun",
-    english: "Direction-specific lane control",
-    meaning: "Vehicles must proceed only in the direction(s) indicated by the arrow(s) in each lane.",
-    exam_note: "One of the most frequently tested regulatory signs"
-  },
-  {
-    id: "reg-46",
-    category: "Regulatory Signs",
-    number: "46",
-    japanese: "原動機付自転車二段階右折",
-    romaji: "Gendōki-tsuki jitensha ni-dankai migi-kōten",
-    english: "Two-stage right turn for motorized bicycles",
-    meaning: "Class-1 motorized bicycles (50cc and under) must make a two-stage right turn at intersections.",
-    exam_note: "Extremely common question"
-  },
-  {
-    id: "reg-47",
-    category: "Regulatory Signs",
-    number: "47",
-    japanese: "原動機付自転車二段階右折（小）",
-    romaji: "Gendōki-tsuki jitensha ni-dankai migi-kōten (shō)",
-    english: "Two-stage right turn for motorized bicycles (small)",
-    meaning: "Same meaning as No.46 but smaller auxiliary version.",
-    exam_note: ""
-  },
-  {
-    id: "reg-48",
-    category: "Regulatory Signs",
-    number: "48",
-    japanese: "原付通行可（小）",
-    romaji: "Gen-tsuki tsūkō ka (shō)",
-    english: "Motorized bicycles permitted (small)",
-    meaning: "Motorized bicycles are permitted to pass even when pedestrian-only or bicycle-only signs are displayed.",
-    exam_note: "Auxiliary sign"
-  },
-  {
-    id: "reg-49",
-    category: "Regulatory Signs",
-    number: "49",
-    japanese: "徐行",
-    romaji: "Jokō",
-    english: "Slow down",
-    meaning: "Drivers must slow down and be ready to stop immediately if necessary.",
-    exam_note: "Very common – often appears with school zones"
-  },
-  {
-    id: "reg-50",
-    category: "Regulatory Signs",
-    number: "50",
-    japanese: "一時停止",
-    romaji: "Ichiji teishi",
-    english: "Stop",
-    meaning: "Drivers must come to a complete stop at the stop line or just before entering the intersection.",
-    exam_note: "Highest priority regulatory sign – must stop even if no one is coming"
-  },
-  {
-    id: "reg-51",
-    category: "Regulatory Signs",
-    number: "51",
-    japanese: "優先道路",
-    romaji: "Yūsen dōro",
-    english: "Priority road",
-    meaning: "The road you are on has priority over intersecting roads.",
-    exam_note: "Vehicles on the priority road do NOT need to yield"
-  },
-  {
-    id: "reg-52",
-    category: "Regulatory Signs",
-    number: "52",
-    japanese: "幅員減少",
-    romaji: "Fukuin genshō",
-    english: "Road narrows",
-    meaning: "The width of the roadway ahead becomes narrower.",
-    exam_note: ""
-  },
-  {
-    id: "reg-53",
-    category: "Regulatory Signs",
-    number: "53",
-    japanese: "環状交差点進行可",
-    romaji: "Kanjō kōsaten shinkō ka",
-    english: "Roundabout – proceed",
-    meaning: "Vehicles may proceed through the roundabout.",
-    exam_note: "Blue circle with white circular arrow"
-  },
-  {
-    id: "reg-54",
-    category: "Regulatory Signs",
-    number: "54",
-    japanese: "環状の交差点における右回り通行",
-    romaji: "Kanjō no kōsaten ni okeru migi-mawari tsūkō",
-    english: "Circulate clockwise in roundabout",
-    meaning: "Vehicles inside the roundabout must travel clockwise.",
-    exam_note: ""
-  },
-  {
-    id: "reg-55",
-    category: "Regulatory Signs",
-    number: "55",
-    japanese: "指定方向外進行禁止",
-    romaji: "Shitei hōkō-gai shinkō kinshi",
-    english: "No entry except in designated direction",
-    meaning: "Vehicles must not proceed in any direction other than the one indicated by the arrow.",
-    exam_note: "Red circle with white horizontal bar"
-  },
-  // Add remaining regulatory signs (56-59) - placeholder structure
-  {
-    id: "reg-56",
-    category: "Regulatory Signs",
-    number: "56",
-    japanese: "指定方向外進行禁止（左折可）",
-    romaji: "Shitei hōkō-gai shinkō kinshi (sasetsu ka)",
-    english: "No entry except straight and left turn",
-    meaning: "Vehicles must proceed straight or turn left only.",
-    exam_note: ""
-  },
-  {
-    id: "reg-57",
-    category: "Regulatory Signs",
-    number: "57",
-    japanese: "指定方向外進行禁止（右折可）",
-    romaji: "Shitei hōkō-gai shinkō kinshi (migi-setsu ka)",
-    english: "No entry except straight and right turn",
-    meaning: "Vehicles must proceed straight or turn right only.",
-    exam_note: ""
-  },
-  {
-    id: "reg-58",
-    category: "Regulatory Signs",
-    number: "58",
-    japanese: "指定方向外進行禁止（直進可）",
-    romaji: "Shitei hōkō-gai shinkō kinshi (chokushin ka)",
-    english: "No entry except straight",
-    meaning: "Vehicles must proceed straight only. Left and right turns are prohibited.",
-    exam_note: ""
-  },
-  {
-    id: "reg-59",
-    category: "Regulatory Signs",
-    number: "59",
-    japanese: "指定方向外進行禁止（左右可）",
-    romaji: "Shitei hōkō-gai shinkō kinshi (sayū ka)",
-    english: "Either direction O.K.",
-    meaning: "Vehicles may proceed in either direction (left or right).",
-    exam_note: ""
-  }
-];
-
-// Indication Signs Data (14 signs)
-const INDICATION_SIGNS: SignData[] = [
-  {
-    id: "ind-01",
-    category: "Indication Signs",
-    number: "1",
-    japanese: "並進可",
-    romaji: "Heishin ka",
-    english: "Riding abreast permitted",
-    meaning: "Bicycles are permitted to travel side by side.",
-    exam_note: ""
-  },
-  {
-    id: "ind-02",
-    category: "Indication Signs",
-    number: "2",
-    japanese: "軌道敷内通行可",
-    romaji: "Kidōjiki-nai tsūkō ka",
-    english: "Driving on streetcar tracks permitted",
-    meaning: "Motor vehicles can drive on the streetcar tracks (restricted to motor vehicles designated by auxiliary sign).",
-    exam_note: ""
-  },
-  {
-    id: "ind-03",
-    category: "Indication Signs",
-    number: "3",
-    japanese: "高齢運転者等標章自動車駐車可",
-    romaji: "Kōrei untensha-tō hyōshō jidōsha chūsha ka",
-    english: "Parking permitted for motor vehicles with senior driver's sign, etc.",
-    meaning: "Motor vehicles with senior driver's sign, etc. are permitted to park. (Refer to p262 for motor vehicles with senior driver's sign, etc.)",
-    exam_note: ""
-  },
-  {
-    id: "ind-04",
-    category: "Indication Signs",
-    number: "4",
-    japanese: "駐車可",
-    romaji: "Chūsha ka",
-    english: "Parking permitted",
-    meaning: "Vehicles are permitted to park.",
-    exam_note: ""
-  },
-  {
-    id: "ind-05",
-    category: "Indication Signs",
-    number: "5",
-    japanese: "高齢運転者等標章自動車停車可",
-    romaji: "Kōrei untensha-tō hyōshō jidōsha teisha ka",
-    english: "Stopping permitted for motor vehicles with senior driver's sign, etc.",
-    meaning: "Motor vehicles with senior driver's sign, etc. are permitted to stop. (Refer to p262 for motor vehicles with senior driver's sign, etc.)",
-    exam_note: ""
-  },
-  {
-    id: "ind-06",
-    category: "Indication Signs",
-    number: "6",
-    japanese: "停車可",
-    romaji: "Teisha ka",
-    english: "Stopping permitted",
-    meaning: "Vehicles are permitted to stop.",
-    exam_note: ""
-  },
-  {
-    id: "ind-07",
-    category: "Indication Signs",
-    number: "7",
-    japanese: "優先道路",
-    romaji: "Yūsen dōro",
-    english: "Right-of-way",
-    meaning: "Indicates the road has the right of way.",
-    exam_note: ""
-  },
-  {
-    id: "ind-08",
-    category: "Indication Signs",
-    number: "8",
-    japanese: "中央線",
-    romaji: "Chūōsen",
-    english: "Centerline",
-    meaning: "Indicates the center of the road or centerline.",
-    exam_note: ""
-  },
-  {
-    id: "ind-09",
-    category: "Indication Signs",
-    number: "9",
-    japanese: "停止線",
-    romaji: "Teishi-sen",
-    english: "Stop line",
-    meaning: "Indicates the line where vehicles are required to stop.",
-    exam_note: ""
-  },
-  {
-    id: "ind-10",
-    category: "Indication Signs",
-    number: "10",
-    japanese: "横断歩道",
-    romaji: "Ōdan hodō",
-    english: "Pedestrian crossing",
-    meaning: "Indicates the pedestrian crossing.",
-    exam_note: ""
-  },
-  {
-    id: "ind-11",
-    category: "Indication Signs",
-    number: "11",
-    japanese: "自転車横断帯",
-    romaji: "Jitensha ōdan-tai",
-    english: "Bicycle crossing zone",
-    meaning: "Indicates the bicycle crossing zone.",
-    exam_note: ""
-  },
-  {
-    id: "ind-12",
-    category: "Indication Signs",
-    number: "12",
-    japanese: "横断歩道・自転車横断帯",
-    romaji: "Ōdan hodō / Jitensha ōdan-tai",
-    english: "Pedestrian crossing and bicycle crossing zone",
-    meaning: "Indicates the pedestrian crossing and the bicycle crossing zone.",
-    exam_note: ""
-  },
-  {
-    id: "ind-13",
-    category: "Indication Signs",
-    number: "13",
-    japanese: "安全地帯",
-    romaji: "Anzen chitai",
-    english: "Safety zone",
-    meaning: "Indicates a safety zone.",
-    exam_note: ""
-  },
-  {
-    id: "ind-14",
-    category: "Indication Signs",
-    number: "14",
-    japanese: "規制予告",
-    romaji: "Kisei yokoku",
-    english: "Advance warning",
-    meaning: "Indicates advance warning that there is a traffic regulation ahead on the road.",
-    exam_note: ""
-  }
-];
-
-// Warning Signs Data (26 signs provided, 52 total expected)
-const WARNING_SIGNS: SignData[] = [
-  {
-    id: "warn-01",
-    category: "Warning Signs",
-    number: "1",
-    japanese: "交差点あり",
-    romaji: "Kōsaten ari",
-    english: "Intersection",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-02",
-    category: "Warning Signs",
-    number: "2",
-    japanese: "右（左）方道路合流",
-    romaji: "Migi (hidari) hō dōro gōryū",
-    english: "Road Branch Right (or Left)",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-03",
-    category: "Warning Signs",
-    number: "3",
-    japanese: "Ｔ字路",
-    romaji: "T-jirō",
-    english: "T Intersection",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-04",
-    category: "Warning Signs",
-    number: "4",
-    japanese: "Ｙ字路",
-    romaji: "Y-jirō",
-    english: "Y-Junction",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-05",
-    category: "Warning Signs",
-    number: "5",
-    japanese: "ロータリーあり",
-    romaji: "Rōtari ari",
-    english: "Rotary",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-06",
-    category: "Warning Signs",
-    number: "6",
-    japanese: "右（左）方屈曲",
-    romaji: "Migi (hidari) hō kukyoku",
-    english: "Right (Left) Bend",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-07",
-    category: "Warning Signs",
-    number: "7",
-    japanese: "右（左）方屈折",
-    romaji: "Migi (hidari) hō kussetsu",
-    english: "Sharp Right (Left) Turn",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-08",
-    category: "Warning Signs",
-    number: "8",
-    japanese: "右（左）連続屈曲",
-    romaji: "Migi (hidari) renzoku kukyoku",
-    english: "Right (Left) Double Bend",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-09",
-    category: "Warning Signs",
-    number: "9",
-    japanese: "右（左）方鋭角屈曲",
-    romaji: "Migi (hidari) hō eikaku kukyoku",
-    english: "Sharp Right (Left) Double Turn",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-10",
-    category: "Warning Signs",
-    number: "10",
-    japanese: "蛇行道路",
-    romaji: "Jakō dōro",
-    english: "Zigzag Road",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-11",
-    category: "Warning Signs",
-    number: "11",
-    japanese: "踏切あり",
-    romaji: "Fumikiri ari",
-    english: "Railway Crossing",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-12",
-    category: "Warning Signs",
-    number: "12",
-    japanese: "学校、幼稚園、保育園あり",
-    romaji: "Gakkō, yōchien, hoikuen ari",
-    english: "School, Kindergarten, Nursery",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-13",
-    category: "Warning Signs",
-    number: "13",
-    japanese: "信号機あり",
-    romaji: "Shingōki ari",
-    english: "Traffic Signal",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-14",
-    category: "Warning Signs",
-    number: "14",
-    japanese: "すべりやすい",
-    romaji: "Suberiyasui",
-    english: "Slippery Road",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-15",
-    category: "Warning Signs",
-    number: "15",
-    japanese: "落石のおそれあり",
-    romaji: "Rakuseki no osore ari",
-    english: "Falling or fallen rock",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-16",
-    category: "Warning Signs",
-    number: "16",
-    japanese: "くぼみあり",
-    romaji: "Kubomi ari",
-    english: "Hump or Dip",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-17",
-    category: "Warning Signs",
-    number: "17",
-    japanese: "左（右）方道路進入",
-    romaji: "Hidari (migi) hō dōro shinnyū",
-    english: "Road Entry Left",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-18",
-    category: "Warning Signs",
-    number: "18",
-    japanese: "車線減少",
-    romaji: "Shasen genshō",
-    english: "Fewer Lanes",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-19",
-    category: "Warning Signs",
-    number: "19",
-    japanese: "幅員減少",
-    romaji: "Fukuin genshō",
-    english: "Road Narrows",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-20",
-    category: "Warning Signs",
-    number: "20",
-    japanese: "二方向交通",
-    romaji: "Ni-hōkō kōtsū",
-    english: "Two-way Traffic",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-21",
-    category: "Warning Signs",
-    number: "21",
-    japanese: "上り急勾配",
-    romaji: "Nobori kyū kōhai",
-    english: "Steep Upgrade",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-22",
-    category: "Warning Signs",
-    number: "22",
-    japanese: "下り急勾配",
-    romaji: "Kudari kyū kōhai",
-    english: "Steep Downgrade",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-23",
-    category: "Warning Signs",
-    number: "23",
-    japanese: "工事中",
-    romaji: "Kōji-chū",
-    english: "Road Construction",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-24",
-    category: "Warning Signs",
-    number: "24",
-    japanese: "横風注意",
-    romaji: "Yokofū chūi",
-    english: "Side Winds",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-25",
-    category: "Warning Signs",
-    number: "25",
-    japanese: "動物横断",
-    romaji: "Dōbutsu ōdan",
-    english: "Animal Crossing",
-    meaning: "",
-    exam_note: ""
-  },
-  {
-    id: "warn-26",
-    category: "Warning Signs",
-    number: "26",
-    japanese: "その他の危険",
-    romaji: "Sono hoka no kiken",
-    english: "Other Dangers",
-    meaning: "",
-    exam_note: ""
-  }
-];
-
-// Guidance Signs Data (39 signs)
-const GUIDANCE_SIGNS: SignData[] = [
-  {
-    id: "guide-01",
-    category: "Guidance Signs",
-    number: "1",
-    japanese: "市町村",
-    romaji: "Shichōson",
-    english: "Municipality",
-    meaning: "Indicates the name of the city, town or village",
-    exam_note: ""
-  },
-  {
-    id: "guide-02",
-    category: "Guidance Signs",
-    number: "2",
-    japanese: "都道府県",
-    romaji: "Todōfuken",
-    english: "Prefecture",
-    meaning: "Indicates the name of the prefecture",
-    exam_note: ""
-  },
-  {
-    id: "guide-03",
-    category: "Guidance Signs",
-    number: "3",
-    japanese: "都道府県",
-    romaji: "Todōfuken",
-    english: "Prefecture",
-    meaning: "Indicates the name of the prefecture (different design)",
-    exam_note: ""
-  },
-  {
-    id: "guide-04",
-    category: "Guidance Signs",
-    number: "4",
-    japanese: "高速自動車国道等方面",
-    romaji: "Kōsoku jidōsha kokudō-tō hōmen",
-    english: "Direction to Expressway",
-    meaning: "Shows direction and distance to expressway entrance",
-    exam_note: ""
-  },
-  {
-    id: "guide-05",
-    category: "Guidance Signs",
-    number: "5",
-    japanese: "高速自動車国道等予告",
-    romaji: "Kōsoku jidōsha kokudō-tō yokoku",
-    english: "Advance notice of entrance to Expressway",
-    meaning: "Advance notice of upcoming expressway entrance",
-    exam_note: ""
-  },
-  {
-    id: "guide-06",
-    category: "Guidance Signs",
-    number: "6",
-    japanese: "総重量緩和指定道路",
-    romaji: "Sōjūryō kanwa shitei dōro",
-    english: "Designated road with alleviated total weight limit",
-    meaning: "Road where higher total vehicle weight is permitted",
-    exam_note: ""
-  },
-  {
-    id: "guide-07",
-    category: "Guidance Signs",
-    number: "7",
-    japanese: "高さ制限なし道路",
-    romaji: "Takasa seigen nashi dōro",
-    english: "No height restriction road",
-    meaning: "Road with no height restriction",
-    exam_note: ""
-  },
-  {
-    id: "guide-08",
-    category: "Guidance Signs",
-    number: "8",
-    japanese: "方面及び距離",
-    romaji: "Hōmen oyobi kyori",
-    english: "Direction and distance",
-    meaning: "Shows direction and distance to destinations",
-    exam_note: ""
-  },
-  {
-    id: "guide-09",
-    category: "Guidance Signs",
-    number: "9",
-    japanese: "方面及び車線",
-    romaji: "Hōmen oyobi shasen",
-    english: "Direction and lane",
-    meaning: "Shows direction and recommended lane",
-    exam_note: ""
-  },
-  {
-    id: "guide-10",
-    category: "Guidance Signs",
-    number: "10",
-    japanese: "出口予告",
-    romaji: "Deguchi yokoku",
-    english: "Advance notice of exit",
-    meaning: "Advance notice of upcoming exit",
-    exam_note: ""
-  },
-  {
-    id: "guide-11",
-    category: "Guidance Signs",
-    number: "11",
-    japanese: "方面、方向及び道路の予告",
-    romaji: "Hōmen, hōkō oyobi dōro no yokoku",
-    english: "Advance notice of destination and direction",
-    meaning: "Advance notice of destination and direction",
-    exam_note: ""
-  },
-  {
-    id: "guide-12",
-    category: "Guidance Signs",
-    number: "12",
-    japanese: "方面及び方向",
-    romaji: "Hōmen oyobi hōkō",
-    english: "Destination and direction",
-    meaning: "Shows destination and direction",
-    exam_note: ""
-  },
-  {
-    id: "guide-13",
-    category: "Guidance Signs",
-    number: "13",
-    japanese: "方面、方向及び距離",
-    romaji: "Hōmen, hōkō oyobi kyori",
-    english: "Direction, bearings and distance",
-    meaning: "Shows direction, bearings and distance to places",
-    exam_note: ""
-  },
-  {
-    id: "guide-14",
-    category: "Guidance Signs",
-    number: "14",
-    japanese: "方面及び方向の予告",
-    romaji: "Hōmen oyobi hōkō no yokoku",
-    english: "Advance notice of direction and road name",
-    meaning: "Advance notice of direction and road name",
-    exam_note: ""
-  },
-  {
-    id: "guide-15",
-    category: "Guidance Signs",
-    number: "15",
-    japanese: "方面及び道路名",
-    romaji: "Hōmen oyobi dōromei",
-    english: "Direction and road name",
-    meaning: "Shows direction and road name",
-    exam_note: ""
-  },
-  {
-    id: "guide-16",
-    category: "Guidance Signs",
-    number: "16",
-    japanese: "方向及び出口の予告",
-    romaji: "Hōkō oyobi deguchi no yokoku",
-    english: "Advance notice of direction and exit",
-    meaning: "Advance notice of direction and exit",
-    exam_note: ""
-  },
-  {
-    id: "guide-17",
-    category: "Guidance Signs",
-    number: "17",
-    japanese: "方面、車線及び出口の予告",
-    romaji: "Hōmen, shasen oyobi deguchi no yokoku",
-    english: "Advance notice of direction, lane and exit",
-    meaning: "Advance notice of direction, lane and exit",
-    exam_note: ""
-  },
-  {
-    id: "guide-18",
-    category: "Guidance Signs",
-    number: "18",
-    japanese: "方面及び出口",
-    romaji: "Hōmen oyobi deguchi",
-    english: "Direction and exit",
-    meaning: "Shows direction and exit",
-    exam_note: ""
-  },
-  {
-    id: "guide-19",
-    category: "Guidance Signs",
-    number: "19",
-    japanese: "出口",
-    romaji: "Deguchi",
-    english: "Exit",
-    meaning: "Indicates the exit",
-    exam_note: ""
-  },
-  {
-    id: "guide-20",
-    category: "Guidance Signs",
-    number: "20",
-    japanese: "著名地点",
-    romaji: "Chomei chiten",
-    english: "Landmark",
-    meaning: "Shows famous or important locations",
-    exam_note: ""
-  },
-  {
-    id: "guide-21",
-    category: "Guidance Signs",
-    number: "21",
-    japanese: "著名地点",
-    romaji: "Chomei chiten",
-    english: "Major location",
-    meaning: "Shows major locations",
-    exam_note: ""
-  },
-  {
-    id: "guide-22",
-    category: "Guidance Signs",
-    number: "22",
-    japanese: "料金所",
-    romaji: "Ryōkinjo",
-    english: "Toll gate",
-    meaning: "Indicates toll gate ahead",
-    exam_note: ""
-  },
-  {
-    id: "guide-23",
-    category: "Guidance Signs",
-    number: "23",
-    japanese: "非常施設・路側駅等までの距離",
-    romaji: "Hijō shisetsu, rosoku-eki-tō made no kyori",
-    english: "Distances to Service areas, Roadside stations",
-    meaning: "Shows distances to service areas and roadside stations",
-    exam_note: ""
-  },
-  {
-    id: "guide-24",
-    category: "Guidance Signs",
-    number: "24",
-    japanese: "非常施設・路側駅等予告",
-    romaji: "Hijō shisetsu, rosoku-eki-tō yokoku",
-    english: "Advance notice of Service areas, Roadside stations",
-    meaning: "Advance notice of service areas and roadside stations",
-    exam_note: ""
-  },
-  {
-    id: "guide-25",
-    category: "Guidance Signs",
-    number: "25",
-    japanese: "サービスエリア",
-    romaji: "Sābisu eria",
-    english: "Service area",
-    meaning: "Indicates service area (rest area on expressway)",
-    exam_note: ""
-  },
-  {
-    id: "guide-26",
-    category: "Guidance Signs",
-    number: "26",
-    japanese: "非常電話",
-    romaji: "Hijō denwa",
-    english: "Emergency telephone",
-    meaning: "Indicates location of emergency telephone",
-    exam_note: ""
-  },
-  {
-    id: "guide-27",
-    category: "Guidance Signs",
-    number: "27",
-    japanese: "待避所",
-    romaji: "Taihisho",
-    english: "Shelter",
-    meaning: "Indicates shelter or turnout",
-    exam_note: ""
-  },
-  {
-    id: "guide-28",
-    category: "Guidance Signs",
-    number: "28",
-    japanese: "非常駐車帯",
-    romaji: "Hijō chūshatai",
-    english: "Emergency parking zone",
-    meaning: "Emergency parking zone on expressway",
-    exam_note: ""
-  },
-  {
-    id: "guide-29",
-    category: "Guidance Signs",
-    number: "29",
-    japanese: "駐車場",
-    romaji: "Chūshajō",
-    english: "Parking",
-    meaning: "Indicates parking area",
-    exam_note: ""
-  },
-  {
-    id: "guide-30",
-    category: "Guidance Signs",
-    number: "30",
-    japanese: "本線車道への入口",
-    romaji: "Honsen shadō e no iriguchi",
-    english: "Entrance to main traffic lane from a service area or a parking lot",
-    meaning: "Entrance to main traffic lane from service area/parking lot",
-    exam_note: ""
-  },
-  {
-    id: "guide-31",
-    category: "Guidance Signs",
-    number: "31",
-    japanese: "登坂車線",
-    romaji: "Tōhan shasen",
-    english: "Slower traffic / Climbing lane",
-    meaning: "Indicates slower traffic or climbing lane",
-    exam_note: ""
-  },
-  {
-    id: "guide-32",
-    category: "Guidance Signs",
-    number: "32",
-    japanese: "国道番号",
-    romaji: "Kokudō bangō",
-    english: "National route number",
-    meaning: "Shows national route number",
-    exam_note: ""
-  },
-  {
-    id: "guide-33",
-    category: "Guidance Signs",
-    number: "33",
-    japanese: "都道府県道番号",
-    romaji: "Todōfuken-dō bangō",
-    english: "Prefectural route number",
-    meaning: "Shows prefectural route number",
-    exam_note: ""
-  },
-  {
-    id: "guide-34",
-    category: "Guidance Signs",
-    number: "34",
-    japanese: "高速自動車国道番号",
-    romaji: "Kōsoku jidōsha kokudō bangō",
-    english: "Number of the expressway",
-    meaning: "Expressway route number (E + number or C + number)",
-    exam_note: ""
-  },
-  {
-    id: "guide-35",
-    category: "Guidance Signs",
-    number: "35",
-    japanese: "道路名",
-    romaji: "Dōromei",
-    english: "Road name",
-    meaning: "Shows the name of the road",
-    exam_note: ""
-  },
-  {
-    id: "guide-36",
-    category: "Guidance Signs",
-    number: "36",
-    japanese: "う回",
-    romaji: "Ukai",
-    english: "Detour",
-    meaning: "Indicates detour route",
-    exam_note: ""
-  },
-  {
-    id: "guide-37",
-    category: "Guidance Signs",
-    number: "37",
-    japanese: "勾配",
-    romaji: "Kōbai",
-    english: "Sloping road",
-    meaning: "Indicates sloping road (gradient)",
-    exam_note: ""
-  },
-  {
-    id: "guide-38",
-    category: "Guidance Signs",
-    number: "38",
-    japanese: "バス停",
-    romaji: "Basu-tei",
-    english: "Bus stop",
-    meaning: "Indicates bus stop",
-    exam_note: ""
-  },
-  {
-    id: "guide-39",
-    category: "Guidance Signs",
-    number: "39",
-    japanese: "電車停留場",
-    romaji: "Densha teiryūjo",
-    english: "Train stop / Tram stop",
-    meaning: "Indicates train or tram stop",
-    exam_note: ""
-  }
-];
-
-// Auxiliary Signs Data (21 signs)
-const AUXILIARY_SIGNS: SignData[] = [
-  {
-    id: "aux-01",
-    category: "Auxiliary Signs",
-    number: "1",
-    japanese: "距離・区域",
-    romaji: "Kyori / Kuiki",
-    english: "Distance/area",
-    meaning: "Indicates the distance, section and zone up to the location shown by the main sign.",
-    exam_note: "Examples: この先100m / 市内全域 / ここから500m"
-  },
-  {
-    id: "aux-02",
-    category: "Auxiliary Signs",
-    number: "2",
-    japanese: "曜日・時間",
-    romaji: "Yōbi / Jikan",
-    english: "Day/time",
-    meaning: "Indicates the day and time of the traffic regulation shown by the main sign.",
-    exam_note: "Examples: 日曜・休日を除く 8－20"
-  },
-  {
-    id: "aux-03",
-    category: "Auxiliary Signs",
-    number: "3",
-    japanese: "車両の種類",
-    romaji: "Sharyō no shurui",
-    english: "Type of vehicles",
-    meaning: "Indicates the type of vehicle subject to the traffic regulation shown by the main sign.",
-    exam_note: "Very important – know the exact vehicle symbols:\n• 大貨 = Large truck (max load ≥3t or special heavy equipment)\n• 標車専用 = Large-size passenger vehicle\n• 原付を除く = Large-size truck, specific middle-size trucks and special heavy equipment"
-  },
-  {
-    id: "aux-04",
-    category: "Auxiliary Signs",
-    number: "4",
-    japanese: "駐車余地",
-    romaji: "Chūsha yochi",
-    english: "Parking room",
-    meaning: "When parking, leave the designated distance on the right side.",
-    exam_note: "Example: 駐車余地6m"
-  },
-  {
-    id: "aux-05",
-    category: "Auxiliary Signs",
-    number: "5",
-    japanese: "駐車時間制限",
-    romaji: "Chūsha jikan seigen",
-    english: "Parking time restrictions",
-    meaning: "Duration of continuous parking is until the time shown on parking meter or parking ticket.",
-    exam_note: "Examples: 連続2時間まで / 最高2時間まで"
-  },
-  {
-    id: "aux-06",
-    category: "Auxiliary Signs",
-    number: "6",
-    japanese: "規制交通開始",
-    romaji: "Kisei kōtsū kaishi",
-    english: "Start of regulated traffic",
-    meaning: "Indicates the beginning of the section or zone where the traffic regulation shown by the main sign begins.",
-    exam_note: "Examples: 区域 ここから / ここから"
-  },
-  {
-    id: "aux-07",
-    category: "Auxiliary Signs",
-    number: "7",
-    japanese: "規制交通区間",
-    romaji: "Kisei kōtsū kukan",
-    english: "Traffic regulated section",
-    meaning: "Indicates the zone where the traffic regulation shown by the main sign is applied.",
-    exam_note: "Example: 区域内"
-  },
-  {
-    id: "aux-08",
-    category: "Auxiliary Signs",
-    number: "8",
-    japanese: "規制交通終了",
-    romaji: "Kisei kōtsū shūryō",
-    english: "End of regulated traffic",
-    meaning: "Indicates the end of the section or zone where the traffic regulation shown by the main sign ends.",
-    exam_note: "Examples: 区域 ここまで / ここまで"
-  },
-  {
-    id: "aux-09",
-    category: "Auxiliary Signs",
-    number: "9",
-    japanese: "通学路",
-    romaji: "Tsūgakuro",
-    english: "School zone",
-    meaning: "Indicates a zone which children pass through on their way to elementary school, kindergarten or nursery.",
-    exam_note: ""
-  },
-  {
-    id: "aux-10",
-    category: "Auxiliary Signs",
-    number: "10",
-    japanese: "追越し禁止",
-    romaji: "Oikoshi kinshi",
-    english: "No overtaking",
-    meaning: "Vehicles are prohibited from overtaking.",
-    exam_note: ""
-  },
-  {
-    id: "aux-11",
-    category: "Auxiliary Signs",
-    number: "11",
-    japanese: "前方優先道路",
-    romaji: "Mae hō yūsen dōro",
-    english: "Right-of-way ahead",
-    meaning: "Indicates the intersecting road ahead is a priority road.",
-    exam_note: ""
-  },
-  {
-    id: "aux-12",
-    category: "Auxiliary Signs",
-    number: "12",
-    japanese: "踏切注意",
-    romaji: "Fumikiri chūi",
-    english: "Railway crossing",
-    meaning: "Indicates attention is required due to a railway crossing.",
-    exam_note: ""
-  },
-  {
-    id: "aux-13",
-    category: "Auxiliary Signs",
-    number: "13",
-    japanese: "横風注意",
-    romaji: "Yokofū chūi",
-    english: "Side winds",
-    meaning: "Indicates attention is required due to strong side winds.",
-    exam_note: ""
-  },
-  {
-    id: "aux-14",
-    category: "Auxiliary Signs",
-    number: "14",
-    japanese: "動物注意",
-    romaji: "Dōbutsu chūi",
-    english: "Animals",
-    meaning: "Indicates attention is required because animals may enter the road.",
-    exam_note: ""
-  },
-  {
-    id: "aux-15",
-    category: "Auxiliary Signs",
-    number: "15",
-    japanese: "注意",
-    romaji: "Chūi",
-    english: "Caution",
-    meaning: "Must exercise special caution when driving in this area.",
-    exam_note: ""
-  },
-  {
-    id: "aux-16",
-    category: "Auxiliary Signs",
-    number: "16",
-    japanese: "注意（特記理由）",
-    romaji: "Chūi (tokki riyū)",
-    english: "Caution (special reason)",
-    meaning: "Indicates the reason for particular attention by vehicles and streetcars.",
-    exam_note: "Example: 路肩弱し 30"
-  },
-  {
-    id: "aux-17",
-    category: "Auxiliary Signs",
-    number: "17",
-    japanese: "必符者横断多し 対向車多し 騒音防止区間",
-    romaji: "Hitsu-fu-sha ōdan ōshi / Taikōsha ōshi / Sōon bōshi kukan",
-    english: "Regulatory reasons",
-    meaning: "Indicates the reason for the traffic regulation shown by the main sign.",
-    exam_note: "Common examples: 必符者横断多し / 対向車多し / 騒音防止区間"
-  },
-  {
-    id: "aux-18",
-    category: "Auxiliary Signs",
-    number: "18",
-    japanese: "方面",
-    romaji: "Hōmen",
-    english: "Direction",
-    meaning: "Indicates the direction of the route, facility and location shown by the main sign.",
-    exam_note: "Red arrow pointing the way"
-  },
-  {
-    id: "aux-19",
-    category: "Auxiliary Signs",
-    number: "19",
-    japanese: "地名",
-    romaji: "Chimei",
-    english: "Place name",
-    meaning: "Indicates the name of the place.",
-    exam_note: "Examples: 小諸市 / 本町"
-  },
-  {
-    id: "aux-20",
-    category: "Auxiliary Signs",
-    number: "20",
-    japanese: "始点",
-    romaji: "Shiten",
-    english: "Starting point",
-    meaning: "Indicates the starting point of the designated road sign.",
-    exam_note: ""
-  },
-  {
-    id: "aux-21",
-    category: "Auxiliary Signs",
-    number: "21",
-    japanese: "終点",
-    romaji: "Shūten",
-    english: "End point",
-    meaning: "Indicates the end point of the designated road sign.",
-    exam_note: ""
-  }
-];
-
-// Enforcement-Based Signs Data (6 signs)
-const ENFORCEMENT_SIGNS: SignData[] = [
-  {
-    id: "enforce-01",
-    category: "Enforcement-Based Signs",
-    number: "1",
-    japanese: "歩行者専用 / 自転車専用 / 歩行者・自転車専用 / バス専用",
-    romaji: "Hokōsha sen'yō / Jitensha sen'yō / Hokōsha・jitensha sen'yō / Basu sen'yō",
-    english: "Sign showing traffic signals for specific traffic",
-    meaning: "Indicates that the traffic signal applies only to the designated type of traffic (pedestrians, bicycles, pedestrian & bicycle, or buses).",
-    exam_note: "Very frequently tested – know which signal applies to whom"
-  },
-  {
-    id: "enforce-02",
-    category: "Enforcement-Based Signs",
-    number: "2",
-    japanese: "左折可",
-    romaji: "Sasetsu ka",
-    english: "Left turn permitted sign",
-    meaning: "Even when the traffic light is red, vehicles may turn left (after stopping and confirming safety).",
-    exam_note: ""
-  },
-  {
-    id: "enforce-03",
-    category: "Enforcement-Based Signs",
-    number: "3",
-    japanese: "消火栓",
-    romaji: "Shōkasen",
-    english: "Sign for fire-fighting water supply",
-    meaning: "Indicates the location of a fire hydrant.",
-    exam_note: ""
-  },
-  {
-    id: "enforce-04",
-    category: "Enforcement-Based Signs",
-    number: "4",
-    japanese: "時間制限駐車区間を示す標識",
-    romaji: "Jikan seigen chūsha kukan o shimesu hyōshiki",
-    english: "Sign to indicate time-limited parking zone",
-    meaning: "Shows the time period during which time-restricted parking applies (usually with parking meter or ticket machine).",
-    exam_note: "Examples shown: 8-20"
-  },
-  {
-    id: "enforce-05",
-    category: "Enforcement-Based Signs",
-    number: "5",
-    japanese: "駐車券発給機の標識",
-    romaji: "Chūsha-ken hakkō-ki no hyōshiki",
-    english: "Sign to indicate parking ticket machine",
-    meaning: "Indicates the location of the parking ticket issuing machine (maximum parking time shown).",
-    exam_note: "Example: P 60分"
-  },
-  {
-    id: "enforce-06",
-    category: "Enforcement-Based Signs",
-    number: "6",
-    japanese: "災害対策基本法による閉鎖標識",
-    romaji: "Saigai taisaku kihon-hō ni yoru heisa hyōshiki",
-    english: "Closed to traffic under the Disaster Measures Basic Law",
-    meaning: "Road is closed under disaster countermeasures law.",
-    exam_note: "Rare but appears in recent exams"
-  }
-];
-
-// Vehicle Designation Abbreviations Data (36+ entries from table)
-const VEHICLE_ABBREVIATIONS: SignData[] = [
-  {
-    id: "veh-01",
-    category: "Vehicle Abbreviations",
-    number: "1",
-    japanese: "大型",
-    romaji: "Ōgata",
-    english: "Large motor vehicle",
-    meaning: "Large motor vehicle",
-    exam_note: ""
-  },
-  {
-    id: "veh-02",
-    category: "Vehicle Abbreviations",
-    number: "2",
-    japanese: "大型等",
-    romaji: "Ōgata-tō",
-    english: "Large motor vehicle, specific middle motor vehicle and special heavy equipment",
-    meaning: "Large motor vehicle, specific middle motor vehicle and special heavy equipment",
-    exam_note: ""
-  },
-  {
-    id: "veh-03",
-    category: "Vehicle Abbreviations",
-    number: "3",
-    japanese: "中型",
-    romaji: "Chūgata",
-    english: "Middle motor vehicle",
-    meaning: "Middle motor vehicle",
-    exam_note: ""
-  },
-  {
-    id: "veh-04",
-    category: "Vehicle Abbreviations",
-    number: "4",
-    japanese: "特定中型",
-    romaji: "Tokutei chūgata",
-    english: "Specific middle motor vehicle",
-    meaning: "Specific middle motor vehicle",
-    exam_note: ""
-  },
-  {
-    id: "veh-05",
-    category: "Vehicle Abbreviations",
-    number: "5",
-    japanese: "準中型",
-    romaji: "Jun chūgata",
-    english: "Semi-middle motor vehicle",
-    meaning: "Semi-middle motor vehicle",
-    exam_note: ""
-  },
-  {
-    id: "veh-06",
-    category: "Vehicle Abbreviations",
-    number: "6",
-    japanese: "普通",
-    romaji: "Futsū",
-    english: "Regular motor vehicle",
-    meaning: "Regular motor vehicle",
-    exam_note: ""
-  },
-  {
-    id: "veh-07",
-    category: "Vehicle Abbreviations",
-    number: "7",
-    japanese: "大特",
-    romaji: "Daitoku",
-    english: "Special heavy equipment",
-    meaning: "Special heavy equipment",
-    exam_note: ""
-  },
-  {
-    id: "veh-08",
-    category: "Vehicle Abbreviations",
-    number: "8",
-    japanese: "自二輪",
-    romaji: "Ji nirin",
-    english: "Large and regular motorcycle",
-    meaning: "Large and regular motorcycle",
-    exam_note: ""
-  },
-  {
-    id: "veh-09",
-    category: "Vehicle Abbreviations",
-    number: "9",
-    japanese: "軽",
-    romaji: "Kei",
-    english: "Regular motor vehicles 3.4m or shorter in length, 1.48m or narrower in width, and 2.0m or lower in height. (For motor vehicles with internal-combustion engines, limited to vehicles with a total displacement of less than 660cc.)",
-    meaning: "Regular motor vehicles 3.4m or shorter in length, 1.48m or narrower in width, and 2.0m or lower in height. (For motor vehicles with internal-combustion engines, limited to vehicles with a total displacement of less than 660cc.)",
-    exam_note: ""
-  },
-  {
-    id: "veh-10",
-    category: "Vehicle Abbreviations",
-    number: "10",
-    japanese: "小特",
-    romaji: "Shōtoku",
-    english: "Special light equipment",
-    meaning: "Special light equipment",
-    exam_note: ""
-  },
-  {
-    id: "veh-11",
-    category: "Vehicle Abbreviations",
-    number: "11",
-    japanese: "原付",
-    romaji: "Gen-tsuki",
-    english: "General motorized bicycle",
-    meaning: "General motorized bicycle",
-    exam_note: ""
-  },
-  {
-    id: "veh-12",
-    category: "Vehicle Abbreviations",
-    number: "12",
-    japanese: "特定原付",
-    romaji: "Tokutei gen-tsuki",
-    english: "Specified small motorized bicycle",
-    meaning: "Specified small motorized bicycle",
-    exam_note: ""
-  },
-  {
-    id: "veh-13",
-    category: "Vehicle Abbreviations",
-    number: "13",
-    japanese: "小二輪",
-    romaji: "Shō nirin",
-    english: "Small two-wheel motor vehicle and general motorized bicycle",
-    meaning: "Small two-wheel motor vehicle and general motorized bicycle",
-    exam_note: ""
-  },
-  {
-    id: "veh-14",
-    category: "Vehicle Abbreviations",
-    number: "14",
-    japanese: "二輪",
-    romaji: "Nirin",
-    english: "Light motorcycle and general motorized bicycle",
-    meaning: "Light motorcycle and general motorized bicycle",
-    exam_note: ""
-  },
-  {
-    id: "veh-15",
-    category: "Vehicle Abbreviations",
-    number: "15",
-    japanese: "自転車",
-    romaji: "Jitensha",
-    english: "Regular bicycle",
-    meaning: "Regular bicycle",
-    exam_note: ""
-  },
-  {
-    id: "veh-16",
-    category: "Vehicle Abbreviations",
-    number: "16",
-    japanese: "乗用",
-    romaji: "Jōyō",
-    english: "Motor vehicle for transporting passengers",
-    meaning: "Motor vehicle for transporting passengers",
-    exam_note: ""
-  },
-  {
-    id: "veh-17",
-    category: "Vehicle Abbreviations",
-    number: "17",
-    japanese: "大乗",
-    romaji: "Daijō",
-    english: "Large-size passenger vehicle",
-    meaning: "Large-size passenger vehicle",
-    exam_note: ""
-  },
-  {
-    id: "veh-18",
-    category: "Vehicle Abbreviations",
-    number: "18",
-    japanese: "中乗",
-    romaji: "Chūjō",
-    english: "Middle-size passenger vehicle",
-    meaning: "Middle-size passenger vehicle",
-    exam_note: ""
-  },
-  {
-    id: "veh-19",
-    category: "Vehicle Abbreviations",
-    number: "19",
-    japanese: "特定中乗",
-    romaji: "Tokutei chūjō",
-    english: "Specific middle-size passenger vehicle",
-    meaning: "Specific middle-size passenger vehicle",
-    exam_note: ""
-  },
-  {
-    id: "veh-20",
-    category: "Vehicle Abbreviations",
-    number: "20",
-    japanese: "準中乗",
-    romaji: "Jun chūjō",
-    english: "Semi-middle-size passenger vehicle",
-    meaning: "Semi-middle-size passenger vehicle",
-    exam_note: ""
-  },
-  {
-    id: "veh-21",
-    category: "Vehicle Abbreviations",
-    number: "21",
-    japanese: "バス",
-    romaji: "Basu",
-    english: "Large-size passenger vehicle and specific middle-size passenger vehicle",
-    meaning: "Large-size passenger vehicle and specific middle-size passenger vehicle",
-    exam_note: ""
-  },
-  {
-    id: "veh-22",
-    category: "Vehicle Abbreviations",
-    number: "22",
-    japanese: "大型バス",
-    romaji: "Ōgata basu",
-    english: "Large-size passenger vehicle with a capacity of more than 30 passengers",
-    meaning: "Large-size passenger vehicle with a capacity of more than 30 passengers",
-    exam_note: ""
-  },
-  {
-    id: "veh-23",
-    category: "Vehicle Abbreviations",
-    number: "23",
-    japanese: "マイクロ",
-    romaji: "Maikuro",
-    english: "Large-size passenger vehicle and specific middle-size passenger vehicle other than large bus",
-    meaning: "Large-size passenger vehicle and specific middle-size passenger vehicle other than large bus",
-    exam_note: ""
-  },
-  {
-    id: "veh-24",
-    category: "Vehicle Abbreviations",
-    number: "24",
-    japanese: "路線バス",
-    romaji: "Rosen basu",
-    english: "Regular route service-use motor vehicle for general transportation of passengers",
-    meaning: "Regular route service-use motor vehicle for general transportation of passengers",
-    exam_note: ""
-  },
-  {
-    id: "veh-25",
-    category: "Vehicle Abbreviations",
-    number: "25",
-    japanese: "営業",
-    romaji: "Eigyō",
-    english: "Regular passenger vehicle",
-    meaning: "Regular passenger vehicle",
-    exam_note: ""
-  },
-  {
-    id: "veh-26",
-    category: "Vehicle Abbreviations",
-    number: "26",
-    japanese: "タクシー",
-    romaji: "Takushī",
-    english: "Business-use vehicle used to transport general passengers as stipulated by the Road Transportation Law",
-    meaning: "Business-use vehicle used to transport general passengers as stipulated by the Road Transportation Law",
-    exam_note: ""
-  },
-  {
-    id: "veh-27",
-    category: "Vehicle Abbreviations",
-    number: "27",
-    japanese: "貨物",
-    romaji: "Kamotsu",
-    english: "Truck (Motor vehicles other than passenger motor vehicles)",
-    meaning: "Truck (Motor vehicles other than passenger motor vehicles)",
-    exam_note: ""
-  },
-  {
-    id: "veh-28",
-    category: "Vehicle Abbreviations",
-    number: "28",
-    japanese: "大貨",
-    romaji: "Daika",
-    english: "Large-size truck",
-    meaning: "Large-size truck",
-    exam_note: ""
-  },
-  {
-    id: "veh-29",
-    category: "Vehicle Abbreviations",
-    number: "29",
-    japanese: "大貨等",
-    romaji: "Daika-tō",
-    english: "Large-size truck, specific middle-size truck and special heavy equipment",
-    meaning: "Large-size truck, specific middle-size truck and special heavy equipment",
-    exam_note: ""
-  },
-  {
-    id: "veh-30",
-    category: "Vehicle Abbreviations",
-    number: "30",
-    japanese: "中貨",
-    romaji: "Chūka",
-    english: "Middle-size truck",
-    meaning: "Middle-size truck",
-    exam_note: ""
-  },
-  {
-    id: "veh-31",
-    category: "Vehicle Abbreviations",
-    number: "31",
-    japanese: "特定中貨",
-    romaji: "Tokutei chūka",
-    english: "Specific middle-size truck",
-    meaning: "Specific middle-size truck",
-    exam_note: ""
-  },
-  {
-    id: "veh-32",
-    category: "Vehicle Abbreviations",
-    number: "32",
-    japanese: "準中貨",
-    romaji: "Jun chūka",
-    english: "Semi-middle-size truck",
-    meaning: "Semi-middle-size truck",
-    exam_note: ""
-  },
-  {
-    id: "veh-33",
-    category: "Vehicle Abbreviations",
-    number: "33",
-    japanese: "けん引",
-    romaji: "Ken'in",
-    english: "Towing motor vehicle (towing a vehicle total weight exceeding 750kg)",
-    meaning: "Towing motor vehicle (towing a vehicle total weight exceeding 750kg)",
-    exam_note: ""
-  },
-  {
-    id: "veh-34",
-    category: "Vehicle Abbreviations",
-    number: "34",
-    japanese: "標車",
-    romaji: "Hyōsha",
-    english: "Motor vehicles with senior driver's sign, etc.",
-    meaning: "Motor vehicles with senior driver's sign, etc.",
-    exam_note: ""
-  },
-  {
-    id: "veh-35",
-    category: "Vehicle Abbreviations",
-    number: "35",
-    japanese: "遠隔小型",
-    romaji: "Enkaku kogata",
-    english: "Motor vehicles with senior driver's sign, etc.",
-    meaning: "Motor vehicles with senior driver's sign, etc.",
-    exam_note: ""
-  }
-];
-
-// Regulatory Road Markings Data (29 markings)
-const REGULATORY_MARKINGS: SignData[] = [
-  {
-    id: "regmark-01",
-    category: "Regulatory Markings",
-    number: "1",
-    japanese: "Ｕターン禁止",
-    romaji: "Yū-tān kinshi",
-    english: "No U-turn",
-    meaning: "Vehicles are prohibited from making a U-turn (the number indicates the time period to prohibit U-turns).",
-    exam_note: ""
-  },
-  {
-    id: "regmark-02",
-    category: "Regulatory Markings",
-    number: "2",
-    japanese: "追越し禁止",
-    romaji: "Oikoshi kinshi",
-    english: "Overtaking on the right hand side is prohibited",
-    meaning: "Neither a vehicle in lane A nor B must enter the right hand side of the road to overtake.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-03",
-    category: "Regulatory Markings",
-    number: "3",
-    japanese: "車線変更禁止",
-    romaji: "Shasen henkō kinshi",
-    english: "Lane change prohibited",
-    meaning: "Vehicles in lane A must not change to lane B, and vehicles in lane B must not change to lane A.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-04",
-    category: "Regulatory Markings",
-    number: "4",
-    japanese: "駐車・停車禁止",
-    romaji: "Chūsha / teisha kinshi",
-    english: "No parking or stopping",
-    meaning: "Vehicles are prohibited from parking or stopping.",
-    exam_note: "Yellow grid pattern"
-  },
-  {
-    id: "regmark-05",
-    category: "Regulatory Markings",
-    number: "5",
-    japanese: "駐車禁止",
-    romaji: "Chūsha kinshi",
-    english: "No parking",
-    meaning: "Vehicles are prohibited from parking.",
-    exam_note: "Yellow grid pattern"
-  },
-  {
-    id: "regmark-06",
-    category: "Regulatory Markings",
-    number: "6",
-    japanese: "最高速度",
-    romaji: "Saikō sokudo",
-    english: "Maximum speed limit",
-    meaning: "Vehicles and streetcars must not exceed the posted speed limit. Mopeds and motor vehicles towing another vehicle by rope must not exceed the legal speed limit for towing even when the posted speed is higher than the legal speed limit.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-07",
-    category: "Regulatory Markings",
-    number: "7",
-    japanese: "車両進入禁止区域",
-    romaji: "Sharyō shinnyū kinshi kuiki",
-    english: "No entry zone",
-    meaning: "Vehicles are prohibited from entering the area indicated by this marking.",
-    exam_note: "Yellow diagonal band"
-  },
-  {
-    id: "regmark-08",
-    category: "Regulatory Markings",
-    number: "8",
-    japanese: "停車禁止区域",
-    romaji: "Teisha kinshi kuiki",
-    english: "No stopping zone",
-    meaning: "Vehicle and streetcars are prohibited from entering the area indicated by this marking if there is a possibility they may have to stop on it due to the conditions ahead.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-09",
-    category: "Regulatory Markings",
-    number: "9",
-    japanese: "側帯",
-    romaji: "Sokutai",
-    english: "Side strip",
-    meaning: "① Pedestrians and special specific small motorized bicycle can pass. ② Where the side strip is wide it is possible to park on the side strip. (Refer to p.263)",
-    exam_note: ""
-  },
-  {
-    id: "regmark-10",
-    category: "Regulatory Markings",
-    number: "10",
-    japanese: "駐車又は停車禁止の側帯",
-    romaji: "Chūsha mata wa teisha kinshi no sokutai",
-    english: "Side strip where parking or stopping is prohibited",
-    meaning: "① Pedestrians and special specific small motorized bicycle can pass. ② Vehicles are prohibited from parking or stopping on the side strip. (Refer to p.263)",
-    exam_note: ""
-  },
-  {
-    id: "regmark-11",
-    category: "Regulatory Markings",
-    number: "11",
-    japanese: "歩行者専用側帯",
-    romaji: "Hokōsha sen'yō sokutai",
-    english: "Side strip for pedestrians only",
-    meaning: "① Only pedestrians can pass. ② Vehicles are prohibited from parking or stopping on the side strip. (Refer to p.263)",
-    exam_note: ""
-  },
-  {
-    id: "regmark-12",
-    category: "Regulatory Markings",
-    number: "12",
-    japanese: "車線",
-    romaji: "Shasen",
-    english: "Vehicle lanes",
-    meaning: "(1) Vehicle lanes established on roads other than national expressways. (2) Vehicle lanes established by road cat eyes, etc.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-13",
-    category: "Regulatory Markings",
-    number: "13",
-    japanese: "優先車線",
-    romaji: "Yūsen shasen",
-    english: "Right of way designation",
-    meaning: "Indicates the main lane ahead has the right of way when two main lanes merge.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-14",
-    category: "Regulatory Markings",
-    number: "14",
-    japanese: "車線境界",
-    romaji: "Shasen kyōkai",
-    english: "Lane distinction",
-    meaning: "Indicates differences in vehicle lanes by type of vehicles. Vehicles must drive in their designated lanes.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-15",
-    category: "Regulatory Markings",
-    number: "15",
-    japanese: "車両種別通行区分",
-    romaji: "Sharyō shubetsu tsūkō kubun",
-    english: "Lane distinction for specific types of vehicles",
-    meaning: "Large-size trucks, specific middle-size trucks and special heavy equipment must travel in the far left hand lane.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-16",
-    category: "Regulatory Markings",
-    number: "16",
-    japanese: "牽引自動車の通行帯",
-    romaji: "Ken'in jidōsha no tsūkō-tai",
-    english: "Lane for towing motor vehicles on national expressways",
-    meaning: "Towing motor vehicles must travel in the specified vehicle lane.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-17",
-    category: "Regulatory Markings",
-    number: "17",
-    japanese: "専用通行帯",
-    romaji: "Sen'yō tsūkō-tai",
-    english: "Exclusive lane",
-    meaning: "Indicates the lane is for the exclusive use of the marked type of vehicle (in this case, exclusive lane for buses between 7:00 to 9:00).",
-    exam_note: ""
-  },
-  {
-    id: "regmark-18",
-    category: "Regulatory Markings",
-    number: "18",
-    japanese: "バス優先通行帯",
-    romaji: "Basu yūsen tsūkō-tai",
-    english: "Priority lane for buses",
-    meaning: "Indicates the lane is for the priority use of buses (in this case, road with right-of-way for buses between 7:00 to 9:00).",
-    exam_note: ""
-  },
-  {
-    id: "regmark-19",
-    category: "Regulatory Markings",
-    number: "19",
-    japanese: "高速自動車国道等牽引自動車の専用通行帯",
-    romaji: "Kōsoku jidōsha kokudō-tō ken'in jidōsha no sen'yō tsūkō-tai",
-    english: "First lane designated zone on motorways for tow trucks",
-    meaning: "Towing motor vehicle must travel in the far left hand vehicle lane.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-20",
-    category: "Regulatory Markings",
-    number: "20",
-    japanese: "進行方向別通行区分",
-    romaji: "Shinkō hōkō-betsu tsūkō kubun",
-    english: "Lane direction",
-    meaning: "Vehicles must travel in the vehicle lane indicating the direction ahead at the intersection.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-21",
-    category: "Regulatory Markings",
-    number: "21",
-    japanese: "右（左）折車線",
-    romaji: "Migi (hidari) setsu shasen",
-    english: "Right (left) turning route",
-    meaning: "① Methods of turning right ② Methods of turning left",
-    exam_note: ""
-  },
-  {
-    id: "regmark-22",
-    category: "Regulatory Markings",
-    number: "22",
-    japanese: "ロータリーにおける左折等",
-    romaji: "Rōtari ni okeru sasetsu tō",
-    english: "How to left turn, etc. at a roundabout",
-    meaning: "When making left turn, right turn, going straight or U-turn at a roundabout, vehicles must drive along the direction indicated by the arrow.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-23",
-    category: "Regulatory Markings",
-    number: "23",
-    japanese: "平行駐車",
-    romaji: "Heikō chūsha",
-    english: "Parallel parking",
-    meaning: "Indicates the area where vehicles must enter and park parallel to the edge of the road.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-24",
-    category: "Regulatory Markings",
-    number: "24",
-    japanese: "直角駐車",
-    romaji: "Chokkaku chūsha",
-    english: "Rectangular parking",
-    meaning: "Indicates the area where vehicles must enter and park perpendicular to the edge of the road.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-25",
-    category: "Regulatory Markings",
-    number: "25",
-    japanese: "斜め駐車",
-    romaji: "Naname chūsha",
-    english: "Diagonal parking",
-    meaning: "Indicates the area where vehicles must enter and park diagonally to the edge of the road.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-26",
-    category: "Regulatory Markings",
-    number: "26",
-    japanese: "普通自転車等専用通行帯",
-    romaji: "Futsū jitensha-tō sen'yō tsūkō-tai",
-    english: "Special specific small motorized bicycle and regular bicycles zone",
-    meaning: "Special specific small motorized bicycle and regular bicycles permitted to drive on the sidewalk.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-27",
-    category: "Regulatory Markings",
-    number: "27",
-    japanese: "普通自転車等及び歩行者専用",
-    romaji: "Futsū jitensha-tō oyobi hokōsha sen'yō",
-    english: "Special specific small motorized bicycle and regular bicycles zone inside the sidewalk",
-    meaning: "It shows that special specific small motorized bicycle and regular bicycles can drive and use when driving on the sidewalk.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-28",
-    category: "Regulatory Markings",
-    number: "28",
-    japanese: "普通自転車専用通行帯",
-    romaji: "Futsū jitensha sen'yō tsūkō-tai",
-    english: "No entry for regular bicycles into the intersection",
-    meaning: "Regular bicycles must not enter beyond this marking.",
-    exam_note: ""
-  },
-  {
-    id: "regmark-29",
-    category: "Regulatory Markings",
-    number: "29",
-    japanese: "規制の終わり",
-    romaji: "Kisei no owari",
-    english: "End of traffic regulation",
-    meaning: "The end of the traffic regulated zone indicated by the regulatory marking.",
-    exam_note: ""
-  }
-];
-
-// Indication Road Markings Data (15 markings)
-const INDICATION_MARKINGS: SignData[] = [
-  {
-    id: "indmark-01",
-    category: "Indication Markings",
-    number: "1",
-    japanese: "横断歩道",
-    romaji: "Ōdan hodō",
-    english: "Pedestrian crossing",
-    meaning: "Indicates a pedestrian crossing.",
-    exam_note: ""
-  },
-  {
-    id: "indmark-02",
-    category: "Indication Markings",
-    number: "2",
-    japanese: "斜め横断可",
-    romaji: "Naname ōdan ka",
-    english: "Diagonal crossing permitted",
-    meaning: "① Permitted during designated hours. ② Permitted throughout the day.",
-    exam_note: "Very frequently tested – know both versions"
-  },
-  {
-    id: "indmark-03",
-    category: "Indication Markings",
-    number: "3",
-    japanese: "自転車横断帯",
-    romaji: "Jitensha ōdan-tai",
-    english: "Bicycle crossing zone",
-    meaning: "Indicates a bicycle crossing zone.",
-    exam_note: ""
-  },
-  {
-    id: "indmark-04",
-    category: "Indication Markings",
-    number: "4",
-    japanese: "道路の右側部分通行",
-    romaji: "Dōro no migi-gawa bubun tsūkō",
-    english: "Use the right part of the road",
-    meaning: "Indicates vehicles can drive right of the center of the road (marked near corners on steep inclines).",
-    exam_note: ""
-  },
-  {
-    id: "indmark-05",
-    category: "Indication Markings",
-    number: "5",
-    japanese: "停止線",
-    romaji: "Teishi-sen",
-    english: "Stop line",
-    meaning: "Indicates the location for vehicles to stop.",
-    exam_note: ""
-  },
-  {
-    id: "indmark-06",
-    category: "Indication Markings",
-    number: "6",
-    japanese: "二輪・四輪車の停止線",
-    romaji: "Nirin / yonrin-sha no teishi-sen",
-    english: "Stop line for two and four-wheeled vehicles",
-    meaning: "Indicates the location for two or four-wheeled vehicles.",
-    exam_note: ""
-  },
-  {
-    id: "indmark-07",
-    category: "Indication Markings",
-    number: "7",
-    japanese: "進行方向別通行区分",
-    romaji: "Shinkō hōkō-betsu tsūkō kubun",
-    english: "Lane direction",
-    meaning: "Indicates the directions in which vehicles can proceed.",
-    exam_note: ""
-  },
-  {
-    id: "indmark-08",
-    category: "Indication Markings",
-    number: "8",
-    japanese: "中央線",
-    romaji: "Chūō-sen",
-    english: "Centerline",
-    meaning: "Indicates the center of the road or centerline.\n① When necessary to indicate that no vehicle may cross to the right hand side of the road.\n② Where there is a centerline on a road other than the road mentioned in ①\n   (1) Established by paint markings, etc.\n   (2) Established by road cat eyes, stones, etc.\n③ When there is a centerline (not in center of the road).\n   (1) Any time\n   (2) Day or time limited. Marking pipe, marking fence or road cat eyes with amber light.\n④ Where special caution is required.",
-    exam_note: "Extremely important – know all four situations"
-  },
-  {
-    id: "indmark-09",
-    category: "Indication Markings",
-    number: "9",
-    japanese: "車線境界線",
-    romaji: "Shasen kyōkai-sen",
-    english: "Borderline of vehicle lane",
-    meaning: "Indicates the borderline of a vehicle lane on a road with four lanes or more.\n① Established by paint, etc.\n② Established by road cat eyes, stones, etc.",
-    exam_note: ""
-  },
-  {
-    id: "indmark-10",
-    category: "Indication Markings",
-    number: "10",
-    japanese: "安全地帯",
-    romaji: "Anzen chitai",
-    english: "Safety zone",
-    meaning: "Indicates a safety zone.",
-    exam_note: ""
-  },
-  {
-    id: "indmark-11",
-    category: "Indication Markings",
-    number: "11",
-    japanese: "安全地帯又は障害物に接近",
-    romaji: "Anzen chitai mata wa shōgaibutsu ni sekkin",
-    english: "Approach to safety zone or an obstruction",
-    meaning: "Indicates a safety zone or obstruction ahead.\n① Pass the designated side.\n② Pass either side.",
-    exam_note: ""
-  },
-  {
-    id: "indmark-12",
-    category: "Indication Markings",
-    number: "12",
-    japanese: "導流帯",
-    romaji: "Dōryū-tai",
-    english: "Channeling zone",
-    meaning: "The channeling zone is the portion of a road established to guide traffic safely and smoothly by preventing vehicles from passing.",
-    exam_note: ""
-  },
-  {
-    id: "indmark-13",
-    category: "Indication Markings",
-    number: "13",
-    japanese: "路面電車停留場",
-    romaji: "Romen densha teiryūjo",
-    english: "Streetcar stop",
-    meaning: "Indicates a streetcar stop.",
-    exam_note: ""
-  },
-  {
-    id: "indmark-14",
-    category: "Indication Markings",
-    number: "14",
-    japanese: "横断歩道・自転車横断帯あり",
-    romaji: "Ōdan hodō / jitensha ōdan-tai ari",
-    english: "Pedestrian crossing or bicycle crossing zone ahead",
-    meaning: "Indicates a pedestrian crossing or bicycle crossing zone is ahead.",
-    exam_note: ""
-  },
-  {
-    id: "indmark-15",
-    category: "Indication Markings",
-    number: "15",
-    japanese: "優先道路",
-    romaji: "Yūsen dōro",
-    english: "Right-of-way ahead",
-    meaning: "Indicates the intersecting road ahead is a priority road.",
-    exam_note: ""
-  }
-];
-
-// Flashcard categories with sign data
+// Flashcard categories with their Japanese names and queries
 const FLASHCARD_CATEGORIES = {
-  'regulatory-signs': {
-    name: 'Regulatory Signs (規制標識)',
+  'road-signs': {
+    name: 'Road Signs (標識)',
     description: 'Traffic signs and regulatory signs',
-    signs: REGULATORY_SIGNS
-  },
-  'warning-signs': {
-    name: 'Warning Signs (警戒標識)',
-    description: 'Warning and caution signs',
-    signs: WARNING_SIGNS
-  },
-  'indication-signs': {
-    name: 'Indication Signs (指示標識)',
-    description: 'Directional and informational signs',
-    signs: INDICATION_SIGNS
+    queries: [
+      'stop sign japan',
+      'yield sign japan',
+      'speed limit sign japan',
+      'no entry sign japan',
+      'no parking sign japan',
+      'one way sign japan',
+      'pedestrian crossing sign japan',
+      'school zone sign japan',
+      'no U-turn sign japan',
+      'no right turn sign japan',
+      'no left turn sign japan',
+      'priority road sign japan',
+      'roundabout sign japan',
+      'intersection sign japan',
+      'railway crossing sign japan'
+    ]
   },
   'road-markings': {
-    name: 'Regulatory Road Markings (規制の路面標識)',
-    description: 'Regulatory pavement markings and lane indicators',
-    signs: REGULATORY_MARKINGS
+    name: 'Road Markings (道路標示)',
+    description: 'Pavement markings and lane indicators',
+    queries: [
+      'zebra crossing japan',
+      'stop line marking japan',
+      'lane divider japan',
+      'arrow marking japan',
+      'yield line japan',
+      'bike lane marking japan',
+      'bus lane marking japan',
+      'crosswalk marking japan'
+    ]
   },
   'traffic-signals': {
     name: 'Traffic Signals (信号機)',
     description: 'Traffic lights and signal meanings',
-    signs: [] // Will be populated
+    queries: [
+      'traffic light japan',
+      'red light japan',
+      'yellow light japan',
+      'green arrow signal japan',
+      'flashing signal japan'
+    ]
   },
-  'guidance-signs': {
-    name: 'Guidance Signs (案内標識)',
-    description: 'Guidance and information signs',
-    signs: GUIDANCE_SIGNS
+  'warning-signs': {
+    name: 'Warning Signs (警戒標識)',
+    description: 'Warning and caution signs',
+    queries: [
+      'curve warning sign japan',
+      'slippery road sign japan',
+      'falling rocks sign japan',
+      'children crossing sign japan',
+      'wildlife crossing sign japan',
+      'road work sign japan'
+    ]
   },
-  'auxiliary-signs': {
-    name: 'Auxiliary Signs (補助標識)',
-    description: 'Auxiliary plates and supplementary signs',
-    signs: AUXILIARY_SIGNS
+  'prohibition-signs': {
+    name: 'Prohibition Signs (禁止標識)',
+    description: 'Signs indicating restrictions',
+    queries: [
+      'no entry sign japan',
+      'no parking sign japan',
+      'no stopping sign japan',
+      'no vehicles sign japan',
+      'weight limit sign japan',
+      'height limit sign japan'
+    ]
   },
   'instruction-signs': {
     name: 'Instruction Signs (指示標識)',
     description: 'Directional and informational signs',
-    signs: [] // Will be populated
-  },
-  'enforcement-signs': {
-    name: 'Enforcement-Based Signs (法令に基づく標識)',
-    description: 'Signs based on Road Traffic Law and Fire Defense Law (not traffic sign ordinances)',
-    signs: ENFORCEMENT_SIGNS
-  },
-  'vehicle-abbreviations': {
-    name: 'Vehicle Abbreviations (車両略称表)',
-    description: 'Vehicle designation abbreviations used on signs',
-    signs: VEHICLE_ABBREVIATIONS
-  },
-  'indication-markings': {
-    name: 'Indication Road Markings (指示の路面標識)',
-    description: 'Indication pavement markings and guides',
-    signs: INDICATION_MARKINGS
+    queries: [
+      'direction sign japan',
+      'parking sign japan',
+      'hospital sign japan',
+      'gas station sign japan',
+      'rest area sign japan'
+    ]
   }
 };
-
-// Build image query from sign data
-function buildImageQuery(sign: SignData): string {
-  return `${sign.english.toLowerCase()} japan ${sign.japanese}`;
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -2698,17 +128,11 @@ serve(async (req) => {
 
   try {
     const { category, count = 10 } = await req.json();
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
-    // Check available API keys (all optional, but at least one image source should be available)
-    const SERPER_API_KEY = Deno.env.get('SERPER_API_KEY');
-    const GOOGLE_AI_STUDIO_API_KEY = Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    
-    // Log available keys for debugging (without exposing values)
-    console.log(`API Keys available: SERPER=${!!SERPER_API_KEY}, GOOGLE_AI_STUDIO=${!!GOOGLE_AI_STUDIO_API_KEY}, LOVABLE=${!!LOVABLE_API_KEY}`);
-    
-    // Note: LOVABLE_API_KEY is kept available for future use or as additional fallback
-    // Currently, image fetching uses: SERPER_API_KEY (primary) -> GOOGLE_AI_STUDIO_API_KEY (fallback)
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
+    }
 
     console.log(`Generating ${count} flashcards for category: ${category}`);
 
@@ -2718,52 +142,147 @@ serve(async (req) => {
       throw new Error(`Invalid category: ${category}`);
     }
 
-    // Get signs for this category
-    const availableSigns = categoryInfo.signs || [];
+    // Select random queries from the category
+    const availableQueries = [...categoryInfo.queries];
+    const selectedQueries = [];
+    const requestedCount = Math.min(count, availableQueries.length);
     
-    if (availableSigns.length === 0) {
-      throw new Error(`No signs available for category: ${category}. Please ensure sign data is loaded.`);
+    for (let i = 0; i < requestedCount; i++) {
+      const randomIndex = Math.floor(Math.random() * availableQueries.length);
+      selectedQueries.push(availableQueries.splice(randomIndex, 1)[0]);
     }
 
-    // Select random signs from the category
-    const shuffledSigns = [...availableSigns].sort(() => Math.random() - 0.5);
-    const selectedSigns = shuffledSigns.slice(0, Math.min(count, availableSigns.length));
+    // Generate flashcards using AI
+    const systemPrompt = `You are an expert Japanese driving instructor. Generate flashcards for practicing Japanese road signs, markings, and traffic symbols.
 
-    console.log(`Selected ${selectedSigns.length} signs from ${availableSigns.length} available`);
+For each flashcard, provide:
+1. A clear question asking what the sign/marking means or what action should be taken
+2. A concise answer explaining the sign/marking meaning
+3. A brief explanation with key points
 
-    // Generate flashcards from sign data
-    const flashcards = selectedSigns.map((sign) => {
-      const imageQuery = buildImageQuery(sign);
-      
-      return {
-        imageQuery,
-        question: `What does this sign mean? (${sign.japanese})`,
-        answer: `${sign.english} (${sign.japanese} - ${sign.romaji}). ${sign.meaning}`,
-        explanation: sign.exam_note 
-          ? `${sign.meaning}\n\n📝 Exam Note: ${sign.exam_note}`
-          : sign.meaning,
-        signData: sign
-      };
+Category: ${categoryInfo.name}
+Description: ${categoryInfo.description}
+
+Generate ${requestedCount} flashcards in this exact JSON format:
+{
+  "flashcards": [
+    {
+      "imageQuery": "stop sign japan",
+      "question": "What does this sign mean?",
+      "answer": "Stop (一時停止 - Ichiji Teishi). Must come to a complete stop.",
+      "explanation": "This red octagonal sign with white text means you must come to a complete stop before proceeding. Check all directions before continuing."
+    }
+  ]
+}
+
+Make sure:
+- Each imageQuery matches the provided query exactly
+- Questions are clear and test understanding
+- Answers include both English and Japanese (when relevant)
+- Explanations are educational and concise
+- Return valid JSON only, no additional text.`;
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { 
+            role: "user", 
+            content: `Generate ${requestedCount} flashcards with these image queries: ${selectedQueries.join(', ')}. Return only valid JSON.` 
+          },
+        ],
+        stream: false,
+      }),
     });
 
-    // Fetch images for each flashcard with fallback chain:
-    // 1. Try SERPER_API_KEY (real photos)
-    // 2. Fallback to GOOGLE_AI_STUDIO_API_KEY (AI-generated if needed)
+    if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), 
+          {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "AI service quota exceeded. Please contact support." }), 
+          {
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+      
+      const errorText = await response.text();
+      console.error("AI gateway error:", response.status, errorText);
+      throw new Error(`AI gateway error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const assistantMessage = data.choices?.[0]?.message?.content;
+
+    if (!assistantMessage) {
+      throw new Error("No response from AI");
+    }
+
+    console.log('AI flashcard response generated successfully');
+
+    // Parse JSON response
+    let flashcards: any[] = [];
+    try {
+      // Extract JSON from markdown code blocks if present
+      let jsonString = assistantMessage;
+      const codeBlockMatch = assistantMessage.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (codeBlockMatch) {
+        jsonString = codeBlockMatch[1];
+      }
+      
+      // Find JSON object
+      const jsonMatch = jsonString.match(/\{[\s\S]*"flashcards"[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsedResponse = JSON.parse(jsonMatch[0].trim());
+        flashcards = parsedResponse.flashcards || [];
+      } else {
+        throw new Error('Could not find flashcards in response');
+      }
+    } catch (e) {
+      console.error('Error parsing flashcard response:', e);
+      throw new Error('Failed to parse flashcard response');
+    }
+
+    // Ensure we match the queries - create flashcards manually if needed
+    if (flashcards.length !== selectedQueries.length) {
+      console.log('Regenerating flashcards to match queries...');
+      flashcards = selectedQueries.map((query, index) => {
+        // Find matching flashcard or create default
+        const existing = flashcards.find(f => f.imageQuery === query);
+        if (existing) return existing;
+      
+      return {
+          imageQuery: query,
+          question: `What does this ${categoryInfo.name.toLowerCase()} mean?`,
+          answer: `This is a Japanese ${categoryInfo.name.toLowerCase()}. See explanation.`,
+          explanation: `This sign/marking indicates important traffic information. Study this carefully for your driving test.`
+      };
+    });
+    }
+
+    // Fetch images for each flashcard
     console.log(`Fetching images for ${flashcards.length} flashcards...`);
     const flashcardsWithImages = await Promise.all(
       flashcards.map(async (flashcard) => {
-        // Try Serper API first for real photos
-        let imageUrl = await fetchImage(flashcard.imageQuery, flashcard.signData);
-        
-        // If Serper fails, try Google AI Studio as fallback
-        if (!imageUrl) {
-          console.log(`Serper failed for ${flashcard.signData.japanese}, trying Google AI Studio fallback...`);
-          imageUrl = await generateImageWithGoogleAI(flashcard.signData);
-        }
-
+        const imageUrl = await fetchImage(flashcard.imageQuery);
         return {
           ...flashcard,
-          imageUrl
+          imageUrl: imageUrl || null
         };
       })
     );
@@ -2774,8 +293,7 @@ serve(async (req) => {
       JSON.stringify({ 
         flashcards: flashcardsWithImages,
         category: categoryInfo.name,
-        count: flashcardsWithImages.length,
-        totalAvailable: availableSigns.length
+        count: flashcardsWithImages.length
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -2792,3 +310,5 @@ serve(async (req) => {
     );
   }
 });
+
+
