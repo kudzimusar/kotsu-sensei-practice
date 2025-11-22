@@ -423,8 +423,7 @@ export default function BookingPayment() {
           open={showAddCard}
           onOpenChange={setShowAddCard}
           onSuccess={() => {
-            // Refresh payment methods after adding card
-            refetchPaymentMethods();
+            queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
           }}
         />
       </div>

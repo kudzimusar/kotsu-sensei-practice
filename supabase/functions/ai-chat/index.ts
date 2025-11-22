@@ -71,9 +71,23 @@ serve(async (req) => {
   try {
     const { messages } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+<<<<<<< HEAD
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
+=======
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    const GOOGLE_AI_STUDIO_API_KEY = Deno.env.get("GOOGLE_AI_STUDIO_API_KEY");
+    
+    // Use GOOGLE_AI_STUDIO_API_KEY as primary fallback, then GEMINI_API_KEY
+    const fallbackApiKey = GOOGLE_AI_STUDIO_API_KEY || GEMINI_API_KEY;
+    
+    console.log('AI Chat request received with', messages.length, 'messages');
+    console.log('API Keys available: LOVABLE=', !!LOVABLE_API_KEY, 'GOOGLE_AI_STUDIO=', !!GOOGLE_AI_STUDIO_API_KEY, 'GEMINI=', !!GEMINI_API_KEY);
+    
+    if (!LOVABLE_API_KEY && !fallbackApiKey) {
+      throw new Error("Neither LOVABLE_API_KEY nor GOOGLE_AI_STUDIO_API_KEY/GEMINI_API_KEY is configured");
+>>>>>>> d3c701c9ce22b59bb9391048dd141b1750b9c89d
     }
 
     console.log('AI Chat request received with', messages.length, 'messages');
@@ -135,10 +149,100 @@ Topics you can help with:
       }),
     });
 
+<<<<<<< HEAD
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), 
+=======
+    if (LOVABLE_API_KEY) {
+      try {
+        console.log("Attempting primary API (LOVABLE_API_KEY)");
+        response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: systemPrompt },
+              ...messages,
+            ],
+            stream: false,
+          }),
+        });
+
+        if (!response.ok) {
+          let errorText = '';
+          try {
+            errorText = await response.text();
+          } catch (e) {
+            errorText = `Failed to read error response: ${e instanceof Error ? e.message : 'Unknown'}`;
+          }
+          console.error("Primary API error:", response.status, errorText.substring(0, 200));
+          throw new Error(`Primary API error: ${response.status} - ${errorText.substring(0, 100)}`);
+        }
+
+        let data: any;
+        try {
+          data = await response.json();
+        } catch (e) {
+          console.error("Failed to parse primary API response:", e);
+          throw new Error(`Primary API returned invalid JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        }
+        
+        assistantMessage = data.choices?.[0]?.message?.content;
+        
+        if (!assistantMessage) {
+          console.error("Primary API returned empty response:", JSON.stringify(data));
+          throw new Error("Primary API returned empty response");
+        }
+        
+        console.log("Primary API succeeded, response length:", assistantMessage.length);
+      } catch (error) {
+        console.warn("LOVABLE_API_KEY failed, trying fallback:", error);
+        useFallback = true;
+        assistantMessage = null;
+      }
+    } else {
+      console.log("LOVABLE_API_KEY not available, using fallback");
+      useFallback = true;
+    }
+
+    // Fallback to GOOGLE_AI_STUDIO_API_KEY or GEMINI_API_KEY
+    if (useFallback && fallbackApiKey) {
+      console.log("Using GOOGLE_AI_STUDIO_API_KEY/GEMINI_API_KEY fallback");
+      try {
+        // Build messages for Gemini API format
+        // Combine system prompt with user messages
+        const conversationHistory: any[] = [];
+        
+        // Add system prompt as first user message
+        conversationHistory.push({
+          role: "user",
+          parts: [{ text: systemPrompt }]
+        });
+        
+        // Add conversation history
+        for (const msg of messages) {
+          if (msg.role === "assistant") {
+            conversationHistory.push({
+              role: "model",
+              parts: [{ text: msg.content || "" }]
+            });
+          } else {
+            conversationHistory.push({
+              role: "user",
+              parts: [{ text: msg.content || "" }]
+            });
+          }
+        }
+
+        response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${fallbackApiKey}`,
+>>>>>>> d3c701c9ce22b59bb9391048dd141b1750b9c89d
           {
             status: 429,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
