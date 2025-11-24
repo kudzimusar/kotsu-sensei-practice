@@ -15,7 +15,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { AddCardDialog } from "@/components/AddCardDialog";
-import { AddCardDialog } from "@/components/AddCardDialog";
 
 interface SavedPaymentMethod {
   id: string;
@@ -33,7 +32,6 @@ export default function BookingPayment() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const queryClient = useQueryClient();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("card");
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
