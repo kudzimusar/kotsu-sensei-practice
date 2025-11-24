@@ -19,6 +19,16 @@ import Planner from "./pages/Planner";
 import NotFound from "./pages/NotFound";
 import AIChatbot from "./pages/AIChatbot";
 import Flashcards from "./pages/Flashcards";
+import Account from "./pages/Account";
+import Payment from "./pages/Payment";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import BookingPayment from "./pages/BookingPayment";
+import MyBookings from "./pages/MyBookings";
+import PracticeRooms from "./pages/PracticeRooms";
+import PracticeRoomDetails from "./pages/PracticeRoomDetails";
+import InstructorProfile from "./pages/InstructorProfile";
+import InstructorDashboard from "./pages/InstructorDashboard";
+import ShareReferral from "./pages/ShareReferral";
 
 const queryClient = new QueryClient();
 
@@ -38,7 +48,19 @@ const App = () => (
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/ai-chat" element={<AIChatbot />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
           <Route path="/generate" element={<ProtectedRoute><QuestionGenerator /></ProtectedRoute>} />
+          <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
+          <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
+          <Route path="/booking/:id/payment" element={<ProtectedRoute><BookingPayment /></ProtectedRoute>} />
+          <Route path="/booking/:id/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
+          <Route path="/my-bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
+          <Route path="/practice-rooms" element={<ProtectedRoute><PracticeRooms /></ProtectedRoute>} />
+          <Route path="/practice-room/:id" element={<ProtectedRoute><PracticeRoomDetails /></ProtectedRoute>} />
+          <Route path="/practice-room/:id/payment" element={<ProtectedRoute><BookingPayment /></ProtectedRoute>} />
+          <Route path="/instructor/:id" element={<InstructorProfile />} />
+          <Route path="/instructor-dashboard" element={<ProtectedRoute><InstructorDashboard /></ProtectedRoute>} />
+          <Route path="/share-referral" element={<ProtectedRoute><ShareReferral /></ProtectedRoute>} />
           <Route path="/about" element={<About />} />
           <Route path="/support" element={<Support />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
