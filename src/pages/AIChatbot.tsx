@@ -214,6 +214,28 @@ const AIChatbot = () => {
                                       console.log(`✅ Image loaded for section "${section.heading}"`);
                                     }}
                                   />
+                                  {/* Attribution for Wikimedia Commons images */}
+                                  {(section.imageSource === 'wikimedia_commons' || section.attribution || section.wikimediaPageUrl) && (
+                                    <div className="mt-2 text-xs text-gray-500 flex items-center gap-1 flex-wrap">
+                                      <span>©</span>
+                                      {section.attribution ? (
+                                        <span>{section.attribution}</span>
+                                      ) : (
+                                        <span>Wikimedia Commons</span>
+                                      )}
+                                      {section.wikimediaPageUrl && (
+                                        <a 
+                                          href={section.wikimediaPageUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 hover:underline"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          View source
+                                        </a>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               )}
                               {!section.image && console.warn(`⚠️ Section "${section.heading}" missing image property`)}

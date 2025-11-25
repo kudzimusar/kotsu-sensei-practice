@@ -81,7 +81,12 @@ function extractCategoryFromQuery(query: string): string | null {
 }
 
 // Fetch a single image - tries Wikimedia Commons first, then Serper API as fallback
-async function fetchImage(query: string): Promise<string | null> {
+async function fetchImage(query: string): Promise<{
+  image: string | null;
+  attribution?: string;
+  imageSource?: string;
+  wikimediaPageUrl?: string;
+} | null> {
   const supabase = getSupabaseClient();
   const category = extractCategoryFromQuery(query);
   
@@ -93,7 +98,12 @@ async function fetchImage(query: string): Promise<string | null> {
       // Increment usage count
       await incrementImageUsage(supabase, wikimediaImage.id);
       console.log(`Using Wikimedia Commons image for: ${query}`);
-      return wikimediaImage.storage_url;
+      return {
+        image: wikimediaImage.storage_url,
+        attribution: wikimediaImage.attribution_text || undefined,
+        imageSource: 'wikimedia_commons',
+        wikimediaPageUrl: wikimediaImage.wikimedia_page_url || undefined
+      };
     }
   }
 
@@ -128,9 +138,13 @@ async function fetchImage(query: string): Promise<string | null> {
     
     if (imageUrl) {
       console.log(`Using Serper API image for: ${query}`);
+      return {
+        image: imageUrl,
+        imageSource: 'serper'
+      };
     }
     
-    return imageUrl;
+    return null;
   } catch (error) {
     console.error('Error fetching image from Serper:', error);
     return null;
@@ -181,13 +195,20 @@ async function fetchImagesForSections(sections: any[]): Promise<any[]> {
     if (section.imageQuery) {
       console.log(`Section ${index + 1}: Fetching image for query "${section.imageQuery}"`);
       try {
-        const imageUrl = await fetchImage(section.imageQuery);
-        if (imageUrl) {
-          console.log(`Section ${index + 1}: Found image: ${imageUrl.substring(0, 80)}...`);
+        const imageResult = await fetchImage(section.imageQuery);
+        if (imageResult && imageResult.image) {
+          console.log(`Section ${index + 1}: Found image: ${imageResult.image.substring(0, 80)}...`);
+          return { 
+            ...section, 
+            image: imageResult.image,
+            attribution: imageResult.attribution,
+            imageSource: imageResult.imageSource,
+            wikimediaPageUrl: imageResult.wikimediaPageUrl
+          };
         } else {
           console.log(`Section ${index + 1}: No image found for query "${section.imageQuery}"`);
         }
-        return { ...section, image: imageUrl || section.image || null };
+        return { ...section, image: section.image || null };
       } catch (error) {
         console.error(`Section ${index + 1}: Error fetching image:`, error);
         return { ...section, image: section.image || null };
@@ -534,6 +555,9 @@ Topics you can help with:
     console.log(`🔍 STEP 1: Fetching image FIRST for query: "${userQuery}"`);
     
     let guaranteedImageUrl: string | null = null;
+    let guaranteedImageAttribution: string | undefined = undefined;
+    let guaranteedImageSource: string | undefined = undefined;
+    let guaranteedImagePageUrl: string | undefined = undefined;
     const detectedCategory = extractCategoryFromQuery(userQuery);
     
     // Try multiple strategies to find an image
@@ -545,6 +569,9 @@ Topics you can help with:
         const wikimediaImage = await findWikimediaImage(supabase, detectedCategory, userQuery);
         if (wikimediaImage) {
           guaranteedImageUrl = wikimediaImage.storage_url;
+          guaranteedImageAttribution = wikimediaImage.attribution_text;
+          guaranteedImageSource = 'wikimedia_commons';
+          guaranteedImagePageUrl = wikimediaImage.wikimedia_page_url;
           await incrementImageUsage(supabase, wikimediaImage.id);
           console.log(`✅ Found image via full query: ${guaranteedImageUrl.substring(0, 80)}...`);
         }
@@ -562,6 +589,9 @@ Topics you can help with:
           const wikimediaImage = await findWikimediaImage(supabase, detectedCategory, term);
           if (wikimediaImage) {
             guaranteedImageUrl = wikimediaImage.storage_url;
+            guaranteedImageAttribution = wikimediaImage.attribution_text;
+            guaranteedImageSource = 'wikimedia_commons';
+            guaranteedImagePageUrl = wikimediaImage.wikimedia_page_url;
             await incrementImageUsage(supabase, wikimediaImage.id);
             console.log(`✅ Found image via term "${term}": ${guaranteedImageUrl.substring(0, 80)}...`);
             break;
@@ -575,6 +605,9 @@ Topics you can help with:
         const categoryImage = await findWikimediaImage(supabase, detectedCategory, null);
         if (categoryImage) {
           guaranteedImageUrl = categoryImage.storage_url;
+          guaranteedImageAttribution = categoryImage.attribution_text;
+          guaranteedImageSource = 'wikimedia_commons';
+          guaranteedImagePageUrl = categoryImage.wikimedia_page_url;
           await incrementImageUsage(supabase, categoryImage.id);
           console.log(`✅ Found image via category: ${guaranteedImageUrl.substring(0, 80)}...`);
         }
@@ -586,6 +619,9 @@ Topics you can help with:
         const fallbackImage = await findWikimediaImage(supabase, 'regulatory', null);
         if (fallbackImage) {
           guaranteedImageUrl = fallbackImage.storage_url;
+          guaranteedImageAttribution = fallbackImage.attribution_text;
+          guaranteedImageSource = 'wikimedia_commons';
+          guaranteedImagePageUrl = fallbackImage.wikimedia_page_url;
           await incrementImageUsage(supabase, fallbackImage.id);
           console.log(`✅ Found image via regulatory fallback: ${guaranteedImageUrl.substring(0, 80)}...`);
         }
@@ -594,8 +630,12 @@ Topics you can help with:
       // Strategy 5: Serper API fallback (if Wikimedia failed)
       if (!guaranteedImageUrl) {
         console.log(`  Trying Serper API fallback`);
-        guaranteedImageUrl = await fetchImage(userQuery || 'japan road sign');
-        if (guaranteedImageUrl) {
+        const imageResult = await fetchImage(userQuery || 'japan road sign');
+        if (imageResult && imageResult.image) {
+          guaranteedImageUrl = imageResult.image;
+          guaranteedImageAttribution = imageResult.attribution;
+          guaranteedImageSource = imageResult.imageSource;
+          guaranteedImagePageUrl = imageResult.wikimediaPageUrl;
           console.log(`✅ Found image via Serper API: ${guaranteedImageUrl.substring(0, 80)}...`);
         }
       }
@@ -644,10 +684,13 @@ Topics you can help with:
     console.log(`🔍 STEP 4: Fetching additional images for sections with imageQuery...`);
     sections = await fetchImagesForSections(sections);
     
-    // Ensure every section still has an image (use guaranteed image if missing)
+    // Ensure every section still has an image (use guaranteed image if missing) and attribution
     sections = sections.map((section: any) => ({
       ...section,
-      image: section.image || guaranteedImageUrl || null
+      image: section.image || guaranteedImageUrl || null,
+      attribution: section.attribution || guaranteedImageAttribution,
+      imageSource: section.imageSource || guaranteedImageSource,
+      wikimediaPageUrl: section.wikimediaPageUrl || guaranteedImagePageUrl
     }));
     
     const imagesCount = sections.filter((s: any) => s.image).length;

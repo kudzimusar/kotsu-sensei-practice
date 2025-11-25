@@ -435,6 +435,15 @@ async function processImage(image: WikimediaImage): Promise<boolean> {
       return false;
     }
 
+    // Build attribution text
+    let attributionText = 'Image from Wikimedia Commons';
+    if (artist) {
+      attributionText = `Image by ${artist} via Wikimedia Commons`;
+    }
+    if (license && license !== 'Unknown') {
+      attributionText += ` - License: ${license}`;
+    }
+
     // Store in database
     const { error: dbError } = await supabase
       .from('road_sign_images')
@@ -454,6 +463,9 @@ async function processImage(image: WikimediaImage): Promise<boolean> {
         image_source: 'wikimedia_commons',
         wikimedia_file_name: title,
         wikimedia_page_url: pageUrl,
+        license_info: license,
+        attribution_text: attributionText,
+        artist_name: artist || null,
         usage_count: 0,
       });
 

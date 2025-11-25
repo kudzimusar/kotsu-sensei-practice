@@ -16,7 +16,14 @@ export async function findWikimediaImage(
   supabase: ReturnType<typeof createClient>,
   category?: string | null,
   query?: string | null
-): Promise<{ storage_url: string; id: string } | null> {
+): Promise<{ 
+  storage_url: string; 
+  id: string;
+  attribution_text?: string;
+  license_info?: string;
+  wikimedia_page_url?: string;
+  artist_name?: string;
+} | null> {
   try {
     // Extract key terms from query for better matching
     const searchQuery = query ? query.toLowerCase().trim() : '';
@@ -35,7 +42,7 @@ export async function findWikimediaImage(
         for (const term of queryTerms) {
           const { data: exactMatch, error: exactError } = await supabase
             .from('road_sign_images')
-            .select('storage_url, id')
+            .select('storage_url, id, attribution_text, license_info, wikimedia_page_url, artist_name')
             .eq('image_source', 'wikimedia_commons')
             .eq('is_verified', true)
             .eq('sign_category', category)
@@ -55,7 +62,7 @@ export async function findWikimediaImage(
       for (const term of queryTerms) {
         const { data: nameMatch, error: nameError } = await supabase
           .from('road_sign_images')
-          .select('storage_url, id')
+          .select('storage_url, id, attribution_text, license_info, wikimedia_page_url, artist_name')
           .eq('image_source', 'wikimedia_commons')
           .eq('is_verified', true)
           .or(`sign_name_en.ilike.%${term}%,sign_name_jp.ilike.%${term}%`)
@@ -74,7 +81,7 @@ export async function findWikimediaImage(
         for (const term of queryTerms) {
           const { data: tagMatch, error: tagError } = await supabase
             .from('road_sign_images')
-            .select('storage_url, id')
+            .select('storage_url, id, attribution_text, license_info, wikimedia_page_url, artist_name')
             .eq('image_source', 'wikimedia_commons')
             .eq('is_verified', true)
             .eq('sign_category', category)
@@ -94,7 +101,7 @@ export async function findWikimediaImage(
       for (const term of queryTerms) {
         const { data: tagMatch, error: tagError } = await supabase
           .from('road_sign_images')
-          .select('storage_url, id')
+          .select('storage_url, id, attribution_text, license_info, wikimedia_page_url, artist_name')
           .eq('image_source', 'wikimedia_commons')
           .eq('is_verified', true)
           .contains('tags', [term])
@@ -112,7 +119,7 @@ export async function findWikimediaImage(
       if (searchQuery.length >= 3) {
         const { data: fullQueryMatch, error: fullQueryError } = await supabase
           .from('road_sign_images')
-          .select('storage_url, id')
+          .select('storage_url, id, attribution_text, license_info, wikimedia_page_url, artist_name')
           .eq('image_source', 'wikimedia_commons')
           .eq('is_verified', true)
           .or(`sign_name_en.ilike.%${searchQuery}%,sign_name_jp.ilike.%${searchQuery}%`)
@@ -131,7 +138,7 @@ export async function findWikimediaImage(
     if (category) {
       const { data: broadMatch, error: broadError } = await supabase
         .from('road_sign_images')
-        .select('storage_url, id')
+        .select('storage_url, id, attribution_text, license_info, wikimedia_page_url, artist_name')
         .eq('image_source', 'wikimedia_commons')
         .eq('is_verified', true)
         .eq('sign_category', category)
