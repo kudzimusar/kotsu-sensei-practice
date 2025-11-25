@@ -170,14 +170,35 @@ serve(async (req) => {
       const signCategory = mapFlashcardCategoryToDbCategory(category) || category;
       
       // Try to find Wikimedia Commons images first, then other verified images
-      const { data: signImages, error: signError } = await supabase
+      // Query wikimedia_commons images first
+      const { data: wikimediaImages, error: wikiError } = await supabase
         .from('road_sign_images')
         .select('*')
         .eq('sign_category', signCategory)
         .eq('is_verified', true)
-        .order('image_source', { ascending: false }) // Prioritize wikimedia_commons
+        .eq('image_source', 'wikimedia_commons')
         .order('usage_count', { ascending: false })
         .limit(count);
+      
+      let signImages = wikimediaImages || [];
+      
+      // If we need more images, get other verified images
+      if (signImages.length < count) {
+        const { data: otherImages, error: otherError } = await supabase
+          .from('road_sign_images')
+          .select('*')
+          .eq('sign_category', signCategory)
+          .eq('is_verified', true)
+          .neq('image_source', 'wikimedia_commons')
+          .order('usage_count', { ascending: false })
+          .limit(count - signImages.length);
+        
+        if (!otherError && otherImages) {
+          signImages = [...signImages, ...otherImages];
+        }
+      }
+      
+      const signError = wikiError;
       
       if (!signError && signImages && signImages.length > 0) {
         recycledImages = signImages;

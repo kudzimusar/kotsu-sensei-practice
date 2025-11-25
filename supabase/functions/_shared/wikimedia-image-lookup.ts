@@ -40,8 +40,11 @@ export async function findWikimediaImage(
     if (query) {
       const searchQuery = query.toLowerCase().trim();
       
-      // Try English name match
-      const { data: nameMatch, error: nameError } = await supabase
+      // Extract key terms from query (e.g., "stop sign" -> ["stop", "sign"])
+      const queryTerms = searchQuery.split(/\s+/).filter(term => term.length > 2);
+      
+      // Try exact match first
+      const { data: exactMatch, error: exactError } = await supabase
         .from('road_sign_images')
         .select('storage_url, id')
         .eq('image_source', 'wikimedia_commons')
@@ -49,34 +52,51 @@ export async function findWikimediaImage(
         .or(`sign_name_en.ilike.%${searchQuery}%,sign_name_jp.ilike.%${searchQuery}%`)
         .order('usage_count', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (!nameError && nameMatch) {
-        console.log(`Found Wikimedia image by name: ${query}`);
-        return nameMatch;
+      if (!exactError && exactMatch) {
+        console.log(`Found Wikimedia image by exact name match: ${query}`);
+        return exactMatch;
       }
 
-      // Strategy 3: Try tags match (array contains or ILIKE)
-      // Extract key terms from query (e.g., "stop sign" -> ["stop", "sign"])
-      const queryTerms = searchQuery.split(/\s+/).filter(term => term.length > 2);
-      
+      // Try partial match with individual terms
       if (queryTerms.length > 0) {
-        // Build a query that checks if any tag contains any of the query terms
-        const tagConditions = queryTerms.map(term => `tags.cs.{${term}}`).join(',');
+        const termConditions = queryTerms.map(term => 
+          `sign_name_en.ilike.%${term}%,sign_name_jp.ilike.%${term}%`
+        ).join(',');
         
-        const { data: tagMatch, error: tagError } = await supabase
+        const { data: partialMatch, error: partialError } = await supabase
           .from('road_sign_images')
           .select('storage_url, id')
           .eq('image_source', 'wikimedia_commons')
           .eq('is_verified', true)
-          .or(tagConditions)
+          .or(termConditions)
           .order('usage_count', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
-        if (!tagError && tagMatch) {
-          console.log(`Found Wikimedia image by tags: ${query}`);
-          return tagMatch;
+        if (!partialError && partialMatch) {
+          console.log(`Found Wikimedia image by partial name match: ${query}`);
+          return partialMatch;
+        }
+
+        // Strategy 3: Try tags match (array contains)
+        // Check if tags array contains any of the query terms
+        for (const term of queryTerms) {
+          const { data: tagMatch, error: tagError } = await supabase
+            .from('road_sign_images')
+            .select('storage_url, id')
+            .eq('image_source', 'wikimedia_commons')
+            .eq('is_verified', true)
+            .contains('tags', [term])
+            .order('usage_count', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (!tagError && tagMatch) {
+            console.log(`Found Wikimedia image by tag match: ${term}`);
+            return tagMatch;
+          }
         }
       }
     }

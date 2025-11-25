@@ -42,6 +42,17 @@ function getSupabaseClient() {
 function extractCategoryFromQuery(query: string): string | null {
   const lowerQuery = query.toLowerCase();
   
+  // Specific sign types that map to categories
+  if (lowerQuery.includes('stop sign') || lowerQuery.includes('stop') || lowerQuery.includes('一時停止')) {
+    return 'regulatory'; // Stop signs are regulatory
+  }
+  if (lowerQuery.includes('yield') || lowerQuery.includes('give way')) {
+    return 'regulatory';
+  }
+  if (lowerQuery.includes('speed limit') || lowerQuery.includes('no parking') || lowerQuery.includes('no entry')) {
+    return 'regulatory';
+  }
+  
   if (lowerQuery.includes('warning') || lowerQuery.includes('caution') || lowerQuery.includes('警戒')) {
     return 'warning';
   }
