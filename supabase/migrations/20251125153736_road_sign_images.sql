@@ -9,7 +9,7 @@ VALUES (
   'road-sign-images',
   true,
   NULL, -- No size limit
-  ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/jpg']
+  ARRAY['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml', 'image/gif', 'image/bmp', 'image/tiff', 'image/x-icon']
 )
 ON CONFLICT (id) DO UPDATE SET file_size_limit = NULL;
 

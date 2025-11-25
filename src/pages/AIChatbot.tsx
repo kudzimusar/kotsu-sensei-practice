@@ -352,7 +352,7 @@ const AIChatbot = () => {
             <div className="flex gap-2 items-center">
               <input
                 type="file"
-                accept="image/png,image/jpeg,image/jpg,image/webp"
+                accept="image/*"
                 multiple
                 onChange={(e) => {
                   const files = e.target.files;
@@ -368,9 +368,9 @@ const AIChatbot = () => {
                         toast.error(`${file.name} is too small. Minimum size is 2KB`);
                         return;
                       }
-                      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-                      if (!validTypes.includes(file.type)) {
-                        toast.error(`${file.name} is not a valid image type`);
+                      // Check if it's an image type
+                      if (!file.type.startsWith('image/')) {
+                        toast.error(`${file.name} is not a valid image file`);
                         return;
                       }
                       newImages.push({

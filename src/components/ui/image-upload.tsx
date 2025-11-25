@@ -30,10 +30,9 @@ export function ImageUpload({
   const [isDragging, setIsDragging] = useState(false);
 
   const validateFile = (file: File): string | null => {
-    // Check file type
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      return 'Invalid file type. Please upload PNG, JPEG, or WEBP images.';
+    // Check if it's an image type
+    if (!file.type.startsWith('image/')) {
+      return 'Invalid file type. Please upload an image file.';
     }
 
     // Check minimum file size (2KB)
@@ -182,10 +181,10 @@ export function ImageUpload({
           )}
           onClick={openFileDialog}
         >
-          <input
+            <input
             ref={fileInputRef}
             type="file"
-            accept="image/png,image/jpeg,image/jpg,image/webp"
+            accept="image/*"
             multiple
             onChange={handleFileInput}
             disabled={disabled}
@@ -206,7 +205,7 @@ export function ImageUpload({
               or drag and drop
             </div>
             <p className="text-xs text-muted-foreground">
-              PNG, JPEG, WEBP {maxSizeMB && maxSizeMB > 0 ? `up to ${maxSizeMB}MB` : '(any size, min 2KB)'}
+              All image types {maxSizeMB && maxSizeMB > 0 ? `up to ${maxSizeMB}MB` : '(any size, min 2KB)'}
             </p>
             {images.length > 0 && (
               <p className="text-xs text-muted-foreground">

@@ -115,18 +115,33 @@ serve(async (req) => {
 
     let imageContext = '';
     if (hasImages) {
-      const imageDescriptions = lastMessage.images.map((img: any, idx: number) => {
-        return `Image ${idx + 1}:
-- Sign Name (EN): ${img.sign_name_en || 'Unknown'}
-- Sign Name (JP): ${img.sign_name_jp || '不明'}
-- Category: ${img.sign_category || 'Unknown'}
-- Meaning: ${img.sign_meaning || 'Not analyzed'}
-- AI Explanation: ${img.ai_explanation || 'No explanation available'}
-- Confidence: ${img.ai_confidence ? (img.ai_confidence * 100).toFixed(0) + '%' : 'N/A'}
-- Storage URL: ${img.storage_url || 'N/A'}`;
-      }).join('\n\n');
-      
-      imageContext = `\n\nIMPORTANT: The user has uploaded ${lastMessage.images.length} road sign image(s). Here is the AI analysis:\n\n${imageDescriptions}\n\nWhen responding, reference these images and provide detailed explanations about the signs shown. If the user asks questions about the signs, use the AI analysis provided above.`;
+      try {
+        const imageDescriptions = lastMessage.images.map((img: any, idx: number) => {
+          // Safely access image properties
+          const signNameEn = img?.sign_name_en || img?.signNameEn || 'Unknown';
+          const signNameJp = img?.sign_name_jp || img?.signNameJp || '不明';
+          const category = img?.sign_category || img?.signCategory || 'Unknown';
+          const meaning = img?.sign_meaning || img?.signMeaning || 'Not analyzed';
+          const explanation = img?.ai_explanation || img?.aiExplanation || 'No explanation available';
+          const confidence = img?.ai_confidence || img?.aiConfidence || 0;
+          const storageUrl = img?.storage_url || img?.storageUrl || 'N/A';
+          
+          return `Image ${idx + 1}:
+- Sign Name (EN): ${signNameEn}
+- Sign Name (JP): ${signNameJp}
+- Category: ${category}
+- Meaning: ${meaning}
+- AI Explanation: ${explanation}
+- Confidence: ${confidence ? (Number(confidence) * 100).toFixed(0) + '%' : 'N/A'}
+- Storage URL: ${storageUrl}`;
+        }).join('\n\n');
+        
+        imageContext = `\n\nIMPORTANT: The user has uploaded ${lastMessage.images.length} road sign image(s). Here is the AI analysis:\n\n${imageDescriptions}\n\nWhen responding, reference these images and provide detailed explanations about the signs shown. If the user asks questions about the signs, use the AI analysis provided above.`;
+      } catch (error) {
+        console.error('Error processing image context:', error);
+        // Continue without image context if there's an error
+        imageContext = '';
+      }
     }
 
     const systemPrompt = `You are a friendly and knowledgeable Japanese driving instructor assistant named "Kōtsū Sensei" (交通先生). Your role is to help students understand Japanese traffic laws, road signs, driving techniques, and test preparation.
