@@ -8,10 +8,10 @@ VALUES (
   'road-sign-images',
   'road-sign-images',
   true,
-  5242880, -- 5MB
+  NULL, -- No size limit
   ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/jpg']
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET file_size_limit = NULL;
 
 -- RLS policies for storage bucket
 DROP POLICY IF EXISTS "Public can view road sign images" ON storage.objects;

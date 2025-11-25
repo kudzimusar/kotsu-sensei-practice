@@ -36,10 +36,18 @@ export function ImageUpload({
       return 'Invalid file type. Please upload PNG, JPEG, or WEBP images.';
     }
 
-    // Check file size
-    const maxSizeBytes = maxSizeMB * 1024 * 1024;
-    if (file.size > maxSizeBytes) {
-      return `File size exceeds ${maxSizeMB}MB limit.`;
+    // Check minimum file size (2KB)
+    const minSizeBytes = 2 * 1024;
+    if (file.size < minSizeBytes) {
+      return 'File size is too small. Minimum size is 2KB.';
+    }
+
+    // Check maximum file size if specified
+    if (maxSizeMB && maxSizeMB > 0) {
+      const maxSizeBytes = maxSizeMB * 1024 * 1024;
+      if (file.size > maxSizeBytes) {
+        return `File size exceeds ${maxSizeMB}MB limit.`;
+      }
     }
 
     return null;
@@ -198,7 +206,7 @@ export function ImageUpload({
               or drag and drop
             </div>
             <p className="text-xs text-muted-foreground">
-              PNG, JPEG, WEBP up to {maxSizeMB}MB
+              PNG, JPEG, WEBP {maxSizeMB && maxSizeMB > 0 ? `up to ${maxSizeMB}MB` : '(any size, min 2KB)'}
             </p>
             {images.length > 0 && (
               <p className="text-xs text-muted-foreground">

@@ -363,8 +363,9 @@ const AIChatbot = () => {
                         toast.error('Maximum 5 images allowed');
                         return;
                       }
-                      if (file.size > 5 * 1024 * 1024) {
-                        toast.error(`${file.name} exceeds 5MB limit`);
+                      // Minimum size check (2KB)
+                      if (file.size < 2 * 1024) {
+                        toast.error(`${file.name} is too small. Minimum size is 2KB`);
                         return;
                       }
                       const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
