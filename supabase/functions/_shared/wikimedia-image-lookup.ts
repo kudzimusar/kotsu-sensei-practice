@@ -20,7 +20,13 @@ export async function findWikimediaImage(
   try {
     // Extract key terms from query for better matching
     const searchQuery = query ? query.toLowerCase().trim() : '';
-    const queryTerms = searchQuery ? searchQuery.split(/\s+/).filter(term => term.length >= 3) : [];
+    // Filter out common words and keep meaningful terms (length >= 2, but prioritize longer terms)
+    const queryTerms = searchQuery ? searchQuery.split(/\s+/)
+      .filter(term => term.length >= 2 && !['the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being'].includes(term))
+      .sort((a, b) => b.length - a.length) // Prioritize longer terms first
+      : [];
+    
+    console.log(`Looking up image for query: "${query}", category: "${category}", terms: [${queryTerms.join(', ')}]`);
     
     // If we have a query, prioritize name/tag matching over category-only matching
     if (query && queryTerms.length > 0) {

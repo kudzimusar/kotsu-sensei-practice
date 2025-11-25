@@ -134,15 +134,32 @@ async function fetchImage(query: string): Promise<string | null> {
 
 // Fetch images for multiple sections
 async function fetchImagesForSections(sections: any[]): Promise<any[]> {
-  const promises = sections.map(async (section) => {
+  console.log(`Fetching images for ${sections.length} sections...`);
+  const promises = sections.map(async (section, index) => {
     if (section.imageQuery) {
-      const imageUrl = await fetchImage(section.imageQuery);
-      return { ...section, image: imageUrl };
+      console.log(`Section ${index + 1}: Fetching image for query "${section.imageQuery}"`);
+      try {
+        const imageUrl = await fetchImage(section.imageQuery);
+        if (imageUrl) {
+          console.log(`Section ${index + 1}: Found image: ${imageUrl.substring(0, 80)}...`);
+        } else {
+          console.log(`Section ${index + 1}: No image found for query "${section.imageQuery}"`);
+        }
+        return { ...section, image: imageUrl || null };
+      } catch (error) {
+        console.error(`Section ${index + 1}: Error fetching image:`, error);
+        return { ...section, image: null };
+      }
+    } else {
+      console.log(`Section ${index + 1}: No imageQuery provided`);
     }
     return section;
   });
   
-  return await Promise.all(promises);
+  const results = await Promise.all(promises);
+  const imagesFound = results.filter(s => s.image).length;
+  console.log(`Image fetch complete: ${imagesFound}/${sections.length} sections have images`);
+  return results;
 }
 
 serve(async (req) => {
@@ -497,10 +514,18 @@ Topics you can help with:
     // If structured response with sections, fetch images for each section
     if (parsedResponse && parsedResponse.sections && Array.isArray(parsedResponse.sections)) {
       console.log(`Processing ${parsedResponse.sections.length} sections with images...`);
+      console.log('Sections structure:', JSON.stringify(parsedResponse.sections.map((s: any) => ({ 
+        heading: s.heading, 
+        hasImageQuery: !!s.imageQuery,
+        imageQuery: s.imageQuery 
+      })), null, 2));
+      
       const sectionsWithImages = await fetchImagesForSections(parsedResponse.sections);
       
       // Include uploaded images in response if available
       const responseImages = hasImages ? lastMessage.images : undefined;
+      
+      console.log(`Returning ${sectionsWithImages.length} sections, ${sectionsWithImages.filter((s: any) => s.image).length} with images`);
       
       return new Response(
         JSON.stringify({ 
@@ -511,6 +536,8 @@ Topics you can help with:
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
+    } else {
+      console.log('Response is not structured JSON with sections, returning plain text');
     }
 
     // Plain text response (backward compatibility)
