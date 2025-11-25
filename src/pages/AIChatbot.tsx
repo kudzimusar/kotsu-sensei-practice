@@ -10,8 +10,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { TTSButton } from '@/components/ui/tts-button';
 import { ImageFile } from '@/components/ui/image-upload';
-import { toast } from 'sonner';
-import { X } from 'lucide-react';
+import { ImageUploadMenu } from '@/components/ui/image-upload-menu';
 
 const SUGGESTED_QUESTIONS = [
   "What are the speed limits in different areas in Japan?",
@@ -121,8 +120,8 @@ const AIChatbot = () => {
 
         {/* Messages */}
         {messages.length > 0 && (
-          <ScrollArea className="h-[calc(100vh-280px)] mb-4" ref={scrollRef}>
-            <div className="space-y-4">
+          <div className="h-[calc(100vh-280px)] mb-4 overflow-y-auto" ref={scrollRef}>
+            <div className="space-y-4 p-4">
               {messages.map((message, index) => (
                 <div
                   key={index}
@@ -315,7 +314,7 @@ const AIChatbot = () => {
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
         )}
 
         {/* Input Area */}
