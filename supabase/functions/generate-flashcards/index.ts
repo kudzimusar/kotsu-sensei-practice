@@ -228,6 +228,10 @@ Make sure:
               { text: `${systemPrompt}\n\nUser: Generate ${requestedCount} flashcards with these image queries: ${selectedQueries.join(', ')}. Return only valid JSON.` }
             ]
           }],
+          generationConfig: {
+            temperature: 0.7,
+            responseMimeType: "application/json"
+          }
         }),
       });
     } else {
@@ -237,26 +241,26 @@ Make sure:
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), 
+          JSON.stringify({ error: "Google AI rate limit exceeded. Free tier allows 15 requests/minute. Please try again shortly." }), 
           {
             status: 429,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
         );
       }
-      if (response.status === 402) {
+      if (response.status === 403) {
         return new Response(
-          JSON.stringify({ error: "AI service quota exceeded. Please contact support." }), 
+          JSON.stringify({ error: "Invalid API key or quota exceeded. Please check your Google AI Studio configuration." }), 
           {
-            status: 402,
+            status: 403,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
         );
       }
       
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
+      console.error("Google AI Studio error:", response.status, errorText);
+      throw new Error(`Google AI Studio error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -355,5 +359,3 @@ Make sure:
     );
   }
 });
-
-
