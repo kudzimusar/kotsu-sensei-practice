@@ -107,6 +107,24 @@ export async function findWikimediaImage(
           return tagMatch;
         }
       }
+
+      // Strategy 5: Try full query string match (fallback)
+      if (searchQuery.length >= 3) {
+        const { data: fullQueryMatch, error: fullQueryError } = await supabase
+          .from('road_sign_images')
+          .select('storage_url, id')
+          .eq('image_source', 'wikimedia_commons')
+          .eq('is_verified', true)
+          .or(`sign_name_en.ilike.%${searchQuery}%,sign_name_jp.ilike.%${searchQuery}%`)
+          .order('usage_count', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!fullQueryError && fullQueryMatch) {
+          console.log(`Found Wikimedia image by full query match: ${searchQuery}`);
+          return fullQueryMatch;
+        }
+      }
     }
 
     // Strategy 4: If category provided but no exact match, try broader search
