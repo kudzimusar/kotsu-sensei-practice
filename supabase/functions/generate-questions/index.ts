@@ -38,13 +38,40 @@ serve(async (req) => {
       userId = user?.id || null;
     }
 
-    const { category, difficulty, count, language, concept } = await req.json();
+    const { category, difficulty, count, language, concept, road_sign_image_id } = await req.json();
 
     const startTime = Date.now();
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
+    // Fetch road sign image if provided
+    let roadSignImage = null;
+    if (road_sign_image_id) {
+      const { data: signData, error: signError } = await supabase
+        .from('road_sign_images')
+        .select('*')
+        .eq('id', road_sign_image_id)
+        .single();
+      
+      if (!signError && signData) {
+        roadSignImage = signData;
+      }
+    }
+
     // Build the prompt
+    let imageContext = '';
+    if (roadSignImage) {
+      imageContext = `\n\nIMPORTANT: Generate questions based on this specific road sign image:
+- Sign Name (EN): ${roadSignImage.sign_name_en || 'Unknown'}
+- Sign Name (JP): ${roadSignImage.sign_name_jp || '不明'}
+- Category: ${roadSignImage.sign_category || 'Unknown'}
+- Meaning: ${roadSignImage.sign_meaning || 'Not analyzed'}
+- AI Explanation: ${roadSignImage.ai_explanation || 'No explanation available'}
+- Image URL: ${roadSignImage.storage_url || 'N/A'}
+
+Generate questions specifically about this sign. Include the image URL in the question data.`;
+    }
+
     const systemPrompt = `You are an expert Japanese driving test question writer. Generate realistic, accurate practice questions based on official Japanese traffic rules.
 
 REQUIREMENTS:
@@ -54,7 +81,7 @@ REQUIREMENTS:
 - Questions should test understanding, not just memorization
 - Difficulty: ${difficulty || 'medium'}
 - Category: ${category || 'general'}
-- Language: ${language || 'en'}
+- Language: ${language || 'en'}${imageContext}
 
 Generate ${count || 5} new, unique questions that test different aspects of the concept: "${concept || 'driving rules'}"`;
 
@@ -88,13 +115,14 @@ EXAMPLE QUESTIONS:
       "explanation": "Explanation here",
       "source_concept": "Specific rule or concept",
       "difficulty_level": "medium",
-      "needs_image": false,
-      "image_description": "Description of traffic sign or situation if needs_image is true"
+      "needs_image": ${roadSignImage ? 'true' : 'false'},
+      "image_description": "${roadSignImage ? `Road sign: ${roadSignImage.sign_name_en || 'Unknown sign'}` : 'Description of traffic sign or situation if needs_image is true'}",
+      "image_url": "${roadSignImage ? roadSignImage.storage_url : ''}"
     }
   ]
 }
 
-Set needs_image to true for questions about road signs, traffic signals, or visual scenarios. Provide a clear image_description.
+${roadSignImage ? `IMPORTANT: All questions must reference the provided road sign image. Set needs_image to true and include the image_url: ${roadSignImage.storage_url}` : 'Set needs_image to true for questions about road signs, traffic signals, or visual scenarios. Provide a clear image_description.'}
 Make sure to return valid JSON only, no additional text.`
             }]
           }],
@@ -130,12 +158,18 @@ Make sure to return valid JSON only, no additional text.`
     const parsedResponse = JSON.parse(jsonMatch[0]);
     const questions = parsedResponse.questions || [];
 
-    // Generate images for questions that need them
+    // Generate images for questions that need them (or use provided road sign image)
     const questionsWithImages = await Promise.all(
       questions.map(async (q: any) => {
         let figureUrl = null;
 
-        if (q.needs_image && q.image_description && LOVABLE_API_KEY) {
+        // Use road sign image if provided
+        if (roadSignImage && q.needs_image) {
+          figureUrl = roadSignImage.storage_url;
+        } else if (q.needs_image && q.image_url) {
+          // Use image_url from AI response if available
+          figureUrl = q.image_url;
+        } else if (q.needs_image && q.image_description && LOVABLE_API_KEY) {
           try {
             const imagePrompt = `Generate a clear, simple illustration of: ${q.image_description}. Style: Clean vector graphic suitable for a driving test, high contrast, educational.`;
             
@@ -187,6 +221,25 @@ Make sure to return valid JSON only, no additional text.`
       figure_description: q.image_description,
       status: 'approved' // Auto-approve for immediate use
     }));
+
+    // Also save to road_sign_questions table if road_sign_image_id is provided
+    if (roadSignImage && questionsWithImages.length > 0) {
+      const roadSignQuestions = questionsWithImages.map((q: any) => ({
+        road_sign_image_id: road_sign_image_id,
+        question_text: q.question,
+        answer: q.answer,
+        explanation: q.explanation,
+        difficulty: q.difficulty_level || difficulty || 'medium',
+      }));
+
+      const { error: roadSignError } = await supabase
+        .from('road_sign_questions')
+        .insert(roadSignQuestions);
+
+      if (roadSignError) {
+        console.error('Error inserting road sign questions:', roadSignError);
+      }
+    }
 
     const { data: insertedQuestions, error: insertError } = await supabase
       .from('ai_generated_questions')

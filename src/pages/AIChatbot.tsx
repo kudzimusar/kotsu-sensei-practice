@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Send, Trash2, Sparkles } from 'lucide-react';
+import { MessageSquare, Send, Trash2, Sparkles, Image as ImageIcon } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { TTSButton } from '@/components/ui/tts-button';
+import { ImageUpload, ImageFile } from '@/components/ui/image-upload';
 
 const SUGGESTED_QUESTIONS = [
   "What are the speed limits in different areas in Japan?",
@@ -20,6 +21,7 @@ const SUGGESTED_QUESTIONS = [
 
 const AIChatbot = () => {
   const [input, setInput] = useState('');
+  const [images, setImages] = useState<ImageFile[]>([]);
   const { messages, isLoading, sendMessage, clearChat } = useAIChat();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,11 +34,13 @@ const AIChatbot = () => {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && images.length === 0) || isLoading) return;
     
     const messageToSend = input;
+    const imagesToSend = [...images];
     setInput('');
-    await sendMessage(messageToSend);
+    setImages([]);
+    await sendMessage(messageToSend, imagesToSend.length > 0 ? imagesToSend : undefined);
     inputRef.current?.focus();
   };
 
@@ -135,15 +139,41 @@ const AIChatbot = () => {
                         : 'prose-slate'
                     }`}>
                       {message.role === 'user' ? (
-                        <div className="flex items-start gap-2">
-                          <p className="whitespace-pre-wrap break-words m-0 flex-1">{message.content}</p>
+                        <div className="space-y-2">
+                          {message.images && message.images.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {message.images.map((img, idx) => (
+                                <div key={img.id || idx} className="relative group">
+                                  <img
+                                    src={img.storage_url}
+                                    alt={img.sign_name_en || 'Road sign'}
+                                    className="w-24 h-24 object-cover rounded-lg border-2 border-white/20 cursor-pointer hover:opacity-90 transition"
+                                    onClick={() => window.open(img.storage_url, '_blank')}
+                                  />
+                                  {img.sign_name_en && (
+                                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] px-1 py-0.5 rounded-b-lg truncate">
+                                      {img.sign_name_en}
+                                    </div>
+                                  )}
+                                  {img.ai_confidence && (
+                                    <div className="absolute top-1 right-1 bg-blue-600 text-white text-[9px] px-1 py-0.5 rounded">
+                                      {(img.ai_confidence * 100).toFixed(0)}%
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           {message.content && (
-                            <TTSButton 
-                              text={message.content}
-                              size="sm" 
-                              variant="ghost"
-                              className="text-white hover:bg-blue-700"
-                            />
+                            <div className="flex items-start gap-2">
+                              <p className="whitespace-pre-wrap break-words m-0 flex-1">{message.content}</p>
+                              <TTSButton 
+                                text={message.content}
+                                size="sm" 
+                                variant="ghost"
+                                className="text-white hover:bg-blue-700"
+                              />
+                            </div>
                           )}
                         </div>
                       ) : message.sections ? (
@@ -287,24 +317,67 @@ const AIChatbot = () => {
         )}
 
         {/* Input Area */}
-        <div className="fixed bottom-20 left-0 right-0 bg-white border-t p-4">
-          <div className="max-w-4xl mx-auto flex gap-2">
-            <Input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask about Japanese driving rules..."
-              disabled={isLoading}
-              className="flex-1"
-            />
-            <Button
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-              size="icon"
-            >
-              <Send className="w-5 h-5" />
-            </Button>
+        <div className="fixed bottom-20 left-0 right-0 bg-white border-t">
+          <div className="max-w-4xl mx-auto p-4 space-y-2">
+            {/* Image Upload */}
+            {images.length > 0 && (
+              <div className="pb-2">
+                <ImageUpload
+                  images={images}
+                  onImagesChange={setImages}
+                  maxImages={5}
+                  maxSizeMB={5}
+                  disabled={isLoading}
+                />
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  if (images.length === 0) {
+                    // Trigger image upload by showing upload area
+                    setImages([]);
+                  }
+                }}
+                disabled={isLoading || images.length >= 5}
+                title="Upload road sign image"
+              >
+                <ImageIcon className="w-5 h-5" />
+              </Button>
+              <Input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder={images.length > 0 ? "Ask about this sign..." : "Ask about Japanese driving rules..."}
+                disabled={isLoading}
+                className="flex-1"
+              />
+              <Button
+                onClick={handleSend}
+                disabled={(!input.trim() && images.length === 0) || isLoading}
+                size="icon"
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </div>
+            
+            {/* Show image upload area when image button is clicked and no images yet */}
+            {images.length === 0 && (
+              <div className="pt-2">
+                <ImageUpload
+                  images={images}
+                  onImagesChange={setImages}
+                  maxImages={5}
+                  maxSizeMB={5}
+                  disabled={isLoading}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

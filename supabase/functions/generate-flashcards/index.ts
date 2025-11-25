@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.77.0";
 import { corsHeaders } from "../_shared/cors.ts";
 
 // Fetch a single image for a specific query using Serper API
@@ -128,6 +129,46 @@ serve(async (req) => {
 
   try {
     const { category, count = 10 } = await req.json();
+    
+    // Create Supabase client for database queries
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    let recycledImages: any[] = [];
+    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      });
+      
+      // Map category to sign_category
+      const categoryMap: { [key: string]: string } = {
+        'regulatory-signs': 'regulatory',
+        'warning-signs': 'warning',
+        'indication-signs': 'indication',
+        'guidance-signs': 'guidance',
+        'auxiliary-signs': 'auxiliary',
+        'road-markings': 'road-markings',
+      };
+      
+      const signCategory = categoryMap[category] || category;
+      
+      // Try to find recycled images from database
+      const { data: signImages, error: signError } = await supabase
+        .from('road_sign_images')
+        .select('*')
+        .eq('sign_category', signCategory)
+        .eq('is_verified', true)
+        .order('usage_count', { ascending: false })
+        .limit(count);
+      
+      if (!signError && signImages && signImages.length > 0) {
+        recycledImages = signImages;
+        console.log(`Found ${recycledImages.length} recycled images for category ${category}`);
+      }
+    }
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const GOOGLE_AI_STUDIO_API_KEY = Deno.env.get("GOOGLE_AI_STUDIO_API_KEY");
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
@@ -149,14 +190,25 @@ serve(async (req) => {
       throw new Error(`Invalid category: ${category}`);
     }
 
-    // Select random queries from the category
-    const availableQueries = [...categoryInfo.queries];
-    const selectedQueries = [];
-    const requestedCount = Math.min(count, availableQueries.length);
+    // If we have recycled images, use them; otherwise use queries
+    let selectedQueries: string[] = [];
+    let requestedCount = count;
     
-    for (let i = 0; i < requestedCount; i++) {
-      const randomIndex = Math.floor(Math.random() * availableQueries.length);
-      selectedQueries.push(availableQueries.splice(randomIndex, 1)[0]);
+    if (recycledImages.length > 0) {
+      // Use recycled images - create queries from sign names
+      selectedQueries = recycledImages.slice(0, Math.min(count, recycledImages.length)).map((img: any) => {
+        return `${img.sign_name_en || 'road sign'} japan`;
+      });
+      requestedCount = selectedQueries.length;
+    } else {
+      // Select random queries from the category
+      const availableQueries = [...categoryInfo.queries];
+      requestedCount = Math.min(count, availableQueries.length);
+      
+      for (let i = 0; i < requestedCount; i++) {
+        const randomIndex = Math.floor(Math.random() * availableQueries.length);
+        selectedQueries.push(availableQueries.splice(randomIndex, 1)[0]);
+      }
     }
 
     // Generate flashcards using AI
@@ -324,10 +376,21 @@ Make sure:
     });
     }
 
-    // Fetch images for each flashcard
-    console.log(`Fetching images for ${flashcards.length} flashcards...`);
+    // Fetch images for each flashcard (use recycled images if available)
+    console.log(`Processing ${flashcards.length} flashcards...`);
     const flashcardsWithImages = await Promise.all(
-      flashcards.map(async (flashcard) => {
+      flashcards.map(async (flashcard, index) => {
+        // Use recycled image if available
+        if (recycledImages[index]) {
+          const recycledImg = recycledImages[index];
+          return {
+            ...flashcard,
+            imageUrl: recycledImg.storage_url,
+            roadSignImageId: recycledImg.id,
+          };
+        }
+        
+        // Otherwise fetch from image search
         const imageUrl = await fetchImage(flashcard.imageQuery);
         return {
           ...flashcard,
@@ -335,6 +398,36 @@ Make sure:
         };
       })
     );
+    
+    // Save flashcards to database if we used recycled images
+    if (recycledImages.length > 0 && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      });
+      
+      const flashcardsToInsert = flashcardsWithImages
+        .filter((fc: any) => fc.roadSignImageId)
+        .map((fc: any) => ({
+          road_sign_image_id: fc.roadSignImageId,
+          question: fc.question,
+          answer: fc.answer,
+          explanation: fc.explanation,
+          category: category,
+        }));
+      
+      if (flashcardsToInsert.length > 0) {
+        const { error: insertError } = await supabase
+          .from('road_sign_flashcards')
+          .insert(flashcardsToInsert);
+        
+        if (insertError) {
+          console.error('Error saving flashcards to database:', insertError);
+        }
+      }
+    }
 
     console.log(`Generated ${flashcardsWithImages.length} flashcards with ${flashcardsWithImages.filter(f => f.imageUrl).length} images`);
 

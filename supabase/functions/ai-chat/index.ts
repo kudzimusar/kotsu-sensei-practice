@@ -109,12 +109,32 @@ serve(async (req) => {
       throw new Error("Neither LOVABLE_API_KEY nor GOOGLE_AI_STUDIO_API_KEY/GEMINI_API_KEY is configured");
     }
 
+    // Check if the last message has images
+    const lastMessage = messages[messages.length - 1];
+    const hasImages = lastMessage?.images && Array.isArray(lastMessage.images) && lastMessage.images.length > 0;
+
+    let imageContext = '';
+    if (hasImages) {
+      const imageDescriptions = lastMessage.images.map((img: any, idx: number) => {
+        return `Image ${idx + 1}:
+- Sign Name (EN): ${img.sign_name_en || 'Unknown'}
+- Sign Name (JP): ${img.sign_name_jp || '不明'}
+- Category: ${img.sign_category || 'Unknown'}
+- Meaning: ${img.sign_meaning || 'Not analyzed'}
+- AI Explanation: ${img.ai_explanation || 'No explanation available'}
+- Confidence: ${img.ai_confidence ? (img.ai_confidence * 100).toFixed(0) + '%' : 'N/A'}
+- Storage URL: ${img.storage_url || 'N/A'}`;
+      }).join('\n\n');
+      
+      imageContext = `\n\nIMPORTANT: The user has uploaded ${lastMessage.images.length} road sign image(s). Here is the AI analysis:\n\n${imageDescriptions}\n\nWhen responding, reference these images and provide detailed explanations about the signs shown. If the user asks questions about the signs, use the AI analysis provided above.`;
+    }
+
     const systemPrompt = `You are a friendly and knowledgeable Japanese driving instructor assistant named "Kōtsū Sensei" (交通先生). Your role is to help students understand Japanese traffic laws, road signs, driving techniques, and test preparation.
 
 CRITICAL RESPONSE FORMAT:
-When users ask about visual topics (signs, markings, signals), you MUST respond with a JSON structure containing sections. Each section should have:
+When users ask about visual topics (signs, markings, signals) OR when they upload images, you MUST respond with a JSON structure containing sections. Each section should have:
 - heading: A clear H3-level heading for the topic
-- imageQuery: A specific search term for fetching a relevant image (e.g., "stop sign japan", "speed limit 50 sign japan")
+- imageQuery: A specific search term for fetching a relevant image (e.g., "stop sign japan", "speed limit 50 sign japan") OR use the uploaded image URL if available
 - content: The explanation in markdown format
 - summary: (optional) A key takeaway or tip
 
@@ -140,6 +160,7 @@ Guidelines:
 - Add summaries for important safety tips or key takeaways
 - Be encouraging and supportive
 - Reference specific Japanese traffic rules
+- When users upload images, provide detailed analysis based on the AI recognition results
 
 Topics you can help with:
 - Japanese traffic laws and regulations
@@ -148,7 +169,7 @@ Topics you can help with:
 - Speed limits and parking regulations
 - Driving techniques and best practices
 - Test preparation strategies
-- Common mistakes to avoid`;
+- Common mistakes to avoid${imageContext}`;
 
     // Try LOVABLE_API_KEY first, fallback to GOOGLE_AI_STUDIO_API_KEY
     let response = null;
@@ -331,9 +352,13 @@ Topics you can help with:
       console.log(`Processing ${parsedResponse.sections.length} sections with images...`);
       const sectionsWithImages = await fetchImagesForSections(parsedResponse.sections);
       
+      // Include uploaded images in response if available
+      const responseImages = hasImages ? lastMessage.images : undefined;
+      
       return new Response(
         JSON.stringify({ 
-          sections: sectionsWithImages
+          sections: sectionsWithImages,
+          images: responseImages
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
