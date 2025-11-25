@@ -1,9 +1,26 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.77.0";
 import { corsHeaders } from "../_shared/cors.ts";
+import { findWikimediaImage, mapFlashcardCategoryToDbCategory, incrementImageUsage } from "../_shared/wikimedia-image-lookup.ts";
 
-// Fetch a single image for a specific query using Serper API
-async function fetchImage(query: string): Promise<string | null> {
+// Fetch a single image - tries Wikimedia Commons first, then Serper API as fallback
+async function fetchImage(
+  supabase: ReturnType<typeof createClient>,
+  query: string,
+  category?: string | null
+): Promise<string | null> {
+  // Strategy 1: Try Wikimedia Commons database first
+  const dbCategory = category ? mapFlashcardCategoryToDbCategory(category) : null;
+  const wikimediaImage = await findWikimediaImage(supabase, dbCategory, query);
+  
+  if (wikimediaImage) {
+    // Increment usage count
+    await incrementImageUsage(supabase, wikimediaImage.id);
+    console.log(`Using Wikimedia Commons image for: ${query}`);
+    return wikimediaImage.storage_url;
+  }
+
+  // Strategy 2: Fallback to Serper API
   try {
     const SERPER_API_KEY = Deno.env.get('SERPER_API_KEY');
     
@@ -12,27 +29,33 @@ async function fetchImage(query: string): Promise<string | null> {
       return null;
     }
 
-        const response = await fetch('https://google.serper.dev/images', {
-          method: 'POST',
-          headers: {
-            'X-API-KEY': SERPER_API_KEY,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
+    const response = await fetch('https://google.serper.dev/images', {
+      method: 'POST',
+      headers: {
+        'X-API-KEY': SERPER_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
         q: `${query} japan driving traffic road`,
         num: 1
-          })
-        });
+      })
+    });
 
-        if (!response.ok) {
-          console.error('Serper API error:', response.status);
+    if (!response.ok) {
+      console.error('Serper API error:', response.status);
       return null;
-        }
+    }
 
-        const data = await response.json();
-    return data.images?.[0]?.imageUrl || null;
+    const data = await response.json();
+    const imageUrl = data.images?.[0]?.imageUrl || null;
+    
+    if (imageUrl) {
+      console.log(`Using Serper API image for: ${query}`);
+    }
+    
+    return imageUrl;
   } catch (error) {
-    console.error('Error fetching image:', error);
+    console.error('Error fetching image from Serper:', error);
     return null;
   }
 }
@@ -144,29 +167,21 @@ serve(async (req) => {
       });
       
       // Map category to sign_category
-      const categoryMap: { [key: string]: string } = {
-        'regulatory-signs': 'regulatory',
-        'warning-signs': 'warning',
-        'indication-signs': 'indication',
-        'guidance-signs': 'guidance',
-        'auxiliary-signs': 'auxiliary',
-        'road-markings': 'road-markings',
-      };
+      const signCategory = mapFlashcardCategoryToDbCategory(category) || category;
       
-      const signCategory = categoryMap[category] || category;
-      
-      // Try to find recycled images from database
+      // Try to find Wikimedia Commons images first, then other verified images
       const { data: signImages, error: signError } = await supabase
         .from('road_sign_images')
         .select('*')
         .eq('sign_category', signCategory)
         .eq('is_verified', true)
+        .order('image_source', { ascending: false }) // Prioritize wikimedia_commons
         .order('usage_count', { ascending: false })
         .limit(count);
       
       if (!signError && signImages && signImages.length > 0) {
         recycledImages = signImages;
-        console.log(`Found ${recycledImages.length} recycled images for category ${category}`);
+        console.log(`Found ${recycledImages.length} images for category ${category} (${recycledImages.filter(img => img.image_source === 'wikimedia_commons').length} from Wikimedia Commons)`);
       }
     }
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -378,11 +393,25 @@ Make sure:
 
     // Fetch images for each flashcard (use recycled images if available)
     console.log(`Processing ${flashcards.length} flashcards...`);
+    
+    // Ensure we have a supabase client for image fetching
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('Supabase credentials not configured');
+    }
+    const supabaseForImages = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+    
     const flashcardsWithImages = await Promise.all(
       flashcards.map(async (flashcard, index) => {
         // Use recycled image if available
         if (recycledImages[index]) {
           const recycledImg = recycledImages[index];
+          // Increment usage count
+          await incrementImageUsage(supabaseForImages, recycledImg.id);
           return {
             ...flashcard,
             imageUrl: recycledImg.storage_url,
@@ -390,8 +419,8 @@ Make sure:
           };
         }
         
-        // Otherwise fetch from image search
-        const imageUrl = await fetchImage(flashcard.imageQuery);
+        // Otherwise try Wikimedia Commons first, then Serper fallback
+        const imageUrl = await fetchImage(supabaseForImages, flashcard.imageQuery, category);
         return {
           ...flashcard,
           imageUrl: imageUrl || null

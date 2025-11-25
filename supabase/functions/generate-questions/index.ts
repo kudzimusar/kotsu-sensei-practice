@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.77.0";
+import { findWikimediaImage, incrementImageUsage } from "../_shared/wikimedia-image-lookup.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -169,32 +170,65 @@ Make sure to return valid JSON only, no additional text.`
         } else if (q.needs_image && q.image_url) {
           // Use image_url from AI response if available
           figureUrl = q.image_url;
-        } else if (q.needs_image && q.image_description && LOVABLE_API_KEY) {
+        } else if (q.needs_image && q.image_description) {
+          // Strategy 1: Try Wikimedia Commons database first
           try {
-            const imagePrompt = `Generate a clear, simple illustration of: ${q.image_description}. Style: Clean vector graphic suitable for a driving test, high contrast, educational.`;
+            // Extract category from image description or question
+            const extractCategory = (desc: string): string | null => {
+              const lower = desc.toLowerCase();
+              if (lower.includes('warning') || lower.includes('caution')) return 'warning';
+              if (lower.includes('regulatory') || lower.includes('prohibition')) return 'regulatory';
+              if (lower.includes('instruction') || lower.includes('indication')) return 'indication';
+              if (lower.includes('guidance') || lower.includes('information')) return 'guidance';
+              if (lower.includes('auxiliary')) return 'auxiliary';
+              if (lower.includes('marking')) return 'road-markings';
+              return null;
+            };
             
-            const imageResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                model: 'google/gemini-2.5-flash-image-preview',
-                messages: [{
-                  role: 'user',
-                  content: imagePrompt
-                }],
-                modalities: ['image', 'text']
-              })
-            });
-
-            if (imageResponse.ok) {
-              const imageData = await imageResponse.json();
-              figureUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+            const category = extractCategory(q.image_description);
+            const wikimediaImage = await findWikimediaImage(supabase, category, q.image_description);
+            
+            if (wikimediaImage) {
+              await incrementImageUsage(supabase, wikimediaImage.id);
+              figureUrl = wikimediaImage.storage_url;
+              console.log(`Using Wikimedia Commons image for question: ${q.image_description}`);
             }
-          } catch (imgError) {
-            console.error('Error generating image:', imgError);
+          } catch (wikiError) {
+            console.error('Error looking up Wikimedia image:', wikiError);
+          }
+          
+          // Strategy 2: Fallback to AI image generation if Wikimedia not found
+          if (!figureUrl && LOVABLE_API_KEY) {
+            try {
+              const imagePrompt = `Generate a clear, simple illustration of: ${q.image_description}. Style: Clean vector graphic suitable for a driving test, high contrast, educational.`;
+              
+              const imageResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  model: 'google/gemini-2.5-flash-image-preview',
+                  messages: [{
+                    role: 'user',
+                    content: imagePrompt
+                  }],
+                  modalities: ['image', 'text']
+                })
+              });
+
+              if (imageResponse.ok) {
+                const imageData = await imageResponse.json();
+                const generatedUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+                if (generatedUrl) {
+                  figureUrl = generatedUrl;
+                  console.log(`Using AI-generated image for question: ${q.image_description}`);
+                }
+              }
+            } catch (imgError) {
+              console.error('Error generating image:', imgError);
+            }
           }
         }
 

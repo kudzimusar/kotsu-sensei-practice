@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.77.0";
+import { findWikimediaImage, incrementImageUsage } from "../_shared/wikimedia-image-lookup.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,8 +21,67 @@ function needsVisualAid(userMessage: string): boolean {
   return visualKeywords.some(keyword => lowercaseMessage.includes(keyword));
 }
 
-// Fetch a single image for a specific query
+// Get Supabase client for image lookup
+function getSupabaseClient() {
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return null;
+  }
+  
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
+
+// Extract category from query (simple heuristic)
+function extractCategoryFromQuery(query: string): string | null {
+  const lowerQuery = query.toLowerCase();
+  
+  if (lowerQuery.includes('warning') || lowerQuery.includes('caution') || lowerQuery.includes('警戒')) {
+    return 'warning';
+  }
+  if (lowerQuery.includes('regulatory') || lowerQuery.includes('prohibition') || lowerQuery.includes('規制')) {
+    return 'regulatory';
+  }
+  if (lowerQuery.includes('instruction') || lowerQuery.includes('indication') || lowerQuery.includes('指示')) {
+    return 'indication';
+  }
+  if (lowerQuery.includes('guidance') || lowerQuery.includes('information') || lowerQuery.includes('案内')) {
+    return 'guidance';
+  }
+  if (lowerQuery.includes('auxiliary') || lowerQuery.includes('補助')) {
+    return 'auxiliary';
+  }
+  if (lowerQuery.includes('marking') || lowerQuery.includes('道路標示')) {
+    return 'road-markings';
+  }
+  
+  return null;
+}
+
+// Fetch a single image - tries Wikimedia Commons first, then Serper API as fallback
 async function fetchImage(query: string): Promise<string | null> {
+  const supabase = getSupabaseClient();
+  const category = extractCategoryFromQuery(query);
+  
+  // Strategy 1: Try Wikimedia Commons database first
+  if (supabase) {
+    const wikimediaImage = await findWikimediaImage(supabase, category, query);
+    
+    if (wikimediaImage) {
+      // Increment usage count
+      await incrementImageUsage(supabase, wikimediaImage.id);
+      console.log(`Using Wikimedia Commons image for: ${query}`);
+      return wikimediaImage.storage_url;
+    }
+  }
+
+  // Strategy 2: Fallback to Serper API
   try {
     const SERPER_API_KEY = Deno.env.get('SERPER_API_KEY');
     
@@ -47,9 +108,15 @@ async function fetchImage(query: string): Promise<string | null> {
     }
 
     const data = await response.json();
-    return data.images?.[0]?.imageUrl || null;
+    const imageUrl = data.images?.[0]?.imageUrl || null;
+    
+    if (imageUrl) {
+      console.log(`Using Serper API image for: ${query}`);
+    }
+    
+    return imageUrl;
   } catch (error) {
-    console.error('Error fetching image:', error);
+    console.error('Error fetching image from Serper:', error);
     return null;
   }
 }
