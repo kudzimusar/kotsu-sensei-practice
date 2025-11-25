@@ -45,37 +45,40 @@ interface WikimediaImage {
     extmetadata?: {
       ImageDescription?: { value: string };
       ObjectName?: { value: string };
+      LicenseShortName?: { value: string };
+      Artist?: { value: string };
+      AttributionRequired?: { value: string };
+      License?: { value: string };
     };
   }>;
-  categories?: string[];
 }
 
 /**
- * Fetch all images from a Wikimedia Commons category
+ * Fetch all images embedded on the Road_signs_in_Japan page using generator=images
+ * This gets the actual road sign images shown in the gallery, not category files
  */
-async function fetchCategoryImages(categoryTitle: string): Promise<WikimediaImage[]> {
+async function fetchPageImages(pageTitle: string): Promise<WikimediaImage[]> {
   const images: WikimediaImage[] = [];
   let continueParam: string | undefined = undefined;
 
-  console.log(`Fetching images from category: ${categoryTitle}`);
+  console.log(`Fetching images from page: ${pageTitle}`);
+  console.log(`Using generator=images to get gallery images (not category files)\n`);
 
   do {
     const params = new URLSearchParams({
       action: 'query',
       format: 'json',
-      generator: 'categorymembers',
-      gcmtitle: `Category:${categoryTitle}`,
-      gcmtype: 'file',
-      gcmlimit: '500', // Max per request
-      prop: 'imageinfo|categories',
+      generator: 'images', // Use 'images' generator to get images on the page
+      titles: pageTitle,
+      gimlimit: '500', // Max images per request
+      prop: 'imageinfo',
       iiprop: 'url|extmetadata',
-      iiextmetadatafilter: 'ImageDescription|ObjectName',
-      cllimit: '50',
+      iiextmetadatafilter: 'ImageDescription|ObjectName|LicenseShortName|Artist|AttributionRequired|License',
       origin: '*',
     });
 
     if (continueParam) {
-      params.append('gcmcontinue', continueParam);
+      params.append('gimcontinue', continueParam);
     }
 
     try {
@@ -93,13 +96,13 @@ async function fetchCategoryImages(categoryTitle: string): Promise<WikimediaImag
       }
 
       // Check for continuation
-      continueParam = data.continue?.gcmcontinue;
+      continueParam = data.continue?.gimcontinue;
       console.log(`  Fetched ${images.length} images so far...`);
 
       // Rate limiting - be respectful
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
-      console.error(`Error fetching category ${categoryTitle}:`, error);
+      console.error(`Error fetching page images:`, error);
       break;
     }
   } while (continueParam);
@@ -109,37 +112,146 @@ async function fetchCategoryImages(categoryTitle: string): Promise<WikimediaImag
 }
 
 /**
- * Extract sign name from image title or description
+ * Extract sign code/number from title (e.g., "101", "102-A", "407-A")
+ * Supports formats: "Japan road sign 101.svg" or "(101) Sign name"
+ * and determine category based on sign code ranges
  */
-function extractSignName(title: string, description?: string): { en: string | null; jp: string | null } {
-  // Remove file extension and common prefixes
+function determineCategoryFromSignCode(title: string): string | null {
+  // Try pattern with parentheses first: "(101)" or "(102-A)"
+  let codeMatch = title.match(/\((\d+)(?:-([A-Z\d]+))?\)/);
+  
+  // If not found, try pattern without parentheses: "road sign 101" or "101-A"
+  if (!codeMatch) {
+    codeMatch = title.match(/road sign (\d+)(?:-([A-Z\d]+))?/i);
+  }
+  
+  // If still not found, try any 3-digit number followed by optional variant
+  if (!codeMatch) {
+    codeMatch = title.match(/(\d{3})(?:-([A-Z\d]+))?/);
+  }
+  
+  if (!codeMatch) return null;
+
+  const code = parseInt(codeMatch[1], 10);
+
+  // Category ranges based on Japanese road sign numbering system:
+  // 101-199: Information/Guidance signs (案内標識)
+  // 201-299: Warning signs (警戒標識)  
+  // 301-399: Regulatory signs (規制標識)
+  // 401-499: Instruction signs (指示標識)
+  // 501-599: Auxiliary signs (補助標識)
+
+  if (code >= 101 && code <= 199) {
+    return 'guidance';
+  }
+  if (code >= 201 && code <= 299) {
+    return 'warning';
+  }
+  if (code >= 301 && code <= 399) {
+    return 'regulatory';
+  }
+  if (code >= 401 && code <= 499) {
+    return 'indication';
+  }
+  if (code >= 501 && code <= 599) {
+    return 'auxiliary';
+  }
+
+  return null;
+}
+
+/**
+ * Extract sign name from image title
+ * Format examples: "(101) 市町村 Municipality" or "(407-A) 横断歩道 Cross walk"
+ */
+function extractSignName(title: string, description?: string): { en: string | null; jp: string | null; code: string | null } {
+  // Remove file extension and "File:" prefix
   let cleanTitle = title
     .replace(/^File:/, '')
-    .replace(/\.(png|jpg|jpeg|svg|gif)$/i, '')
+    .replace(/\.(png|jpg|jpeg|svg|gif|webp)$/i, '')
     .trim();
 
-  // Try to extract Japanese and English names
-  // Common pattern: "English (Japanese)" or "Japanese - English"
-  const jpMatch = cleanTitle.match(/[（(]([^）)]+)[）)]/);
-  const jpName = jpMatch ? jpMatch[1].trim() : null;
+  // Extract sign code - try multiple patterns
+  let codeMatch = cleanTitle.match(/\((\d+(?:-[A-Z\d]+)?)\)/);
+  let code: string | null = null;
+  
+  if (codeMatch) {
+    code = codeMatch[1];
+  } else {
+    // Try "road sign 101" pattern
+    codeMatch = cleanTitle.match(/road sign (\d+(?:-[A-Z\d]+)?)/i);
+    if (codeMatch) {
+      code = codeMatch[1];
+    } else {
+      // Try standalone 3-digit code
+      codeMatch = cleanTitle.match(/(\d{3}(?:-[A-Z\d]+)?)/);
+      if (codeMatch) {
+        code = codeMatch[1];
+      }
+    }
+  }
 
-  // Remove Japanese part to get English
-  const enName = cleanTitle
-    .replace(/[（(][^）)]+[）)]/g, '')
-    .replace(/[-–—].*$/, '')
-    .trim() || null;
+  // For filenames like "Japan road sign 101.svg", extract a cleaner name
+  // Remove "Japan road sign" prefix and use code as name
+  let enName: string | null = null;
+  let jpName: string | null = null;
+  
+  // Try to extract Japanese characters from description or title
+  const japanesePattern = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/;
+  
+  if (description) {
+    // Look for Japanese text in description
+    const descMatch = description.match(japanesePattern);
+    if (descMatch) {
+      // Extract Japanese part from description
+      const descParts = description.split(/\s+/);
+      const jpParts: string[] = [];
+      const enParts: string[] = [];
+      
+      descParts.forEach(part => {
+        if (japanesePattern.test(part)) {
+          jpParts.push(part);
+        } else if (part.length > 2 && !part.match(/^\d+$/)) {
+          enParts.push(part);
+        }
+      });
+      
+      jpName = jpParts.length > 0 ? jpParts.join(' ') : null;
+      enName = enParts.length > 0 ? enParts.join(' ') : null;
+    }
+  }
+  
+  // If filename is like "Japan road sign 101.svg", create a name from the code
+  if (!enName && code) {
+    enName = `Road Sign ${code}`;
+  }
+  
+  // Fallback to cleaned filename without extension
+  if (!enName) {
+    enName = cleanTitle
+      .replace(/^Japan road sign /i, '')
+      .replace(/^File:/, '')
+      .trim();
+  }
 
   return {
-    en: enName || cleanTitle,
-    jp: jpName || null,
+    en: enName,
+    jp: jpName,
+    code: code,
   };
 }
 
 /**
  * Extract tags from title and description
  */
-function extractTags(title: string, description?: string): string[] {
+function extractTags(title: string, description?: string, code?: string | null): string[] {
   const tags: Set<string> = new Set();
+  
+  // Add sign code if available
+  if (code) {
+    tags.add(code);
+    tags.add(`sign-${code}`);
+  }
   
   // Add words from title
   const titleWords = title
@@ -150,9 +262,17 @@ function extractTags(title: string, description?: string): string[] {
   
   titleWords.forEach(word => tags.add(word));
 
-  // Add common sign-related terms
-  const commonTerms = ['sign', 'road', 'traffic', 'japan', 'japanese', 'regulatory', 'warning', 'indication', 'guidance', 'auxiliary'];
-  commonTerms.forEach(term => tags.add(term));
+  // Add category based on code
+  const category = determineCategoryFromSignCode(title);
+  if (category) {
+    tags.add(category);
+  }
+
+  // Add common terms
+  tags.add('road-sign');
+  tags.add('japan');
+  tags.add('japanese');
+  tags.add('traffic-sign');
 
   return Array.from(tags);
 }
@@ -160,20 +280,18 @@ function extractTags(title: string, description?: string): string[] {
 /**
  * Determine category from image metadata
  */
-function determineCategory(title: string, description?: string, categories?: any[]): string | null {
+function determineCategory(title: string, description?: string): string | null {
+  // First try to determine from sign code
+  const categoryFromCode = determineCategoryFromSignCode(title);
+  if (categoryFromCode) {
+    return categoryFromCode;
+  }
+
+  // Fallback to keyword matching
   const lowerTitle = title.toLowerCase();
   const lowerDesc = (description || '').toLowerCase();
-  // Handle categories - they might be strings or objects with a 'title' property
-  const lowerCats = (categories || []).map(c => {
-    if (typeof c === 'string') return c.toLowerCase();
-    if (c && typeof c === 'object' && c.title) return String(c.title).toLowerCase();
-    return String(c).toLowerCase();
-  });
+  const allText = `${lowerTitle} ${lowerDesc}`;
 
-  // Check category strings
-  const allText = `${lowerTitle} ${lowerDesc} ${lowerCats.join(' ')}`;
-
-  // Map based on keywords
   if (allText.includes('information') || allText.includes('guidance') || allText.includes('案内')) {
     return 'guidance';
   }
@@ -188,9 +306,6 @@ function determineCategory(title: string, description?: string, categories?: any
   }
   if (allText.includes('auxiliary') || allText.includes('supplementary') || allText.includes('補助')) {
     return 'auxiliary';
-  }
-  if (allText.includes('marking') || allText.includes('road marking') || allText.includes('道路標示')) {
-    return 'road-markings';
   }
 
   return null;
@@ -263,13 +378,28 @@ async function processImage(image: WikimediaImage): Promise<boolean> {
     const pageUrl = imageInfo.descriptionurl;
     const description = imageInfo.extmetadata?.ImageDescription?.value || '';
     const objectName = imageInfo.extmetadata?.ObjectName?.value || '';
+    const license = imageInfo.extmetadata?.LicenseShortName?.value || 
+                   imageInfo.extmetadata?.License?.value || 'Unknown';
+    const artist = imageInfo.extmetadata?.Artist?.value || '';
+    const attributionRequired = imageInfo.extmetadata?.AttributionRequired?.value || '';
+
+    // Skip non-image files (PDFs, etc.)
+    const imageExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.gif', '.webp'];
+    const hasImageExtension = imageExtensions.some(ext => 
+      title.toLowerCase().endsWith(ext)
+    );
+    
+    if (!hasImageExtension) {
+      console.log(`  Skipping ${title} (not an image file)`);
+      return true; // Not an error, just skip
+    }
 
     // Check if image already exists
     const { data: existing } = await supabase
       .from('road_sign_images')
       .select('id')
       .eq('wikimedia_file_name', title)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       console.log(`  Skipping ${title} (already exists)`);
@@ -277,9 +407,9 @@ async function processImage(image: WikimediaImage): Promise<boolean> {
     }
 
     // Extract metadata
-    const signNames = extractSignName(title, description);
-    const tags = extractTags(title, description);
-    const category = determineCategory(title, description, image.categories) || 'regulatory'; // Default to regulatory
+    const signData = extractSignName(title, description);
+    const category = determineCategory(title, description) || 'regulatory';
+    const tags = extractTags(title, description, signData.code);
 
     // Download image
     console.log(`  Downloading: ${title}`);
@@ -290,11 +420,11 @@ async function processImage(image: WikimediaImage): Promise<boolean> {
     }
 
     // Determine MIME type from URL
-    const mimeType = imageUrl.match(/\.(png|jpg|jpeg|svg|gif)$/i)?.[0] 
-      ? (imageUrl.endsWith('.svg') ? 'image/svg+xml' : 
-         imageUrl.endsWith('.png') ? 'image/png' : 
-         imageUrl.endsWith('.gif') ? 'image/gif' : 'image/jpeg')
-      : 'image/png';
+    let mimeType = 'image/png';
+    if (imageUrl.endsWith('.svg')) mimeType = 'image/svg+xml';
+    else if (imageUrl.endsWith('.jpg') || imageUrl.endsWith('.jpeg')) mimeType = 'image/jpeg';
+    else if (imageUrl.endsWith('.gif')) mimeType = 'image/gif';
+    else if (imageUrl.endsWith('.webp')) mimeType = 'image/webp';
 
     // Upload to Supabase
     const fileName = title.replace(/^File:/, '').replace(/\s+/g, '-');
@@ -315,8 +445,8 @@ async function processImage(image: WikimediaImage): Promise<boolean> {
         file_name: fileName,
         file_size: imageBuffer.length,
         mime_type: mimeType,
-        sign_name_en: signNames.en,
-        sign_name_jp: signNames.jp,
+        sign_name_en: signData.en,
+        sign_name_jp: signData.jp,
         sign_category: category,
         sign_meaning: description || objectName || null,
         tags: tags,
@@ -332,7 +462,7 @@ async function processImage(image: WikimediaImage): Promise<boolean> {
       return false;
     }
 
-    console.log(`  ✓ Stored: ${title} (${category})`);
+    console.log(`  ✓ Stored: ${title} (${category}) - License: ${license}`);
     return true;
   } catch (error) {
     console.error(`  Error processing image:`, error);
@@ -345,10 +475,11 @@ async function processImage(image: WikimediaImage): Promise<boolean> {
  */
 async function main() {
   console.log('Starting Wikimedia Commons image download...\n');
+  console.log('Using generator=images to fetch images from the gallery page\n');
 
-  // Fetch images from the main category
-  const categoryTitle = 'Road_signs_in_Japan';
-  const images = await fetchCategoryImages(categoryTitle);
+  // Fetch images from the page (not category)
+  const pageTitle = 'Road_signs_in_Japan';
+  const images = await fetchPageImages(pageTitle);
 
   if (images.length === 0) {
     console.log('No images found. Exiting.');
@@ -359,21 +490,34 @@ async function main() {
 
   let successCount = 0;
   let errorCount = 0;
+  let skippedCount = 0;
 
-  // Process images in batches to avoid overwhelming the API
+  // Process images in batches
   const batchSize = 5;
   for (let i = 0; i < images.length; i += batchSize) {
     const batch = images.slice(i, i + batchSize);
     const results = await Promise.all(batch.map(img => processImage(img)));
     
-    results.forEach(success => {
-      if (success) successCount++;
-      else errorCount++;
+    results.forEach((result, idx) => {
+      if (result === true) {
+        const img = batch[idx];
+        // Check if it was skipped (not an image file or already exists)
+        const imageExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.gif', '.webp'];
+        const hasImageExtension = imageExtensions.some(ext => 
+          img.title.toLowerCase().endsWith(ext)
+        );
+        if (!hasImageExtension || img.title.includes('.pdf')) {
+          skippedCount++;
+        } else {
+          successCount++;
+        }
+      } else {
+        errorCount++;
+      }
     });
 
-    // Progress update
     console.log(`\nProgress: ${Math.min(i + batchSize, images.length)}/${images.length} processed`);
-    console.log(`  Success: ${successCount}, Errors: ${errorCount}\n`);
+    console.log(`  Success: ${successCount}, Skipped: ${skippedCount}, Errors: ${errorCount}\n`);
 
     // Rate limiting between batches
     if (i + batchSize < images.length) {
@@ -382,8 +526,9 @@ async function main() {
   }
 
   console.log('\n=== Download Complete ===');
-  console.log(`Total images: ${images.length}`);
+  console.log(`Total images found: ${images.length}`);
   console.log(`Successfully stored: ${successCount}`);
+  console.log(`Skipped: ${skippedCount}`);
   console.log(`Errors: ${errorCount}`);
 }
 
