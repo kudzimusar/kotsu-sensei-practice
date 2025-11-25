@@ -295,9 +295,28 @@ Topics you can help with:
               parts: [{ text: msg.content || "" }]
             });
           } else {
+            // Handle user messages with images
+            const parts: any[] = [];
+            if (msg.content) {
+              parts.push({ text: msg.content });
+            }
+            // Add image URLs if present - for now just include text reference
+            // Note: Gemini Vision API would need actual image data, not just URLs
+            if (msg.images && Array.isArray(msg.images) && msg.images.length > 0) {
+              // Add text reference to images
+              const imageRefs = msg.images.map((img: any, idx: number) => {
+                const signName = img?.sign_name_en || img?.signNameEn || `Image ${idx + 1}`;
+                return signName;
+              }).join(', ');
+              parts.push({ text: `[User uploaded images: ${imageRefs}]` });
+            }
+            // Ensure at least one part exists
+            if (parts.length === 0) {
+              parts.push({ text: "Please analyze the uploaded road sign image(s)." });
+            }
             conversationHistory.push({
               role: "user",
-              parts: [{ text: msg.content || "" }]
+              parts: parts
             });
           }
         }
