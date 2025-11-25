@@ -9,7 +9,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { TTSButton } from '@/components/ui/tts-button';
-import { ImageUpload, ImageFile } from '@/components/ui/image-upload';
+import { ImageFile } from '@/components/ui/image-upload';
+import { toast } from 'sonner';
+import { X } from 'lucide-react';
 
 const SUGGESTED_QUESTIONS = [
   "What are the speed limits in different areas in Japan?",
@@ -318,36 +320,84 @@ const AIChatbot = () => {
 
         {/* Input Area */}
         <div className="fixed bottom-20 left-0 right-0 bg-white border-t">
-          <div className="max-w-4xl mx-auto p-4 space-y-2">
-            {/* Image Upload */}
+          <div className="max-w-4xl mx-auto p-4">
+            {/* Image Previews - Compact row above input */}
             {images.length > 0 && (
-              <div className="pb-2">
-                <ImageUpload
-                  images={images}
-                  onImagesChange={setImages}
-                  maxImages={5}
-                  maxSizeMB={5}
-                  disabled={isLoading}
-                />
+              <div className="flex flex-wrap gap-2 mb-2 pb-2 border-b">
+                {images.map((image) => (
+                  <div key={image.id} className="relative group">
+                    <img
+                      src={image.preview}
+                      alt="Preview"
+                      className="w-12 h-12 object-cover rounded-md border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        URL.revokeObjectURL(image.preview);
+                        setImages(images.filter(img => img.id !== image.id));
+                      }}
+                      disabled={isLoading}
+                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] hover:bg-red-600 transition-colors"
+                      title="Remove image"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
             
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  if (images.length === 0) {
-                    // Trigger image upload by showing upload area
-                    setImages([]);
+            {/* Input row with icon button */}
+            <div className="flex gap-2 items-center">
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                multiple
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (files && files.length > 0) {
+                    const newImages: ImageFile[] = [];
+                    Array.from(files).forEach((file) => {
+                      if (images.length + newImages.length >= 5) {
+                        toast.error('Maximum 5 images allowed');
+                        return;
+                      }
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast.error(`${file.name} exceeds 5MB limit`);
+                        return;
+                      }
+                      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+                      if (!validTypes.includes(file.type)) {
+                        toast.error(`${file.name} is not a valid image type`);
+                        return;
+                      }
+                      newImages.push({
+                        file,
+                        preview: URL.createObjectURL(file),
+                        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                      });
+                    });
+                    if (newImages.length > 0) {
+                      setImages([...images, ...newImages]);
+                    }
                   }
+                  // Reset input to allow selecting same file again
+                  e.target.value = '';
                 }}
+                className="hidden"
+                id="image-upload-input"
                 disabled={isLoading || images.length >= 5}
-                title="Upload road sign image"
+              />
+              <label
+                htmlFor="image-upload-input"
+                className={`flex items-center justify-center w-9 h-9 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer flex-shrink-0 ${
+                  isLoading || images.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                title={images.length >= 5 ? 'Maximum 5 images' : 'Upload road sign image'}
               >
-                <ImageIcon className="w-5 h-5" />
-              </Button>
+                <ImageIcon className="w-4 h-4 text-muted-foreground" />
+              </label>
               <Input
                 ref={inputRef}
                 value={input}
@@ -361,23 +411,11 @@ const AIChatbot = () => {
                 onClick={handleSend}
                 disabled={(!input.trim() && images.length === 0) || isLoading}
                 size="icon"
+                className="flex-shrink-0"
               >
                 <Send className="w-5 h-5" />
               </Button>
             </div>
-            
-            {/* Show image upload area when image button is clicked and no images yet */}
-            {images.length === 0 && (
-              <div className="pt-2">
-                <ImageUpload
-                  images={images}
-                  onImagesChange={setImages}
-                  maxImages={5}
-                  maxSizeMB={5}
-                  disabled={isLoading}
-                />
-              </div>
-            )}
           </div>
         </div>
       </div>
