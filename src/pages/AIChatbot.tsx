@@ -320,84 +320,17 @@ const AIChatbot = () => {
         {/* Input Area */}
         <div className="fixed bottom-20 left-0 right-0 bg-white border-t">
           <div className="max-w-4xl mx-auto p-4">
-            {/* Image Previews - Compact row above input */}
-            {images.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-2 pb-2 border-b">
-                {images.map((image) => (
-                  <div key={image.id} className="relative group">
-                    <img
-                      src={image.preview}
-                      alt="Preview"
-                      className="w-12 h-12 object-cover rounded-md border border-border"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        URL.revokeObjectURL(image.preview);
-                        setImages(images.filter(img => img.id !== image.id));
-                      }}
-                      disabled={isLoading}
-                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] hover:bg-red-600 transition-colors"
-                      title="Remove image"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Upload Menu Component with Image Previews */}
+            <ImageUploadMenu
+              images={images}
+              onImagesChange={setImages}
+              maxImages={5}
+              disabled={isLoading}
+              trigger="icon"
+            />
             
-            {/* Input row with icon button */}
-            <div className="flex gap-2 items-center">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => {
-                  const files = e.target.files;
-                  if (files && files.length > 0) {
-                    const newImages: ImageFile[] = [];
-                    Array.from(files).forEach((file) => {
-                      if (images.length + newImages.length >= 5) {
-                        toast.error('Maximum 5 images allowed');
-                        return;
-                      }
-                      // Minimum size check (2KB)
-                      if (file.size < 2 * 1024) {
-                        toast.error(`${file.name} is too small. Minimum size is 2KB`);
-                        return;
-                      }
-                      // Check if it's an image type
-                      if (!file.type.startsWith('image/')) {
-                        toast.error(`${file.name} is not a valid image file`);
-                        return;
-                      }
-                      newImages.push({
-                        file,
-                        preview: URL.createObjectURL(file),
-                        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                      });
-                    });
-                    if (newImages.length > 0) {
-                      setImages([...images, ...newImages]);
-                    }
-                  }
-                  // Reset input to allow selecting same file again
-                  e.target.value = '';
-                }}
-                className="hidden"
-                id="image-upload-input"
-                disabled={isLoading || images.length >= 5}
-              />
-              <label
-                htmlFor="image-upload-input"
-                className={`flex items-center justify-center w-9 h-9 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer flex-shrink-0 ${
-                  isLoading || images.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                title={images.length >= 5 ? 'Maximum 5 images' : 'Upload road sign image'}
-              >
-                <ImageIcon className="w-4 h-4 text-muted-foreground" />
-              </label>
+            {/* Input row */}
+            <div className="flex gap-2 items-center mt-2">
               <Input
                 ref={inputRef}
                 value={input}
