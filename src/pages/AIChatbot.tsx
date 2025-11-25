@@ -200,15 +200,23 @@ const AIChatbot = () => {
                                 <div className="mb-3">
                                   <img
                                     src={section.image}
-                                    alt={section.heading}
+                                    alt={section.heading || 'Road sign'}
                                     className="w-full max-w-md h-48 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-90 transition"
                                     onClick={() => window.open(section.image, '_blank')}
                                     onError={(e) => {
+                                      console.error(`❌ Image failed to load for section "${section.heading}":`, {
+                                        url: section.image,
+                                        heading: section.heading
+                                      });
                                       e.currentTarget.style.display = 'none';
+                                    }}
+                                    onLoad={() => {
+                                      console.log(`✅ Image loaded for section "${section.heading}"`);
                                     }}
                                   />
                                 </div>
                               )}
+                              {!section.image && console.warn(`⚠️ Section "${section.heading}" missing image property`)}
                               
                               {/* Content */}
                               <ReactMarkdown 

@@ -128,17 +128,46 @@ export const useAIChat = () => {
         images: msg.images,
       }));
 
+      console.log('🔍 Calling ai-chat Edge Function with', messagesToSend.length, 'messages');
+      
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: { messages: messagesToSend },
       });
 
+      console.log('📥 Response received:', {
+        hasData: !!data,
+        hasError: !!error,
+        dataKeys: data ? Object.keys(data) : [],
+        errorMessage: error?.message
+      });
+
       if (error) {
-        console.error('AI Chat error:', error);
+        console.error('❌ AI Chat error:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         throw error;
       }
 
+      if (!data) {
+        console.error('❌ No data in response');
+        throw new Error('No response data from AI');
+      }
+
+      // Log the full response structure for debugging
+      console.log('📋 Full response structure:', JSON.stringify(data, null, 2));
+      console.log('📋 Response sections:', data?.sections);
+      console.log('📋 Response images:', data?.images);
+
       // Handle structured or plain response
-      if (data?.sections) {
+      if (data?.sections && Array.isArray(data.sections)) {
+        // Log each section's image status
+        data.sections.forEach((section: any, index: number) => {
+          console.log(`📸 Section ${index + 1} image:`, {
+            heading: section.heading,
+            hasImage: !!section.image,
+            imageUrl: section.image ? section.image.substring(0, 100) : 'null'
+          });
+        });
+
         // Structured response with sections
         const aiMessage: ChatMessage = {
           role: 'assistant',
@@ -146,9 +175,11 @@ export const useAIChat = () => {
           images: data.images,
           timestamp: new Date(),
         };
+        console.log('✅ Setting message with', data.sections.length, 'sections');
         setMessages((prev) => [...prev, aiMessage]);
       } else if (data?.message) {
         // Plain text response (backward compatibility)
+        console.log('⚠️ Received plain text response, converting to sections format');
         const aiMessage: ChatMessage = {
           role: 'assistant',
           content: data.message,
@@ -157,7 +188,8 @@ export const useAIChat = () => {
         };
         setMessages((prev) => [...prev, aiMessage]);
       } else {
-        throw new Error('No response from AI');
+        console.error('❌ Unexpected response format:', data);
+        throw new Error('No valid response format from AI');
       }
     } catch (error) {
       console.error('Error sending message:', error);
