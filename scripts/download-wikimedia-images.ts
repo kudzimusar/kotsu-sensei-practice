@@ -160,10 +160,15 @@ function extractTags(title: string, description?: string): string[] {
 /**
  * Determine category from image metadata
  */
-function determineCategory(title: string, description?: string, categories?: string[]): string | null {
+function determineCategory(title: string, description?: string, categories?: any[]): string | null {
   const lowerTitle = title.toLowerCase();
   const lowerDesc = (description || '').toLowerCase();
-  const lowerCats = (categories || []).map(c => c.toLowerCase());
+  // Handle categories - they might be strings or objects with a 'title' property
+  const lowerCats = (categories || []).map(c => {
+    if (typeof c === 'string') return c.toLowerCase();
+    if (c && typeof c === 'object' && c.title) return String(c.title).toLowerCase();
+    return String(c).toLowerCase();
+  });
 
   // Check category strings
   const allText = `${lowerTitle} ${lowerDesc} ${lowerCats.join(' ')}`;
