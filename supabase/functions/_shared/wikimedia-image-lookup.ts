@@ -177,17 +177,38 @@ export async function incrementImageUsage(
   imageId: string
 ): Promise<void> {
   try {
-    await supabase.rpc('increment_image_usage', { image_id: imageId });
+    // Try RPC first
+    const { error: rpcError } = await supabase.rpc('increment_image_usage', { image_id: imageId });
+    if (!rpcError) {
+      return; // Success
+    }
   } catch (error) {
-    // If RPC doesn't exist, update directly
+    // RPC doesn't exist or failed, continue to direct update
+  }
+  
+  // Fallback: Update directly using SQL increment
+  try {
+    const { data: currentData, error: fetchError } = await supabase
+      .from('road_sign_images')
+      .select('usage_count')
+      .eq('id', imageId)
+      .single();
+    
+    if (fetchError || !currentData) {
+      console.error('Error fetching current usage count:', fetchError);
+      return;
+    }
+    
     const { error: updateError } = await supabase
       .from('road_sign_images')
-      .update({ usage_count: supabase.raw('usage_count + 1') })
+      .update({ usage_count: (currentData.usage_count || 0) + 1 })
       .eq('id', imageId);
     
     if (updateError) {
       console.error('Error incrementing image usage:', updateError);
     }
+  } catch (error) {
+    console.error('Error in incrementImageUsage fallback:', error);
   }
 }
 

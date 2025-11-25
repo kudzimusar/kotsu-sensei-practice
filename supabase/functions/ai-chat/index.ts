@@ -537,7 +537,33 @@ Topics you can help with:
         }
       );
     } else {
-      console.log('Response is not structured JSON with sections, returning plain text');
+      console.log('Response is not structured JSON with sections, checking if we should fetch an image anyway...');
+      
+      // Fallback: If the user's query needs a visual aid, try to fetch an image anyway
+      const userQuery = lastMessage?.content || '';
+      if (needsVisualAid(userQuery)) {
+        console.log(`User query "${userQuery}" needs visual aid, attempting to fetch image...`);
+        const imageUrl = await fetchImage(userQuery);
+        
+        if (imageUrl) {
+          console.log(`Found image for plain text response: ${imageUrl.substring(0, 80)}...`);
+          // Convert plain text to a section with image
+          return new Response(
+            JSON.stringify({ 
+              sections: [{
+                heading: userQuery.charAt(0).toUpperCase() + userQuery.slice(1),
+                content: assistantMessage,
+                image: imageUrl
+              }]
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        } else {
+          console.log('No image found for visual query, returning plain text');
+        }
+      }
     }
 
     // Plain text response (backward compatibility)
