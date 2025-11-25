@@ -18,85 +18,87 @@ export async function findWikimediaImage(
   query?: string | null
 ): Promise<{ storage_url: string; id: string } | null> {
   try {
-    // Strategy 1: Try exact category match first (most reliable)
-    if (category) {
-      const { data: categoryMatch, error: categoryError } = await supabase
-        .from('road_sign_images')
-        .select('storage_url, id')
-        .eq('image_source', 'wikimedia_commons')
-        .eq('sign_category', category)
-        .eq('is_verified', true)
-        .order('usage_count', { ascending: false })
-        .limit(1)
-        .single();
+    // Extract key terms from query for better matching
+    const searchQuery = query ? query.toLowerCase().trim() : '';
+    const queryTerms = searchQuery ? searchQuery.split(/\s+/).filter(term => term.length >= 3) : [];
+    
+    // If we have a query, prioritize name/tag matching over category-only matching
+    if (query && queryTerms.length > 0) {
+      // Strategy 1: Try exact name match with category filter (most specific)
+      if (category) {
+        for (const term of queryTerms) {
+          const { data: exactMatch, error: exactError } = await supabase
+            .from('road_sign_images')
+            .select('storage_url, id')
+            .eq('image_source', 'wikimedia_commons')
+            .eq('is_verified', true)
+            .eq('sign_category', category)
+            .or(`sign_name_en.ilike.%${term}%,sign_name_jp.ilike.%${term}%`)
+            .order('usage_count', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-      if (!categoryError && categoryMatch) {
-        console.log(`Found Wikimedia image by category: ${category}`);
-        return categoryMatch;
-      }
-    }
-
-    // Strategy 2: Try sign name match (English or Japanese)
-    if (query) {
-      const searchQuery = query.toLowerCase().trim();
-      
-      // Extract key terms from query (e.g., "stop sign" -> ["stop", "sign"])
-      const queryTerms = searchQuery.split(/\s+/).filter(term => term.length > 2);
-      
-      // Try exact match first
-      const { data: exactMatch, error: exactError } = await supabase
-        .from('road_sign_images')
-        .select('storage_url, id')
-        .eq('image_source', 'wikimedia_commons')
-        .eq('is_verified', true)
-        .or(`sign_name_en.ilike.%${searchQuery}%,sign_name_jp.ilike.%${searchQuery}%`)
-        .order('usage_count', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (!exactError && exactMatch) {
-        console.log(`Found Wikimedia image by exact name match: ${query}`);
-        return exactMatch;
+          if (!exactError && exactMatch) {
+            console.log(`Found Wikimedia image by name+category match: ${term} in ${category}`);
+            return exactMatch;
+          }
+        }
       }
 
-      // Try partial match with individual terms
-      if (queryTerms.length > 0) {
-        const termConditions = queryTerms.map(term => 
-          `sign_name_en.ilike.%${term}%,sign_name_jp.ilike.%${term}%`
-        ).join(',');
-        
-        const { data: partialMatch, error: partialError } = await supabase
+      // Strategy 2: Try name match without category (broader)
+      for (const term of queryTerms) {
+        const { data: nameMatch, error: nameError } = await supabase
           .from('road_sign_images')
           .select('storage_url, id')
           .eq('image_source', 'wikimedia_commons')
           .eq('is_verified', true)
-          .or(termConditions)
+          .or(`sign_name_en.ilike.%${term}%,sign_name_jp.ilike.%${term}%`)
           .order('usage_count', { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        if (!partialError && partialMatch) {
-          console.log(`Found Wikimedia image by partial name match: ${query}`);
-          return partialMatch;
+        if (!nameError && nameMatch) {
+          console.log(`Found Wikimedia image by name match: ${term}`);
+          return nameMatch;
         }
+      }
 
-        // Strategy 3: Try tags match (array contains)
-        // Check if tags array contains any of the query terms
+      // Strategy 3: Try tags match with category filter
+      if (category) {
         for (const term of queryTerms) {
           const { data: tagMatch, error: tagError } = await supabase
             .from('road_sign_images')
             .select('storage_url, id')
             .eq('image_source', 'wikimedia_commons')
             .eq('is_verified', true)
+            .eq('sign_category', category)
             .contains('tags', [term])
             .order('usage_count', { ascending: false })
             .limit(1)
             .maybeSingle();
 
           if (!tagError && tagMatch) {
-            console.log(`Found Wikimedia image by tag match: ${term}`);
+            console.log(`Found Wikimedia image by tag+category match: ${term} in ${category}`);
             return tagMatch;
           }
+        }
+      }
+
+      // Strategy 4: Try tags match without category
+      for (const term of queryTerms) {
+        const { data: tagMatch, error: tagError } = await supabase
+          .from('road_sign_images')
+          .select('storage_url, id')
+          .eq('image_source', 'wikimedia_commons')
+          .eq('is_verified', true)
+          .contains('tags', [term])
+          .order('usage_count', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!tagError && tagMatch) {
+          console.log(`Found Wikimedia image by tag match: ${term}`);
+          return tagMatch;
         }
       }
     }
