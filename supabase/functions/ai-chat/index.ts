@@ -137,6 +137,43 @@ async function fetchImage(query: string): Promise<string | null> {
   }
 }
 
+// Force every AI response into sections format with guaranteed images
+function forceSectionFormat(aiResponse: any, userQuery: string, imageUrl: string | null): any[] {
+  console.log('forceSectionFormat called with:', {
+    hasSections: !!aiResponse?.sections,
+    sectionsLength: aiResponse?.sections?.length || 0,
+    hasMessage: !!aiResponse?.message,
+    isString: typeof aiResponse === 'string',
+    hasImageUrl: !!imageUrl
+  });
+
+  // If AI returned proper sections, use them and guarantee images
+  if (aiResponse?.sections && Array.isArray(aiResponse.sections) && aiResponse.sections.length > 0) {
+    console.log(`Using existing ${aiResponse.sections.length} sections from AI, ensuring images...`);
+    return aiResponse.sections.map((section: any) => ({
+      heading: section.heading || null,
+      content: section.content || "",
+      summary: section.summary || null,
+      image: section.image || imageUrl, // GUARANTEE IMAGE
+    }));
+  }
+
+  // If AI returned plain text or message field → wrap it as a single section
+  const content = typeof aiResponse === "string" 
+    ? aiResponse 
+    : (aiResponse?.message || "");
+
+  console.log('Converting plain text response to sections format');
+  return [
+    {
+      heading: null,
+      content: content,
+      summary: null,
+      image: imageUrl, // GUARANTEE IMAGE
+    }
+  ];
+}
+
 // Fetch images for multiple sections
 async function fetchImagesForSections(sections: any[]): Promise<any[]> {
   console.log(`Fetching images for ${sections.length} sections...`);
@@ -150,13 +187,13 @@ async function fetchImagesForSections(sections: any[]): Promise<any[]> {
         } else {
           console.log(`Section ${index + 1}: No image found for query "${section.imageQuery}"`);
         }
-        return { ...section, image: imageUrl || null };
+        return { ...section, image: imageUrl || section.image || null };
       } catch (error) {
         console.error(`Section ${index + 1}: Error fetching image:`, error);
-        return { ...section, image: null };
+        return { ...section, image: section.image || null };
       }
     } else {
-      console.log(`Section ${index + 1}: No imageQuery provided`);
+      console.log(`Section ${index + 1}: No imageQuery provided, using existing image or null`);
     }
     return section;
   });
@@ -492,10 +529,92 @@ Topics you can help with:
 
     console.log('AI Chat response generated successfully');
 
-    // Try to parse as structured JSON response
+    // STEP 1: ALWAYS fetch an image FIRST (before processing AI response)
+    const userQuery = lastMessage?.content || '';
+    console.log(`🔍 STEP 1: Fetching image FIRST for query: "${userQuery}"`);
+    
+    let guaranteedImageUrl: string | null = null;
+    const detectedCategory = extractCategoryFromQuery(userQuery);
+    
+    // Try multiple strategies to find an image
+    try {
+      const supabase = getSupabaseClient();
+      
+      // Strategy 1: Try full user query
+      if (userQuery && supabase) {
+        const wikimediaImage = await findWikimediaImage(supabase, detectedCategory, userQuery);
+        if (wikimediaImage) {
+          guaranteedImageUrl = wikimediaImage.storage_url;
+          await incrementImageUsage(supabase, wikimediaImage.id);
+          console.log(`✅ Found image via full query: ${guaranteedImageUrl.substring(0, 80)}...`);
+        }
+      }
+      
+      // Strategy 2: Try extracting key terms if full query didn't work
+      if (!guaranteedImageUrl && userQuery && supabase) {
+        const queryTerms = userQuery.toLowerCase().split(/\s+/)
+          .filter(term => term.length >= 2 && !['the', 'a', 'an', 'is', 'are', 'what', 'how', 'does', 'when', 'where', 'why'].includes(term))
+          .sort((a, b) => b.length - a.length)
+          .slice(0, 3);
+        
+        for (const term of queryTerms) {
+          console.log(`  Trying term: "${term}"`);
+          const wikimediaImage = await findWikimediaImage(supabase, detectedCategory, term);
+          if (wikimediaImage) {
+            guaranteedImageUrl = wikimediaImage.storage_url;
+            await incrementImageUsage(supabase, wikimediaImage.id);
+            console.log(`✅ Found image via term "${term}": ${guaranteedImageUrl.substring(0, 80)}...`);
+            break;
+          }
+        }
+      }
+      
+      // Strategy 3: Category-based fallback
+      if (!guaranteedImageUrl && detectedCategory && supabase) {
+        console.log(`  Trying category fallback: ${detectedCategory}`);
+        const categoryImage = await findWikimediaImage(supabase, detectedCategory, null);
+        if (categoryImage) {
+          guaranteedImageUrl = categoryImage.storage_url;
+          await incrementImageUsage(supabase, categoryImage.id);
+          console.log(`✅ Found image via category: ${guaranteedImageUrl.substring(0, 80)}...`);
+        }
+      }
+      
+      // Strategy 4: Ultimate fallback - any regulatory sign
+      if (!guaranteedImageUrl && supabase) {
+        console.log(`  Trying ultimate fallback: regulatory sign`);
+        const fallbackImage = await findWikimediaImage(supabase, 'regulatory', null);
+        if (fallbackImage) {
+          guaranteedImageUrl = fallbackImage.storage_url;
+          await incrementImageUsage(supabase, fallbackImage.id);
+          console.log(`✅ Found image via regulatory fallback: ${guaranteedImageUrl.substring(0, 80)}...`);
+        }
+      }
+      
+      // Strategy 5: Serper API fallback (if Wikimedia failed)
+      if (!guaranteedImageUrl) {
+        console.log(`  Trying Serper API fallback`);
+        guaranteedImageUrl = await fetchImage(userQuery || 'japan road sign');
+        if (guaranteedImageUrl) {
+          console.log(`✅ Found image via Serper API: ${guaranteedImageUrl.substring(0, 80)}...`);
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error fetching guaranteed image:', error);
+    }
+    
+    if (!guaranteedImageUrl) {
+      console.warn('⚠️ WARNING: No image found after all strategies - response will have null image');
+    } else {
+      console.log(`✅ GUARANTEED IMAGE URL: ${guaranteedImageUrl.substring(0, 100)}...`);
+    }
+
+    // STEP 2: Parse AI response (try JSON first, fallback to plain text)
+    console.log(`🔍 STEP 2: Parsing AI response...`);
     let parsedResponse: any = null;
     try {
-      // First, try to extract JSON from markdown code blocks if present
+      // Try to extract JSON from markdown code blocks if present
       let jsonString = assistantMessage;
       
       // Remove markdown code blocks (```json ... ``` or ``` ... ```)
@@ -511,193 +630,41 @@ Topics you can help with:
       }
       
       parsedResponse = JSON.parse(jsonString.trim());
-      console.log('Successfully parsed structured JSON response');
+      console.log('✅ Successfully parsed structured JSON response');
     } catch (e) {
-      console.log('Response is plain text, not JSON structured:', e instanceof Error ? e.message : 'Parse error');
+      console.log('⚠️ Response is plain text, not JSON structured:', e instanceof Error ? e.message : 'Parse error');
+      parsedResponse = assistantMessage; // Keep as plain text for forceSectionFormat
     }
 
-    // If structured response with sections, fetch images for each section
-    if (parsedResponse && parsedResponse.sections && Array.isArray(parsedResponse.sections)) {
-      console.log(`Processing ${parsedResponse.sections.length} sections with images...`);
-      console.log('Sections structure:', JSON.stringify(parsedResponse.sections.map((s: any) => ({ 
-        heading: s.heading, 
-        hasImageQuery: !!s.imageQuery,
-        imageQuery: s.imageQuery 
-      })), null, 2));
-      
-      const sectionsWithImages = await fetchImagesForSections(parsedResponse.sections);
-      
-      // Ensure EVERY section has an image - add fallback images if missing
-      const sectionsWithGuaranteedImages = await Promise.all(
-        sectionsWithImages.map(async (section, index) => {
-          // If section already has an image, keep it
-          if (section.image) {
-            return section;
-          }
-          
-          // Try to fetch image using section's imageQuery if available
-          if (section.imageQuery) {
-            console.log(`Section ${index + 1} missing image, trying imageQuery: "${section.imageQuery}"`);
-            const imageUrl = await fetchImage(section.imageQuery);
-            if (imageUrl) {
-              return { ...section, image: imageUrl };
-            }
-          }
-          
-          // Try using the section heading as query
-          if (section.heading) {
-            console.log(`Section ${index + 1} missing image, trying heading: "${section.heading}"`);
-            const imageUrl = await fetchImage(section.heading);
-            if (imageUrl) {
-              return { ...section, image: imageUrl };
-            }
-          }
-          
-          // Try using the user's query
-          const userQuery = lastMessage?.content || '';
-          if (userQuery) {
-            console.log(`Section ${index + 1} missing image, trying user query: "${userQuery}"`);
-            const imageUrl = await fetchImage(userQuery);
-            if (imageUrl) {
-              return { ...section, image: imageUrl };
-            }
-          }
-          
-          // Final fallback: category-based image
-          const category = extractCategoryFromQuery(section.heading || userQuery || '');
-          if (category) {
-            console.log(`Section ${index + 1} missing image, trying category: "${category}"`);
-            const supabase = getSupabaseClient();
-            if (supabase) {
-              const categoryImage = await findWikimediaImage(supabase, category, null);
-              if (categoryImage) {
-                await incrementImageUsage(supabase, categoryImage.id);
-                return { ...section, image: categoryImage.storage_url };
-              }
-            }
-          }
-          
-          // Ultimate fallback: any regulatory sign
-          console.log(`Section ${index + 1} missing image, using regulatory fallback`);
-          const supabase = getSupabaseClient();
-          if (supabase) {
-            const fallbackImage = await findWikimediaImage(supabase, 'regulatory', null);
-            if (fallbackImage) {
-              await incrementImageUsage(supabase, fallbackImage.id);
-              return { ...section, image: fallbackImage.storage_url };
-            }
-          }
-          
-          // If all else fails, section.image will be null/undefined (frontend should handle gracefully)
-          console.warn(`Section ${index + 1} could not get any image after all fallbacks`);
-          return section;
-        })
-      );
-      
-      // Include uploaded images in response if available
-      const responseImages = hasImages ? lastMessage.images : undefined;
-      
-      const imagesCount = sectionsWithGuaranteedImages.filter((s: any) => s.image).length;
-      console.log(`Returning ${sectionsWithGuaranteedImages.length} sections, ${imagesCount} with images`);
-      
-      return new Response(
-        JSON.stringify({ 
-          sections: sectionsWithGuaranteedImages,
-          images: responseImages
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    } else {
-      console.log('Response is not structured JSON with sections, converting to sections with image...');
-      
-      // ALWAYS fetch an image for every response - extract from user query or use category fallback
-      const userQuery = lastMessage?.content || '';
-      console.log(`Attempting to fetch image for query: "${userQuery}"`);
-      
-      let imageUrl: string | null = null;
-      let imageQuery = userQuery;
-      
-      // Try to fetch image using the user's query
-      try {
-        imageUrl = await fetchImage(userQuery);
-        
-        // If not found, try extracting key terms from the query
-        if (!imageUrl && userQuery) {
-          const queryTerms = userQuery.toLowerCase().split(/\s+/)
-            .filter(term => term.length >= 3 && !['the', 'a', 'an', 'is', 'are', 'what', 'how', 'does', 'when', 'where', 'why'].includes(term))
-            .slice(0, 3); // Try first 3 meaningful terms
-          
-          for (const term of queryTerms) {
-            console.log(`Trying alternative term: "${term}"`);
-            imageUrl = await fetchImage(term);
-            if (imageUrl) {
-              imageQuery = term;
-              break;
-            }
-          }
-        }
-        
-        // If still not found, try category-based fallback
-        if (!imageUrl) {
-          const category = extractCategoryFromQuery(userQuery);
-          if (category) {
-            console.log(`Trying category-based fallback: ${category}`);
-            const supabase = getSupabaseClient();
-            if (supabase) {
-              const categoryImage = await findWikimediaImage(supabase, category, null);
-              if (categoryImage) {
-                imageUrl = categoryImage.storage_url;
-                await incrementImageUsage(supabase, categoryImage.id);
-                console.log(`Found category fallback image: ${category}`);
-              }
-            }
-          }
-        }
-        
-        // Final fallback: any regulatory sign (most common)
-        if (!imageUrl) {
-          console.log('Trying final fallback: any regulatory sign');
-          const supabase = getSupabaseClient();
-          if (supabase) {
-            const fallbackImage = await findWikimediaImage(supabase, 'regulatory', null);
-            if (fallbackImage) {
-              imageUrl = fallbackImage.storage_url;
-              await incrementImageUsage(supabase, fallbackImage.id);
-              console.log('Using regulatory sign as final fallback');
-            }
-          }
-        }
-        
-        if (imageUrl) {
-          console.log(`✅ Found image for response: ${imageUrl.substring(0, 80)}...`);
-        } else {
-          console.log('❌ No image found even after all fallbacks');
-        }
-      } catch (error) {
-        console.error('Error fetching image in fallback:', error);
+    // STEP 3: Force sections format with guaranteed image
+    console.log(`🔍 STEP 3: Forcing sections format with guaranteed image...`);
+    let sections = forceSectionFormat(parsedResponse, userQuery, guaranteedImageUrl);
+    
+    // STEP 4: Fetch additional images for sections that have imageQuery
+    console.log(`🔍 STEP 4: Fetching additional images for sections with imageQuery...`);
+    sections = await fetchImagesForSections(sections);
+    
+    // Ensure every section still has an image (use guaranteed image if missing)
+    sections = sections.map((section: any) => ({
+      ...section,
+      image: section.image || guaranteedImageUrl || null
+    }));
+    
+    const imagesCount = sections.filter((s: any) => s.image).length;
+    console.log(`✅ FINAL: Returning ${sections.length} sections, ${imagesCount} with images`);
+    
+    // Include uploaded images in response if available
+    const responseImages = hasImages ? lastMessage.images : undefined;
+    
+    return new Response(
+      JSON.stringify({ 
+        sections: sections,
+        images: responseImages
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
-      
-      // ALWAYS return sections format, even if no image found (frontend will handle missing image)
-      // Create a heading from the query or use a default
-      const heading = userQuery 
-        ? (userQuery.length > 60 ? userQuery.substring(0, 60) + '...' : userQuery)
-        : 'Japanese Driving Information';
-      
-      return new Response(
-        JSON.stringify({ 
-          sections: [{
-            heading: heading.charAt(0).toUpperCase() + heading.slice(1),
-            content: assistantMessage,
-            image: imageUrl || null // Include image even if null, frontend can handle
-          }]
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
+    );
   } catch (error) {
     // Log the full error for debugging
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
