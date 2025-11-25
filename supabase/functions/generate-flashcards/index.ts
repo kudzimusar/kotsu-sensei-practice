@@ -128,10 +128,10 @@ serve(async (req) => {
 
   try {
     const { category, count = 10 } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not configured");
     }
 
     console.log(`Generating ${count} flashcards for category: ${category}`);
@@ -182,52 +182,54 @@ Make sure:
 - Explanations are educational and concise
 - Return valid JSON only, no additional text.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { 
-            role: "user", 
-            content: `Generate ${requestedCount} flashcards with these image queries: ${selectedQueries.join(', ')}. Return only valid JSON.` 
-          },
-        ],
-        stream: false,
-      }),
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `${systemPrompt}\n\nGenerate ${requestedCount} flashcards with these image queries: ${selectedQueries.join(', ')}. Return only valid JSON.`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            responseMimeType: "application/json"
+          }
+        }),
+      }
+    );
 
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), 
+          JSON.stringify({ error: "Google AI rate limit exceeded. Free tier allows 15 requests/minute. Please try again shortly." }), 
           {
             status: 429,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
         );
       }
-      if (response.status === 402) {
+      if (response.status === 403) {
         return new Response(
-          JSON.stringify({ error: "AI service quota exceeded. Please contact support." }), 
+          JSON.stringify({ error: "Invalid API key or quota exceeded. Please check your Google AI Studio configuration." }), 
           {
-            status: 402,
+            status: 403,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
         );
       }
       
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
+      console.error("Google AI Studio error:", response.status, errorText);
+      throw new Error(`Google AI Studio error: ${response.status}`);
     }
 
     const data = await response.json();
-    const assistantMessage = data.choices?.[0]?.message?.content;
+    const assistantMessage = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!assistantMessage) {
       throw new Error("No response from AI");
