@@ -542,52 +542,94 @@ Topics you can help with:
         }
       );
     } else {
-      console.log('Response is not structured JSON with sections, checking if we should fetch an image anyway...');
+      console.log('Response is not structured JSON with sections, converting to sections with image...');
       
-      // Fallback: If the user's query needs a visual aid, try to fetch an image anyway
+      // ALWAYS fetch an image for every response - extract from user query or use category fallback
       const userQuery = lastMessage?.content || '';
-      console.log(`Checking if query needs visual aid: "${userQuery}"`);
+      console.log(`Attempting to fetch image for query: "${userQuery}"`);
       
-      if (needsVisualAid(userQuery)) {
-        console.log(`User query "${userQuery}" needs visual aid, attempting to fetch image...`);
-        try {
-          const imageUrl = await fetchImage(userQuery);
+      let imageUrl: string | null = null;
+      let imageQuery = userQuery;
+      
+      // Try to fetch image using the user's query
+      try {
+        imageUrl = await fetchImage(userQuery);
+        
+        // If not found, try extracting key terms from the query
+        if (!imageUrl && userQuery) {
+          const queryTerms = userQuery.toLowerCase().split(/\s+/)
+            .filter(term => term.length >= 3 && !['the', 'a', 'an', 'is', 'are', 'what', 'how', 'does', 'when', 'where', 'why'].includes(term))
+            .slice(0, 3); // Try first 3 meaningful terms
           
-          if (imageUrl) {
-            console.log(`✅ Found image for plain text response: ${imageUrl.substring(0, 80)}...`);
-            // Convert plain text to a section with image
-            return new Response(
-              JSON.stringify({ 
-                sections: [{
-                  heading: userQuery.charAt(0).toUpperCase() + userQuery.slice(1),
-                  content: assistantMessage,
-                  image: imageUrl
-                }]
-              }),
-              {
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-              }
-            );
-          } else {
-            console.log('❌ No image found for visual query, returning plain text');
+          for (const term of queryTerms) {
+            console.log(`Trying alternative term: "${term}"`);
+            imageUrl = await fetchImage(term);
+            if (imageUrl) {
+              imageQuery = term;
+              break;
+            }
           }
-        } catch (error) {
-          console.error('Error fetching image in fallback:', error);
         }
-      } else {
-        console.log(`Query "${userQuery}" does not need visual aid`);
+        
+        // If still not found, try category-based fallback
+        if (!imageUrl) {
+          const category = extractCategoryFromQuery(userQuery);
+          if (category) {
+            console.log(`Trying category-based fallback: ${category}`);
+            const supabase = getSupabaseClient();
+            if (supabase) {
+              const categoryImage = await findWikimediaImage(supabase, category, null);
+              if (categoryImage) {
+                imageUrl = categoryImage.storage_url;
+                await incrementImageUsage(supabase, categoryImage.id);
+                console.log(`Found category fallback image: ${category}`);
+              }
+            }
+          }
+        }
+        
+        // Final fallback: any regulatory sign (most common)
+        if (!imageUrl) {
+          console.log('Trying final fallback: any regulatory sign');
+          const supabase = getSupabaseClient();
+          if (supabase) {
+            const fallbackImage = await findWikimediaImage(supabase, 'regulatory', null);
+            if (fallbackImage) {
+              imageUrl = fallbackImage.storage_url;
+              await incrementImageUsage(supabase, fallbackImage.id);
+              console.log('Using regulatory sign as final fallback');
+            }
+          }
+        }
+        
+        if (imageUrl) {
+          console.log(`✅ Found image for response: ${imageUrl.substring(0, 80)}...`);
+        } else {
+          console.log('❌ No image found even after all fallbacks');
+        }
+      } catch (error) {
+        console.error('Error fetching image in fallback:', error);
       }
+      
+      // ALWAYS return sections format, even if no image found (frontend will handle missing image)
+      // Create a heading from the query or use a default
+      const heading = userQuery 
+        ? (userQuery.length > 60 ? userQuery.substring(0, 60) + '...' : userQuery)
+        : 'Japanese Driving Information';
+      
+      return new Response(
+        JSON.stringify({ 
+          sections: [{
+            heading: heading.charAt(0).toUpperCase() + heading.slice(1),
+            content: assistantMessage,
+            image: imageUrl || null // Include image even if null, frontend can handle
+          }]
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
-
-    // Plain text response (backward compatibility)
-    return new Response(
-      JSON.stringify({ 
-        message: assistantMessage
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
   } catch (error) {
     // Log the full error for debugging
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
