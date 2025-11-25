@@ -32,12 +32,15 @@ import ShareReferral from "./pages/ShareReferral";
 
 const queryClient = new QueryClient();
 
+// Determine the base path for routing based on environment
+const basename = import.meta.env.PROD ? '/kotsu-sensei-practice' : '';
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Index />} />
