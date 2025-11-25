@@ -1,5 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 // Detect if user question needs visual aid
 function needsVisualAid(userMessage: string): boolean {
@@ -90,8 +94,14 @@ serve(async (req) => {
       if (!msg.role || (msg.role !== 'user' && msg.role !== 'assistant' && msg.role !== 'system')) {
         throw new Error(`Invalid message role at index ${i}: ${msg.role}. Must be 'user', 'assistant', or 'system'`);
       }
-      if (msg.role !== 'system' && (!msg.content || typeof msg.content !== 'string' || msg.content.trim() === '')) {
-        throw new Error(`Invalid message content at index ${i}: must be a non-empty string for user/assistant messages`);
+      // Allow empty content if images are present
+      const hasImages = msg.images && Array.isArray(msg.images) && msg.images.length > 0;
+      if (msg.role !== 'system' && !hasImages && (!msg.content || typeof msg.content !== 'string' || msg.content.trim() === '')) {
+        throw new Error(`Invalid message content at index ${i}: must have either content or images`);
+      }
+      // Validate content type if present
+      if (msg.content && typeof msg.content !== 'string') {
+        throw new Error(`Invalid message content at index ${i}: content must be a string`);
       }
     }
 
@@ -194,6 +204,22 @@ Topics you can help with:
     if (LOVABLE_API_KEY) {
       try {
         console.log("Attempting primary API (LOVABLE_API_KEY)");
+        // Prepare messages for API - handle images and empty content
+        const apiMessages = messages.map((msg: any) => {
+          const apiMsg: any = {
+            role: msg.role,
+          };
+          // Include content if present
+          if (msg.content) {
+            apiMsg.content = msg.content;
+          }
+          // Include images if present (for vision API)
+          if (msg.images && Array.isArray(msg.images) && msg.images.length > 0) {
+            apiMsg.images = msg.images;
+          }
+          return apiMsg;
+        });
+
         response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -204,7 +230,7 @@ Topics you can help with:
             model: "google/gemini-2.5-flash",
             messages: [
               { role: "system", content: systemPrompt },
-              ...messages,
+              ...apiMessages,
             ],
             stream: false,
           }),
