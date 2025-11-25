@@ -9,16 +9,21 @@ const corsHeaders = {
 
 // Detect if user question needs visual aid
 function needsVisualAid(userMessage: string): boolean {
+  if (!userMessage || userMessage.trim().length === 0) return false;
+  
   const visualKeywords = [
     'sign', 'signal', 'marking', 'symbol', 'arrow',
     'traffic light', 'pedestrian crossing', 'zebra crossing',
     'road marking', 'lane', 'intersection marking',
     'stop sign', 'yield sign', 'speed limit', 'no parking',
-    'what does', 'show me', 'how does', 'looks like', 'look like'
+    'what does', 'show me', 'how does', 'looks like', 'look like',
+    'what is', 'explain', 'tell me about'
   ];
   
   const lowercaseMessage = userMessage.toLowerCase();
-  return visualKeywords.some(keyword => lowercaseMessage.includes(keyword));
+  const needsImage = visualKeywords.some(keyword => lowercaseMessage.includes(keyword));
+  console.log(`needsVisualAid("${userMessage}"): ${needsImage}`);
+  return needsImage;
 }
 
 // Get Supabase client for image lookup
@@ -541,28 +546,36 @@ Topics you can help with:
       
       // Fallback: If the user's query needs a visual aid, try to fetch an image anyway
       const userQuery = lastMessage?.content || '';
+      console.log(`Checking if query needs visual aid: "${userQuery}"`);
+      
       if (needsVisualAid(userQuery)) {
         console.log(`User query "${userQuery}" needs visual aid, attempting to fetch image...`);
-        const imageUrl = await fetchImage(userQuery);
-        
-        if (imageUrl) {
-          console.log(`Found image for plain text response: ${imageUrl.substring(0, 80)}...`);
-          // Convert plain text to a section with image
-          return new Response(
-            JSON.stringify({ 
-              sections: [{
-                heading: userQuery.charAt(0).toUpperCase() + userQuery.slice(1),
-                content: assistantMessage,
-                image: imageUrl
-              }]
-            }),
-            {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            }
-          );
-        } else {
-          console.log('No image found for visual query, returning plain text');
+        try {
+          const imageUrl = await fetchImage(userQuery);
+          
+          if (imageUrl) {
+            console.log(`✅ Found image for plain text response: ${imageUrl.substring(0, 80)}...`);
+            // Convert plain text to a section with image
+            return new Response(
+              JSON.stringify({ 
+                sections: [{
+                  heading: userQuery.charAt(0).toUpperCase() + userQuery.slice(1),
+                  content: assistantMessage,
+                  image: imageUrl
+                }]
+              }),
+              {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+              }
+            );
+          } else {
+            console.log('❌ No image found for visual query, returning plain text');
+          }
+        } catch (error) {
+          console.error('Error fetching image in fallback:', error);
         }
+      } else {
+        console.log(`Query "${userQuery}" does not need visual aid`);
       }
     }
 
