@@ -104,7 +104,30 @@ async function analyzeImageWithAI(
     throw new Error('No AI API key configured');
   }
 
-  const systemPrompt = `You are an expert Japanese driving instructor. Analyze this Japanese road sign image and provide a detailed analysis.
+  const systemPrompt = `You are an expert Japanese driving instructor specializing in Japanese traffic signs and road markings. Your task is to analyze this image and identify the Japanese road sign, traffic marking, or road signal.
+
+CRITICAL: This is a JAPANESE road sign/marking. Japanese signs have unique characteristics:
+- Japanese text (hiragana, katakana, kanji) is common
+- Color schemes: Red = prohibition/stop, Yellow = warning, Blue = instruction/guidance, Green = expressway
+- Shapes: Circular = regulatory, Triangular = warning, Rectangular = guidance/indication
+- Unique Japanese signs: 止まれ (stop), 徐行 (slow down), 一時停止 (temporary stop), 進入禁止 (no entry)
+- Road markings: Yellow lines, white lines, arrows, pedestrian crossings (zebra stripes)
+- Traffic signals: Red (赤), Yellow (黄), Green (青) - note: Japanese "green" traffic light is actually blue-green
+
+COMMON JAPANESE ROAD SIGNS TO RECOGNIZE:
+- Regulatory: 止まれ (Stop), 一時停止 (Temporary Stop), 進入禁止 (No Entry), 通行止め (Road Closed), 駐車禁止 (No Parking), 駐車違反 (Parking Violation), 最高速度 (Maximum Speed), 車両進入禁止 (No Vehicle Entry)
+- Warning: 注意 (Caution), 落石注意 (Falling Rocks), 動物注意 (Animal Crossing), 学校 (School Zone), 工事中 (Road Work)
+- Indication: 一方通行 (One Way), 右折禁止 (No Right Turn), 左折禁止 (No Left Turn), 直進禁止 (No Straight Ahead)
+- Guidance: 案内 (Guidance), 方向 (Direction), 距離 (Distance), 出口 (Exit), 入口 (Entrance)
+- Road Markings: 横断歩道 (Pedestrian Crossing), 停止線 (Stop Line), 矢印 (Arrow), 中央線 (Center Line), 路側帯 (Shoulder)
+
+ANALYSIS REQUIREMENTS:
+1. Look carefully at ALL text, symbols, colors, and shapes in the image
+2. Identify if it's a sign, road marking, or traffic signal
+3. Read any Japanese text (hiragana, katakana, kanji) present
+4. Note the color scheme and shape
+5. Determine the exact meaning in Japanese traffic law context
+6. Provide accurate Japanese name (hiragana/katakana/kanji) and English translation
 
 Return a JSON object with the following structure:
 {
@@ -112,16 +135,34 @@ Return a JSON object with the following structure:
   "sign_name_jp": "一時停止",
   "category": "regulatory",
   "meaning": "Must come to a complete stop",
-  "explanation": "This red octagonal sign with white text means you must come to a complete stop before proceeding. Check all directions before continuing.",
+  "explanation": "This red octagonal sign with white text '止まれ' or '一時停止' means you must come to a complete stop before proceeding. Check all directions before continuing. This is a critical safety sign at intersections.",
   "confidence": 0.95,
-  "tags": ["stop", "regulatory", "intersection"]
+  "tags": ["stop", "regulatory", "intersection", "safety"]
 }
 
-Categories must be one of: regulatory, warning, indication, guidance, auxiliary, road-markings
-Confidence should be between 0 and 1
-Tags should be relevant keywords for searching
+CATEGORIES (choose the most accurate):
+- "regulatory": Prohibitions, requirements, mandatory actions (red circles, blue circles with white symbols)
+- "warning": Cautions, hazards, alerts (yellow triangles, yellow diamonds)
+- "indication": Information, directions, guidance (blue rectangles, green rectangles for expressways)
+- "guidance": Route information, destinations, distances (blue/green rectangles)
+- "auxiliary": Supplementary signs, additional information (white rectangles with black text)
+- "road-markings": Painted lines, arrows, symbols on the road surface (white/yellow lines, zebra crossings)
 
-Return ONLY valid JSON, no additional text.`;
+CONFIDENCE: Rate your confidence 0.0 to 1.0 based on:
+- 0.9-1.0: Clear sign with readable text/symbols, high certainty
+- 0.7-0.89: Recognizable but some ambiguity
+- 0.5-0.69: Partial recognition, some uncertainty
+- Below 0.5: Very unclear or unrecognizable
+
+TAGS: Include relevant keywords like: stop, speed, parking, turn, warning, intersection, pedestrian, school, construction, expressway, etc.
+
+IMPORTANT: 
+- If you see Japanese text, include it EXACTLY as shown in sign_name_jp
+- If multiple signs/markings are visible, analyze the PRIMARY/MOST PROMINENT one
+- If it's a road marking (painted on road), note that in the explanation
+- Be specific about colors, shapes, and Japanese text present
+
+Return ONLY valid JSON, no additional text or markdown formatting.`;
 
   // Prepare image data
   const imageData = {
