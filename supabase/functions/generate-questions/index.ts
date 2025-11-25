@@ -13,12 +13,18 @@ serve(async (req) => {
 
   try {
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    const GOOGLE_AI_STUDIO_API_KEY = Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY not configured');
+    // Use GOOGLE_AI_STUDIO_API_KEY as primary, then GEMINI_API_KEY
+    const apiKey = GOOGLE_AI_STUDIO_API_KEY || GEMINI_API_KEY;
+    
+    if (!apiKey) {
+      throw new Error('No API key configured. Please set GOOGLE_AI_STUDIO_API_KEY or GEMINI_API_KEY');
     }
+    
+    console.log('API Keys available: GOOGLE_AI_STUDIO=', !!GOOGLE_AI_STUDIO_API_KEY, 'GEMINI=', !!GEMINI_API_KEY);
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
@@ -64,7 +70,7 @@ EXAMPLE QUESTIONS:
 
     // Call Gemini API for text generation
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
