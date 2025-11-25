@@ -527,14 +527,82 @@ Topics you can help with:
       
       const sectionsWithImages = await fetchImagesForSections(parsedResponse.sections);
       
+      // Ensure EVERY section has an image - add fallback images if missing
+      const sectionsWithGuaranteedImages = await Promise.all(
+        sectionsWithImages.map(async (section, index) => {
+          // If section already has an image, keep it
+          if (section.image) {
+            return section;
+          }
+          
+          // Try to fetch image using section's imageQuery if available
+          if (section.imageQuery) {
+            console.log(`Section ${index + 1} missing image, trying imageQuery: "${section.imageQuery}"`);
+            const imageUrl = await fetchImage(section.imageQuery);
+            if (imageUrl) {
+              return { ...section, image: imageUrl };
+            }
+          }
+          
+          // Try using the section heading as query
+          if (section.heading) {
+            console.log(`Section ${index + 1} missing image, trying heading: "${section.heading}"`);
+            const imageUrl = await fetchImage(section.heading);
+            if (imageUrl) {
+              return { ...section, image: imageUrl };
+            }
+          }
+          
+          // Try using the user's query
+          const userQuery = lastMessage?.content || '';
+          if (userQuery) {
+            console.log(`Section ${index + 1} missing image, trying user query: "${userQuery}"`);
+            const imageUrl = await fetchImage(userQuery);
+            if (imageUrl) {
+              return { ...section, image: imageUrl };
+            }
+          }
+          
+          // Final fallback: category-based image
+          const category = extractCategoryFromQuery(section.heading || userQuery || '');
+          if (category) {
+            console.log(`Section ${index + 1} missing image, trying category: "${category}"`);
+            const supabase = getSupabaseClient();
+            if (supabase) {
+              const categoryImage = await findWikimediaImage(supabase, category, null);
+              if (categoryImage) {
+                await incrementImageUsage(supabase, categoryImage.id);
+                return { ...section, image: categoryImage.storage_url };
+              }
+            }
+          }
+          
+          // Ultimate fallback: any regulatory sign
+          console.log(`Section ${index + 1} missing image, using regulatory fallback`);
+          const supabase = getSupabaseClient();
+          if (supabase) {
+            const fallbackImage = await findWikimediaImage(supabase, 'regulatory', null);
+            if (fallbackImage) {
+              await incrementImageUsage(supabase, fallbackImage.id);
+              return { ...section, image: fallbackImage.storage_url };
+            }
+          }
+          
+          // If all else fails, section.image will be null/undefined (frontend should handle gracefully)
+          console.warn(`Section ${index + 1} could not get any image after all fallbacks`);
+          return section;
+        })
+      );
+      
       // Include uploaded images in response if available
       const responseImages = hasImages ? lastMessage.images : undefined;
       
-      console.log(`Returning ${sectionsWithImages.length} sections, ${sectionsWithImages.filter((s: any) => s.image).length} with images`);
+      const imagesCount = sectionsWithGuaranteedImages.filter((s: any) => s.image).length;
+      console.log(`Returning ${sectionsWithGuaranteedImages.length} sections, ${imagesCount} with images`);
       
       return new Response(
         JSON.stringify({ 
-          sections: sectionsWithImages,
+          sections: sectionsWithGuaranteedImages,
           images: responseImages
         }),
         {
