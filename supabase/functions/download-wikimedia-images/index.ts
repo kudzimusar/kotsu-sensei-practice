@@ -1,38 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
-import * as dotenv from 'dotenv';
-import { join } from 'path';
-
-// Load environment variables
-dotenv.config({ path: join(process.cwd(), '.env.local') });
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-
-if (!SUPABASE_URL) {
-  console.error('Missing SUPABASE_URL environment variable');
-  console.error('Please set VITE_SUPABASE_URL or SUPABASE_URL in .env.local');
-  process.exit(1);
-}
-
-if (!SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable');
-  console.error('Please set SUPABASE_SERVICE_ROLE_KEY in .env.local');
-  console.error('You can find it in Supabase Dashboard > Settings > API > service_role key');
-  console.error('\nAlternatively, run with: SUPABASE_SERVICE_ROLE_KEY=your_key npx tsx scripts/download-wikimedia-images.ts');
-  process.exit(1);
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-// Map Wikimedia Commons categories to app categories
-const CATEGORY_MAP: { [key: string]: string } = {
-  'Information signs': 'guidance',
-  'Warning signs': 'warning',
-  'Regulatory signs': 'regulatory',
-  'Instruction signs': 'indication',
-  'Auxiliary signs': 'auxiliary',
-  'Road markings': 'road-markings',
-};
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.77.0";
+import { corsHeaders } from "../_shared/cors.ts";
 
 // Wikimedia Commons API base URL
 const WIKIMEDIA_API_URL = 'https://commons.wikimedia.org/w/api.php';
@@ -66,7 +34,7 @@ async function fetchCategoryImages(categoryTitle: string): Promise<WikimediaImag
       generator: 'categorymembers',
       gcmtitle: `Category:${categoryTitle}`,
       gcmtype: 'file',
-      gcmlimit: '500', // Max per request
+      gcmlimit: '500',
       prop: 'imageinfo|categories',
       iiprop: 'url|extmetadata',
       iiextmetadatafilter: 'ImageDescription|ObjectName',
@@ -92,11 +60,9 @@ async function fetchCategoryImages(categoryTitle: string): Promise<WikimediaImag
         }
       }
 
-      // Check for continuation
       continueParam = data.continue?.gcmcontinue;
       console.log(`  Fetched ${images.length} images so far...`);
 
-      // Rate limiting - be respectful
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
       console.error(`Error fetching category ${categoryTitle}:`, error);
@@ -112,18 +78,14 @@ async function fetchCategoryImages(categoryTitle: string): Promise<WikimediaImag
  * Extract sign name from image title or description
  */
 function extractSignName(title: string, description?: string): { en: string | null; jp: string | null } {
-  // Remove file extension and common prefixes
   let cleanTitle = title
     .replace(/^File:/, '')
     .replace(/\.(png|jpg|jpeg|svg|gif)$/i, '')
     .trim();
 
-  // Try to extract Japanese and English names
-  // Common pattern: "English (Japanese)" or "Japanese - English"
   const jpMatch = cleanTitle.match(/[（(]([^）)]+)[）)]/);
   const jpName = jpMatch ? jpMatch[1].trim() : null;
 
-  // Remove Japanese part to get English
   const enName = cleanTitle
     .replace(/[（(][^）)]+[）)]/g, '')
     .replace(/[-–—].*$/, '')
@@ -141,7 +103,6 @@ function extractSignName(title: string, description?: string): { en: string | nu
 function extractTags(title: string, description?: string): string[] {
   const tags: Set<string> = new Set();
   
-  // Add words from title
   const titleWords = title
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, ' ')
@@ -150,7 +111,6 @@ function extractTags(title: string, description?: string): string[] {
   
   titleWords.forEach(word => tags.add(word));
 
-  // Add common sign-related terms
   const commonTerms = ['sign', 'road', 'traffic', 'japan', 'japanese', 'regulatory', 'warning', 'indication', 'guidance', 'auxiliary'];
   commonTerms.forEach(term => tags.add(term));
 
@@ -165,10 +125,8 @@ function determineCategory(title: string, description?: string, categories?: str
   const lowerDesc = (description || '').toLowerCase();
   const lowerCats = (categories || []).map(c => c.toLowerCase());
 
-  // Check category strings
   const allText = `${lowerTitle} ${lowerDesc} ${lowerCats.join(' ')}`;
 
-  // Map based on keywords
   if (allText.includes('information') || allText.includes('guidance') || allText.includes('案内')) {
     return 'guidance';
   }
@@ -194,7 +152,7 @@ function determineCategory(title: string, description?: string, categories?: str
 /**
  * Download image from URL
  */
-async function downloadImage(url: string): Promise<Buffer | null> {
+async function downloadImage(url: string): Promise<Uint8Array | null> {
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -202,7 +160,7 @@ async function downloadImage(url: string): Promise<Buffer | null> {
       return null;
     }
     const arrayBuffer = await response.arrayBuffer();
-    return Buffer.from(arrayBuffer);
+    return new Uint8Array(arrayBuffer);
   } catch (error) {
     console.error(`Error downloading image:`, error);
     return null;
@@ -213,7 +171,8 @@ async function downloadImage(url: string): Promise<Buffer | null> {
  * Upload image to Supabase storage
  */
 async function uploadToSupabase(
-  imageBuffer: Buffer,
+  supabase: ReturnType<typeof createClient>,
+  imageBuffer: Uint8Array,
   fileName: string,
   mimeType: string
 ): Promise<{ path: string; url: string } | null> {
@@ -224,7 +183,7 @@ async function uploadToSupabase(
       .from('road-sign-images')
       .upload(storagePath, imageBuffer, {
         contentType: mimeType,
-        upsert: true, // Overwrite if exists
+        upsert: true,
       });
 
     if (error) {
@@ -232,7 +191,6 @@ async function uploadToSupabase(
       return null;
     }
 
-    // Get public URL
     const { data: urlData } = supabase.storage
       .from('road-sign-images')
       .getPublicUrl(storagePath);
@@ -250,7 +208,10 @@ async function uploadToSupabase(
 /**
  * Process and store a single image
  */
-async function processImage(image: WikimediaImage): Promise<boolean> {
+async function processImage(
+  supabase: ReturnType<typeof createClient>,
+  image: WikimediaImage
+): Promise<boolean> {
   try {
     const title = image.title;
     const imageInfo = image.imageinfo[0];
@@ -264,7 +225,7 @@ async function processImage(image: WikimediaImage): Promise<boolean> {
       .from('road_sign_images')
       .select('id')
       .eq('wikimedia_file_name', title)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       console.log(`  Skipping ${title} (already exists)`);
@@ -274,7 +235,7 @@ async function processImage(image: WikimediaImage): Promise<boolean> {
     // Extract metadata
     const signNames = extractSignName(title, description);
     const tags = extractTags(title, description);
-    const category = determineCategory(title, description, image.categories) || 'regulatory'; // Default to regulatory
+    const category = determineCategory(title, description, image.categories) || 'regulatory';
 
     // Download image
     console.log(`  Downloading: ${title}`);
@@ -293,7 +254,7 @@ async function processImage(image: WikimediaImage): Promise<boolean> {
 
     // Upload to Supabase
     const fileName = title.replace(/^File:/, '').replace(/\s+/g, '-');
-    const uploadResult = await uploadToSupabase(imageBuffer, fileName, mimeType);
+    const uploadResult = await uploadToSupabase(supabase, imageBuffer, fileName, mimeType);
     
     if (!uploadResult) {
       console.error(`  Failed to upload: ${title}`);
@@ -335,53 +296,89 @@ async function processImage(image: WikimediaImage): Promise<boolean> {
   }
 }
 
-/**
- * Main function
- */
-async function main() {
-  console.log('Starting Wikimedia Commons image download...\n');
-
-  // Fetch images from the main category
-  const categoryTitle = 'Road_signs_in_Japan';
-  const images = await fetchCategoryImages(categoryTitle);
-
-  if (images.length === 0) {
-    console.log('No images found. Exiting.');
-    return;
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
   }
 
-  console.log(`\nProcessing ${images.length} images...\n`);
+  try {
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-  let successCount = 0;
-  let errorCount = 0;
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'Supabase credentials not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-  // Process images in batches to avoid overwhelming the API
-  const batchSize = 5;
-  for (let i = 0; i < images.length; i += batchSize) {
-    const batch = images.slice(i, i + batchSize);
-    const results = await Promise.all(batch.map(img => processImage(img)));
-    
-    results.forEach(success => {
-      if (success) successCount++;
-      else errorCount++;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
     });
 
-    // Progress update
-    console.log(`\nProgress: ${Math.min(i + batchSize, images.length)}/${images.length} processed`);
-    console.log(`  Success: ${successCount}, Errors: ${errorCount}\n`);
+    const { limit = 10, offset = 0 } = await req.json().catch(() => ({}));
 
-    // Rate limiting between batches
-    if (i + batchSize < images.length) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+    console.log('Starting Wikimedia Commons image download...\n');
+
+    // Fetch images from the main category
+    const categoryTitle = 'Road_signs_in_Japan';
+    const images = await fetchCategoryImages(categoryTitle);
+
+    if (images.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'No images found', total: 0, processed: 0 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    // Process images in batches
+    const batchSize = 5;
+    const startIndex = offset || 0;
+    const endIndex = limit ? Math.min(startIndex + limit, images.length) : images.length;
+    const imagesToProcess = images.slice(startIndex, endIndex);
+
+    console.log(`\nProcessing ${imagesToProcess.length} images (${startIndex + 1}-${endIndex} of ${images.length})...\n`);
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < imagesToProcess.length; i += batchSize) {
+      const batch = imagesToProcess.slice(i, i + batchSize);
+      const results = await Promise.all(batch.map(img => processImage(supabase, img)));
+      
+      results.forEach(success => {
+        if (success) successCount++;
+        else errorCount++;
+      });
+
+      console.log(`\nProgress: ${Math.min(i + batchSize, imagesToProcess.length)}/${imagesToProcess.length} processed`);
+      console.log(`  Success: ${successCount}, Errors: ${errorCount}\n`);
+
+      if (i + batchSize < imagesToProcess.length) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        total: images.length,
+        processed: imagesToProcess.length,
+        successCount,
+        errorCount,
+        message: `Processed ${imagesToProcess.length} images (${successCount} successful, ${errorCount} errors)`
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Error in download-wikimedia-images function:', error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error occurred' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
-
-  console.log('\n=== Download Complete ===');
-  console.log(`Total images: ${images.length}`);
-  console.log(`Successfully stored: ${successCount}`);
-  console.log(`Errors: ${errorCount}`);
-}
-
-// Run the script
-main().catch(console.error);
+});
 
