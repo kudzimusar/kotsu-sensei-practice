@@ -262,7 +262,7 @@ async function processImage(
     }
 
     // Store in database
-    const { error: dbError } = await supabase
+    const { error: dbError } = await (supabase as any)
       .from('road_sign_images')
       .insert({
         storage_type: 'supabase',
@@ -347,7 +347,7 @@ serve(async (req) => {
 
     for (let i = 0; i < imagesToProcess.length; i += batchSize) {
       const batch = imagesToProcess.slice(i, i + batchSize);
-      const results = await Promise.all(batch.map(img => processImage(supabase, img)));
+      const results = await Promise.all(batch.map(img => processImage(supabase as any, img)));
       
       results.forEach(success => {
         if (success) successCount++;
