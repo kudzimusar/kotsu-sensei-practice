@@ -27,40 +27,60 @@ export async function findWikimediaImage(
   try {
     // Extract key terms from query for better matching
     const searchQuery = query ? query.toLowerCase().trim() : '';
-    // Filter out common words and keep meaningful terms (length >= 2, but prioritize longer terms)
+    // Filter out generic location/common words that match too many images
+    const genericTerms = ['the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 
+                          'japan', 'japanese', 'road', 'sign', 'traffic', 'in', 'on', 'at'];
     const queryTerms = searchQuery ? searchQuery.split(/\s+/)
-      .filter(term => term.length >= 2 && !['the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being'].includes(term))
+      .filter(term => term.length >= 2 && !genericTerms.includes(term))
       .sort((a, b) => b.length - a.length) // Prioritize longer terms first
       : [];
     
-    console.log(`Looking up image for query: "${query}", category: "${category}", terms: [${queryTerms.join(', ')}]`);
+    console.log(`Looking up image for query: "${query}", category: "${category}", filtered terms: [${queryTerms.join(', ')}]`);
     
     // If we have a query, prioritize name/tag matching over category-only matching
     if (query && queryTerms.length > 0) {
-      // Strategy 1: Try exact name match with category filter (most specific)
-      if (category) {
-      for (const term of queryTerms) {
-        const { data: exactMatch, error: exactError } = await supabase
+      // Strategy 1: Try full query string match first (most specific)
+      if (searchQuery.length >= 3) {
+        const { data: fullMatch, error: fullError } = await (supabase as any)
           .from('road_sign_images')
           .select('storage_url, id, attribution_text, license_info, wikimedia_page_url, artist_name')
           .eq('image_source', 'wikimedia_commons')
           .eq('is_verified', true)
-          .eq('sign_category', category)
-          .or(`sign_name_en.ilike.%${term}%,sign_name_jp.ilike.%${term}%,sign_meaning.ilike.%${term}%`)
+          .or(`sign_name_en.ilike.%${searchQuery}%,sign_name_jp.ilike.%${searchQuery}%,sign_meaning.ilike.%${searchQuery}%`)
           .order('usage_count', { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        if (!exactError && exactMatch) {
-          console.log(`Found Wikimedia image by name+category match: ${term} in ${category}`);
-          return exactMatch;
+        if (!fullError && fullMatch) {
+          console.log(`Found Wikimedia image by full query match: "${searchQuery}"`);
+          return fullMatch;
         }
       }
+
+      // Strategy 2: Try exact name match with category filter (specific)
+      if (category) {
+        for (const term of queryTerms) {
+          const { data: exactMatch, error: exactError } = await (supabase as any)
+            .from('road_sign_images')
+            .select('storage_url, id, attribution_text, license_info, wikimedia_page_url, artist_name')
+            .eq('image_source', 'wikimedia_commons')
+            .eq('is_verified', true)
+            .eq('sign_category', category)
+            .or(`sign_name_en.ilike.%${term}%,sign_name_jp.ilike.%${term}%,sign_meaning.ilike.%${term}%`)
+            .order('usage_count', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (!exactError && exactMatch) {
+            console.log(`Found Wikimedia image by name+category match: ${term} in ${category}`);
+            return exactMatch;
+          }
+        }
       }
 
-      // Strategy 2: Try name match without category (broader)
+      // Strategy 3: Try name match without category (broader)
       for (const term of queryTerms) {
-        const { data: nameMatch, error: nameError } = await supabase
+        const { data: nameMatch, error: nameError } = await (supabase as any)
           .from('road_sign_images')
           .select('storage_url, id, attribution_text, license_info, wikimedia_page_url, artist_name')
           .eq('image_source', 'wikimedia_commons')
