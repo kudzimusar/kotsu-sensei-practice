@@ -260,6 +260,7 @@ async function listStorageFiles(): Promise<StorageFile[]> {
  */
 async function fetchWikimediaFilesList(): Promise<string[]> {
   console.log('📥 Fetching Wikimedia Commons file list...');
+  console.log('  Using category: Category:Road signs of Japan');
   
   const files: string[] = [];
   let continueParam: string | undefined = undefined;
@@ -269,9 +270,9 @@ async function fetchWikimediaFilesList(): Promise<string[]> {
       action: 'query',
       format: 'json',
       list: 'categorymembers',
-      cmtitle: 'Category:Road_signs_of_Japan',
-      cmlimit: '500',
-      cmnamespace: '6', // File namespace
+      cmtitle: 'Category:Road signs of Japan', // Use spaces, not underscores
+      cmtype: 'file', // Use cmtype=file instead of cmnamespace
+      cmlimit: 'max', // Get maximum results per page
       origin: '*',
     });
 
@@ -279,22 +280,67 @@ async function fetchWikimediaFilesList(): Promise<string[]> {
       params.append('cmcontinue', continueParam);
     }
 
-    const response = await fetch(`${WIKIMEDIA_API_URL}?${params.toString()}`);
+    const url = `${WIKIMEDIA_API_URL}?${params.toString()}`;
+    console.log(`  Fetching page... (${files.length} files so far)`);
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      console.error(`  ❌ API request failed: ${response.status} ${response.statusText}`);
+      const text = await response.text();
+      console.error(`  Response: ${text.substring(0, 200)}`);
+      break;
+    }
+    
     const data = await response.json();
+    
+    // Check for API errors
+    if (data.error) {
+      console.error(`  ❌ API error: ${data.error.code} - ${data.error.info}`);
+      break;
+    }
 
     if (data.query?.categorymembers) {
+      const batchSize = data.query.categorymembers.length;
+      console.log(`  📄 Retrieved ${batchSize} items from this page`);
+      
       for (const member of data.query.categorymembers) {
         if (member.title && member.title.startsWith('File:')) {
           files.push(member.title);
         }
       }
+      
+      console.log(`  ✅ Total files found: ${files.length}`);
+    } else {
+      console.warn('  ⚠️  No categorymembers in response');
+      if (data.query) {
+        console.warn(`  Response structure: ${JSON.stringify(Object.keys(data.query)).substring(0, 200)}`);
+      }
     }
 
     continueParam = data.continue?.cmcontinue;
-    console.log(`  Fetched ${files.length} file titles so far...`);
+    
+    // Rate limiting between pages
+    if (continueParam) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
   } while (continueParam);
 
-  console.log(`✅ Found ${files.length} Wikimedia files`);
+  console.log(`\n✅ Found ${files.length} Wikimedia files total`);
+  
+  if (files.length > 0) {
+    console.log(`  Sample files (first 3):`);
+    files.slice(0, 3).forEach((file, i) => {
+      console.log(`    ${i + 1}. ${file}`);
+    });
+  } else {
+    console.warn('  ⚠️  WARNING: No files were fetched!');
+    console.warn('  This could indicate:');
+    console.warn('    - Incorrect category name');
+    console.warn('    - API endpoint issue');
+    console.warn('    - Network/CORS problem');
+  }
+  
   return files;
 }
 
@@ -316,16 +362,35 @@ async function fetchWikimediaMetadata(
   });
 
   try {
-    const response = await fetch(`${WIKIMEDIA_API_URL}?${params.toString()}`);
+    const url = `${WIKIMEDIA_API_URL}?${params.toString()}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      console.error(`  ⚠️  Failed to fetch metadata for ${fileTitle}: ${response.status}`);
+      return null;
+    }
+    
     const data = await response.json();
+    
+    // Check for API errors
+    if (data.error) {
+      console.error(`  ⚠️  API error for ${fileTitle}: ${data.error.code} - ${data.error.info}`);
+      return null;
+    }
 
     const pages = data.query?.pages;
-    if (!pages) return null;
+    if (!pages) {
+      console.warn(`  ⚠️  No pages in response for ${fileTitle}`);
+      return null;
+    }
 
     const pageId = Object.keys(pages)[0];
     const page = pages[pageId];
 
-    if (!page || page.missing) return null;
+    if (!page || page.missing) {
+      console.warn(`  ⚠️  Page missing or not found: ${fileTitle}`);
+      return null;
+    }
 
     // Extract categories
     const categories: string[] = [];
@@ -337,6 +402,9 @@ async function fetchWikimediaMetadata(
       }
     }
 
+    const imageInfo = page.imageinfo?.[0];
+    const hasLicense = imageInfo?.extmetadata?.LicenseShortName?.value || imageInfo?.extmetadata?.License?.value;
+    
     return {
       title: page.title,
       pageid: page.pageid,
@@ -344,7 +412,7 @@ async function fetchWikimediaMetadata(
       imageinfo: page.imageinfo || [],
     };
   } catch (error) {
-    console.error(`Error fetching metadata for ${fileTitle}:`, error);
+    console.error(`  ❌ Error fetching metadata for ${fileTitle}:`, error instanceof Error ? error.message : error);
     return null;
   }
 }
@@ -357,14 +425,58 @@ async function matchFiles(
   wikimediaFiles: string[]
 ): Promise<MatchResult[]> {
   console.log('🔍 Matching storage files to Wikimedia metadata...');
+  console.log(`  Storage files: ${storageFiles.length}`);
+  console.log(`  Wikimedia files available: ${wikimediaFiles.length}\n`);
   
   const matches: MatchResult[] = [];
   const matchedStoragePaths = new Set<string>();
   const matchedWikimediaTitles = new Set<string>();
 
-  // Strategy 1: Match by existing wikimedia_file_name in database
-  console.log('  Strategy 1: Checking existing wikimedia_file_name in database...');
+  // If we successfully fetched Wikimedia files from API, prioritize those
+  if (wikimediaFiles.length > 0) {
+    // Strategy 1: Match by normalized filename (when we have API files)
+    console.log('  Strategy 1: Matching by normalized filenames...');
+    let filenameMatches = 0;
+    for (const storageFile of storageFiles) {
+      if (matchedStoragePaths.has(storageFile.path)) continue;
+
+      const normalizedStorage = normalizeFilename(storageFile.name);
+      
+      for (const wikimediaTitle of wikimediaFiles) {
+        if (matchedWikimediaTitles.has(wikimediaTitle)) continue;
+
+        const normalizedWikimedia = normalizeFilename(wikimediaTitle);
+        
+        if (normalizedStorage === normalizedWikimedia || 
+            normalizedStorage.includes(normalizedWikimedia) ||
+            normalizedWikimedia.includes(normalizedStorage)) {
+          const metadata = await fetchWikimediaMetadata(wikimediaTitle);
+          if (metadata) {
+            matches.push({
+              storageFile,
+              wikimediaMetadata: metadata,
+              matchStrategy: 'filename',
+              confidence: 0.9,
+            });
+            matchedStoragePaths.add(storageFile.path);
+            matchedWikimediaTitles.add(wikimediaTitle);
+            filenameMatches++;
+            // Rate limiting
+            await new Promise(resolve => setTimeout(resolve, 100));
+            break;
+          }
+        }
+      }
+    }
+    console.log(`    ✅ Matched ${filenameMatches} files by filename`);
+  }
+
+  // Strategy 2: Match by existing wikimedia_file_name in database (refresh metadata)
+  console.log('  Strategy 2: Refreshing metadata using existing wikimedia_file_name in database...');
+  let dbRefreshMatches = 0;
   for (const storageFile of storageFiles) {
+    if (matchedStoragePaths.has(storageFile.path)) continue;
+    
     const { data: existing } = await supabase
       .from('road_sign_images')
       .select('wikimedia_file_name')
@@ -382,134 +494,127 @@ async function matchFiles(
         });
         matchedStoragePaths.add(storageFile.path);
         matchedWikimediaTitles.add(metadata.title);
+        dbRefreshMatches++;
         // Rate limiting
         await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
   }
+  console.log(`    ✅ Refreshed ${dbRefreshMatches} files using existing DB records`);
 
-  // Strategy 2: Match by normalized filename
-  console.log('  Strategy 2: Matching by normalized filenames...');
-  for (const storageFile of storageFiles) {
-    if (matchedStoragePaths.has(storageFile.path)) continue;
-
-    const normalizedStorage = normalizeFilename(storageFile.name);
+  // Strategy 3: Match by file size
+  if (wikimediaFiles.length > 0) {
+    console.log('  Strategy 3: Matching by file size...');
+    const wikimediaMetadataCache = new Map<string, WikimediaFileMetadata>();
+    let sizeMatches = 0;
     
-    for (const wikimediaTitle of wikimediaFiles) {
-      if (matchedWikimediaTitles.has(wikimediaTitle)) continue;
+    for (const storageFile of storageFiles) {
+      if (matchedStoragePaths.has(storageFile.path)) continue;
+      if (storageFile.size === 0) continue;
 
-      const normalizedWikimedia = normalizeFilename(wikimediaTitle);
-      
-      if (normalizedStorage === normalizedWikimedia || 
-          normalizedStorage.includes(normalizedWikimedia) ||
-          normalizedWikimedia.includes(normalizedStorage)) {
-        const metadata = await fetchWikimediaMetadata(wikimediaTitle);
-        if (metadata) {
-          matches.push({
-            storageFile,
-            wikimediaMetadata: metadata,
-            matchStrategy: 'filename',
-            confidence: 0.9,
-          });
-          matchedStoragePaths.add(storageFile.path);
-          matchedWikimediaTitles.add(wikimediaTitle);
-          // Rate limiting
-          await new Promise(resolve => setTimeout(resolve, 100));
+      let matchedMetadata: WikimediaFileMetadata | null = null;
+      let matchedTitle: string | null = null;
+
+      for (const wikimediaTitle of wikimediaFiles) {
+        if (matchedWikimediaTitles.has(wikimediaTitle)) continue;
+
+        let metadata = wikimediaMetadataCache.get(wikimediaTitle);
+        if (!metadata) {
+          metadata = await fetchWikimediaMetadata(wikimediaTitle);
+          if (metadata) {
+            wikimediaMetadataCache.set(wikimediaTitle, metadata);
+            // Rate limiting to avoid overwhelming API
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        }
+
+        if (metadata && metadata.imageinfo[0]?.size === storageFile.size) {
+          matchedMetadata = metadata;
+          matchedTitle = wikimediaTitle;
           break;
         }
       }
-    }
-  }
 
-  // Strategy 3: Match by file size
-  console.log('  Strategy 3: Matching by file size...');
-  const wikimediaMetadataCache = new Map<string, WikimediaFileMetadata>();
-  
-  for (const storageFile of storageFiles) {
-    if (matchedStoragePaths.has(storageFile.path)) continue;
-    if (storageFile.size === 0) continue;
-
-    for (const wikimediaTitle of wikimediaFiles) {
-      if (matchedWikimediaTitles.has(wikimediaTitle)) continue;
-
-      let metadata = wikimediaMetadataCache.get(wikimediaTitle);
-      if (!metadata) {
-        metadata = await fetchWikimediaMetadata(wikimediaTitle);
-      if (metadata) {
-        wikimediaMetadataCache.set(wikimediaTitle, metadata);
-        // Rate limiting to avoid overwhelming API
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    }
-
-    if (metadata && metadata.imageinfo[0]?.size === storageFile.size) {
+      if (matchedMetadata && matchedTitle) {
         matches.push({
           storageFile,
-          wikimediaMetadata: metadata,
+          wikimediaMetadata: matchedMetadata,
           matchStrategy: 'size',
           confidence: 0.7,
         });
         matchedStoragePaths.add(storageFile.path);
-        matchedWikimediaTitles.add(wikimediaTitle);
-        break;
+        matchedWikimediaTitles.add(matchedTitle);
+        sizeMatches++;
       }
     }
+    console.log(`    ✅ Matched ${sizeMatches} files by size`);
   }
 
   // Strategy 4: Match by SHA1 hash (most accurate but slower)
-  console.log('  Strategy 4: Matching by SHA1 hash (this may take a while)...');
-  const hashMatches: MatchResult[] = [];
-  
-  // Build hash map from Wikimedia metadata first (only fetch metadata once)
-  const wikimediaHashMap = new Map<string, WikimediaFileMetadata>();
-  
-  for (const wikimediaTitle of wikimediaFiles) {
-    if (matchedWikimediaTitles.has(wikimediaTitle)) continue;
+  if (wikimediaFiles.length > 0) {
+    console.log('  Strategy 4: Matching by SHA1 hash (this may take a while)...');
+    const hashMatches: MatchResult[] = [];
     
-    let metadata = wikimediaMetadataCache.get(wikimediaTitle);
-    if (!metadata) {
-      metadata = await fetchWikimediaMetadata(wikimediaTitle);
-      if (metadata) {
-        wikimediaMetadataCache.set(wikimediaTitle, metadata);
-        // Rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    }
+    // Build hash map from Wikimedia metadata first (only fetch metadata once)
+    const wikimediaHashMap = new Map<string, WikimediaFileMetadata>();
+    const globalMetadataCache = new Map<string, WikimediaFileMetadata>();
     
-    if (metadata?.imageinfo[0]?.sha1) {
-      wikimediaHashMap.set(metadata.imageinfo[0].sha1, metadata);
-    }
-  }
-
-  // Now match storage files by hash
-  for (const storageFile of storageFiles) {
-    if (matchedStoragePaths.has(storageFile.path)) continue;
-
-    // Download file to compute hash
-    try {
-      const response = await fetch(storageFile.publicUrl);
-      if (!response.ok) continue;
+    console.log(`    Building SHA1 hash map from ${wikimediaFiles.length} Wikimedia files...`);
+    let hashMapCount = 0;
+    for (const wikimediaTitle of wikimediaFiles) {
+      if (matchedWikimediaTitles.has(wikimediaTitle)) continue;
       
-      const buffer = Buffer.from(await response.arrayBuffer());
-      const hash = computeSHA1(buffer);
-
-      const metadata = wikimediaHashMap.get(hash);
-      if (metadata && !matchedWikimediaTitles.has(metadata.title)) {
-        hashMatches.push({
-          storageFile,
-          wikimediaMetadata: metadata,
-          matchStrategy: 'hash',
-          confidence: 1.0,
-        });
-        matchedStoragePaths.add(storageFile.path);
-        matchedWikimediaTitles.add(metadata.title);
+      let metadata = globalMetadataCache.get(wikimediaTitle);
+      if (!metadata) {
+        metadata = await fetchWikimediaMetadata(wikimediaTitle);
+        if (metadata) {
+          globalMetadataCache.set(wikimediaTitle, metadata);
+          // Rate limiting
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       }
-    } catch (error) {
-      console.error(`Error computing hash for ${storageFile.name}:`, error);
+      
+      if (metadata?.imageinfo[0]?.sha1) {
+        wikimediaHashMap.set(metadata.imageinfo[0].sha1, metadata);
+        hashMapCount++;
+      }
     }
-  }
+    console.log(`    ✅ Built hash map with ${hashMapCount} entries`);
 
-  matches.push(...hashMatches);
+    // Now match storage files by hash
+    console.log(`    Matching ${storageFiles.filter(sf => !matchedStoragePaths.has(sf.path)).length} unmatched storage files by hash...`);
+    let hashMatchesFound = 0;
+    for (const storageFile of storageFiles) {
+      if (matchedStoragePaths.has(storageFile.path)) continue;
+
+      // Download file to compute hash
+      try {
+        const response = await fetch(storageFile.publicUrl);
+        if (!response.ok) continue;
+        
+        const buffer = Buffer.from(await response.arrayBuffer());
+        const hash = computeSHA1(buffer);
+
+        const metadata = wikimediaHashMap.get(hash);
+        if (metadata && !matchedWikimediaTitles.has(metadata.title)) {
+          hashMatches.push({
+            storageFile,
+            wikimediaMetadata: metadata,
+            matchStrategy: 'hash',
+            confidence: 1.0,
+          });
+          matchedStoragePaths.add(storageFile.path);
+          matchedWikimediaTitles.add(metadata.title);
+          hashMatchesFound++;
+        }
+      } catch (error) {
+        console.error(`    ⚠️  Error computing hash for ${storageFile.name}:`, error instanceof Error ? error.message : error);
+      }
+    }
+
+    matches.push(...hashMatches);
+    console.log(`    ✅ Matched ${hashMatchesFound} files by SHA1 hash`);
+  }
 
   console.log(`✅ Matched ${matches.length} files`);
   return matches;
