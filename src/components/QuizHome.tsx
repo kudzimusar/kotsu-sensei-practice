@@ -1,4 +1,4 @@
-import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays, Bell, BookOpen, Video, AlertTriangle, Car, ClipboardList, CreditCard } from "lucide-react";
+import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays, Bell, BookOpen, Video, AlertTriangle, Car, ClipboardList } from "lucide-react";
 import { testCategories } from "@/data/questions";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -283,16 +283,16 @@ const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: Q
     <div className="min-h-screen bg-[#F5F7FA] pt-14">
       {/* Header */}
       <header className="fixed inset-x-0 top-0 bg-white z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto flex justify-between items-center px-5 py-2 sm:px-6 md:px-8">
+        <div className="flex justify-between items-center px-5 py-2">
           <div>
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold">{getGreeting()} {firstName}</h1>
+            <h1 className="text-lg font-bold">{getGreeting()} {firstName}</h1>
           </div>
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <button className="rounded-full p-2 bg-gray-100 hover:bg-gray-200 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-              <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+          <div className="flex items-center space-x-2">
+            <button className="rounded-full p-2 bg-gray-100 hover:bg-gray-200 transition-colors">
+              <Bell className="w-4 h-4 text-gray-600" />
             </button>
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-600 flex items-center justify-center">
-              <span className="text-white font-medium text-xs sm:text-sm">
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+              <span className="text-white font-medium text-xs">
                 {isGuest ? '👤' : (profile?.full_name?.charAt(0) || 'U')}
               </span>
             </div>
@@ -300,11 +300,11 @@ const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: Q
         </div>
       </header>
 
-      <main className="px-5 py-6 pb-24 sm:px-6 md:px-8 lg:px-12 max-w-7xl mx-auto">
+      <main className="px-5 py-6 pb-24">
         {/* Guest Banner */}
         {isGuest && (
           <section className="mb-6">
-            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 p-4 sm:p-5">
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 p-4">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                   <User className="text-blue-600" size={20} />
@@ -331,7 +331,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: Q
 
         {/* Progress Section */}
         <section className="mb-6">
-          <div className="bg-white rounded-2xl shadow-md p-5 sm:p-6">
+          <div className="bg-white rounded-2xl shadow-md p-5">
             <div className="flex justify-between items-center mb-3">
               <div>
                 <h2 className="font-bold text-lg">Test Ready: {readinessLoading ? '...' : testReadiness}%</h2>
@@ -367,49 +367,49 @@ const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: Q
 
         {/* Practice Options Card */}
         <section className="mb-6">
-          <h2 className="font-bold text-lg sm:text-xl mb-3 sm:mb-4">Practice Options</h2>
-          <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6">
+          <h2 className="font-bold text-lg mb-3">Practice Options</h2>
+          <div className="bg-white rounded-2xl shadow-md p-4">
             {/* Top Grid: Quick Practice & Focused Study */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
+            <div className="grid grid-cols-2 gap-3 mb-3">
             <button
               onClick={() => handleQuickStart('quick')}
               disabled={isStartingQuiz}
               style={{ background: 'var(--gradient-blue)' }}
-              className="rounded-xl p-4 sm:p-5 text-white transform transition active:scale-[0.98] hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed min-h-[120px] sm:min-h-[140px]"
+              className="rounded-xl p-4 text-white transform transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center mb-2">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-2">
                 {isStartingQuiz ? (
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <Zap className="text-white" size={20} />
                 )}
               </div>
-              <h3 className="font-bold text-base sm:text-lg mb-1">Quick Practice</h3>
-              <p className="text-xs sm:text-sm text-white/90">{isStartingQuiz ? 'Loading...' : '10 random questions'}</p>
+              <h3 className="font-bold text-base mb-1">Quick Practice</h3>
+              <p className="text-xs text-white/90">{isStartingQuiz ? 'Loading...' : '10 random questions'}</p>
             </button>
             
             <button
               onClick={() => handleQuickStart('focused')}
               disabled={isStartingQuiz}
               style={{ background: 'var(--gradient-purple)' }}
-              className="rounded-xl p-4 sm:p-5 text-white transform transition active:scale-[0.98] hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed min-h-[120px] sm:min-h-[140px]"
+              className="rounded-xl p-4 text-white transform transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center mb-2">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-2">
                 {isStartingQuiz ? (
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <Target className="text-white" size={20} />
                 )}
               </div>
-              <h3 className="font-bold text-base sm:text-lg mb-1">Focused Study</h3>
-              <p className="text-xs sm:text-sm text-white/90">{isStartingQuiz ? 'Loading...' : '20 specific questions'}</p>
+              <h3 className="font-bold text-base mb-1">Focused Study</h3>
+              <p className="text-xs text-white/90">{isStartingQuiz ? 'Loading...' : '20 specific questions'}</p>
             </button>
             </div>
             
             {/* Full Exam Simulation */}
             <div
               style={{ background: 'var(--gradient-green)' }}
-              className="rounded-xl p-4 sm:p-5 text-white md:col-span-3"
+              className="rounded-xl p-4 text-white"
             >
               <div className="flex justify-between items-center mb-2">
                 <div>
@@ -443,55 +443,45 @@ const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: Q
 
         {/* Study Tools Section */}
         <section className="mb-6">
-          <h2 className="font-bold text-lg sm:text-xl mb-3 sm:mb-4">Study Tools</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <h2 className="font-bold text-lg mb-3">Study Tools</h2>
+          <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => navigate('/lectures?tab=textbook')}
-              className="bg-white rounded-xl shadow p-3 sm:p-4 transform transition active:scale-[0.98] hover:scale-[1.02] min-h-[100px] sm:min-h-[120px]"
+              className="bg-white rounded-xl shadow p-3 transform transition active:scale-[0.98]"
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-2 mx-auto">
+              <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mb-2">
                 <BookOpen className="text-indigo-600" size={20} />
               </div>
-              <h3 className="font-medium text-xs sm:text-sm text-center">Digital Textbooks</h3>
+              <h3 className="font-medium text-xs">Digital Textbooks</h3>
             </button>
             
             <button
               onClick={() => navigate('/lectures?tab=curriculum')}
-              className="bg-white rounded-xl shadow p-3 sm:p-4 transform transition active:scale-[0.98] hover:scale-[1.02] min-h-[100px] sm:min-h-[120px]"
+              className="bg-white rounded-xl shadow p-3 transform transition active:scale-[0.98]"
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-100 rounded-full flex items-center justify-center mb-2 mx-auto">
+              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center mb-2">
                 <Video className="text-amber-600" size={20} />
               </div>
-              <h3 className="font-medium text-xs sm:text-sm text-center">Lectures</h3>
+              <h3 className="font-medium text-xs">Lectures</h3>
             </button>
             
             <button
               onClick={() => navigate('/planner')}
-              className="bg-white rounded-xl shadow p-3 sm:p-4 transform transition active:scale-[0.98] hover:scale-[1.02] min-h-[100px] sm:min-h-[120px]"
+              className="bg-white rounded-xl shadow p-3 transform transition active:scale-[0.98]"
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-2 mx-auto">
+              <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mb-2">
                 <CalendarDays className="text-emerald-600" size={20} />
               </div>
-              <h3 className="font-medium text-xs sm:text-sm text-center">Driving Schedule</h3>
-            </button>
-            
-            <button
-              onClick={() => navigate('/flashcards')}
-              className="bg-white rounded-xl shadow p-3 sm:p-4 transform transition active:scale-[0.98] hover:scale-[1.02] min-h-[100px] sm:min-h-[120px]"
-            >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-full flex items-center justify-center mb-2 mx-auto">
-                <CreditCard className="text-orange-600" size={20} />
-              </div>
-              <h3 className="font-medium text-xs sm:text-sm text-center">Flashcards</h3>
+              <h3 className="font-medium text-xs">Driving Schedule</h3>
             </button>
           </div>
         </section>
 
         {/* Learning Progress Section */}
         <section className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 gap-4">
             {/* Continue Learning */}
-            <div className="bg-white rounded-2xl shadow-md p-4 sm:p-5">
+            <div className="bg-white rounded-2xl shadow-md p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center flex-1">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
@@ -523,7 +513,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: Q
             </div>
             
             {/* Practice Weak Areas */}
-            <div className="bg-white rounded-2xl shadow-md p-4 sm:p-5">
+            <div className="bg-white rounded-2xl shadow-md p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center flex-1">
                   <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
@@ -558,8 +548,8 @@ const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: Q
 
         {/* Planner Preview */}
         <section className="mb-6">
-          <div className="flex justify-between items-center mb-3 sm:mb-4">
-            <h2 className="font-bold text-lg sm:text-xl">Upcoming Schedule</h2>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="font-bold text-lg">Upcoming Schedule</h2>
             <button
               onClick={() => navigate('/lectures?tab=schedule')}
               className="text-blue-600 text-sm font-medium hover:underline"
@@ -569,7 +559,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: Q
           </div>
           
           {upcomingScheduleEvents.length > 0 ? (
-            <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6 space-y-4 sm:space-y-5">
+            <div className="bg-white rounded-2xl shadow-md p-4 space-y-4">
               {upcomingScheduleEvents.map((event, index) => {
                 const eventDate = parseISO(event.date);
                 const isEventToday = isToday(eventDate);
@@ -636,7 +626,7 @@ const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: Q
               })}
             </div>
           ) : (
-            <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6">
+            <div className="bg-white rounded-2xl shadow-md p-4">
               <div className="text-center py-4">
                 <p className="text-sm text-gray-500">No upcoming events</p>
                 <Button

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import QuizHome from "@/components/QuizHome";
 import QuizQuestion from "@/components/QuizQuestion";
@@ -30,6 +30,8 @@ const Index = () => {
   const [isStartingQuiz, setIsStartingQuiz] = useState(false);
   const [failedQuestions, setFailedQuestions] = useState<Question[]>([]);
   const [isCompletingQuiz, setIsCompletingQuiz] = useState(false);
+  const saveProgressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isSavingProgressRef = useRef(false);
 
   // Preload next 3 question images for better performance
   useImagePreload(selectedQuestions, currentQuestionIndex, 3);
@@ -53,31 +55,73 @@ const Index = () => {
 
   const handleContinueLearning = async () => {
     if (!user && !guestId) return;
-    const progress = await loadQuizProgress(user?.id || null, guestId);
-    if (progress) {
-      setQuizMode(progress.quiz_mode as QuizMode);
-      setSelectedQuestions(progress.selected_questions);
-      setCurrentQuestionIndex(progress.current_question_index);
-      setScore(progress.score);
-      setTimeLimit(progress.time_limit);
-      setScreen('quiz');
+    try {
+      const progress = await loadQuizProgress(user?.id || null, guestId);
+      if (progress) {
+        setQuizMode(progress.quiz_mode as QuizMode);
+        setSelectedQuestions(progress.selected_questions);
+        setCurrentQuestionIndex(progress.current_question_index);
+        setScore(progress.score);
+        setTimeLimit(progress.time_limit);
+        setScreen('quiz');
+      }
+    } catch (error) {
+      console.error('Error loading quiz progress:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load saved progress",
+        variant: "destructive",
+      });
     }
   };
 
-  // Save progress whenever quiz state changes
+  // Save progress whenever quiz state changes (debounced to prevent excessive requests)
   useEffect(() => {
-    if (screen === 'quiz' && selectedQuestions.length > 0 && (user || guestId)) {
-      saveQuizProgress({
-        user_id: user?.id || null,
-        guest_session_id: guestId || null,
-        quiz_mode: quizMode,
-        selected_questions: selectedQuestions,
-        current_question_index: currentQuestionIndex,
-        score,
-        time_limit: timeLimit,
-      });
+    // Only save if we're in quiz mode, have questions, and have a user/guest
+    if (screen !== 'quiz' || selectedQuestions.length === 0 || (!user && !guestId)) {
+      return;
     }
-  }, [screen, quizMode, selectedQuestions, currentQuestionIndex, score, timeLimit, user, guestId]);
+
+    // Clear any pending save
+    if (saveProgressTimeoutRef.current) {
+      clearTimeout(saveProgressTimeoutRef.current);
+      saveProgressTimeoutRef.current = null;
+    }
+
+    // Debounce the save operation - wait 500ms after last change
+    saveProgressTimeoutRef.current = setTimeout(async () => {
+      // Prevent concurrent saves
+      if (isSavingProgressRef.current) {
+        return;
+      }
+
+      isSavingProgressRef.current = true;
+      try {
+        await saveQuizProgress({
+          user_id: user?.id || null,
+          guest_session_id: guestId || null,
+          quiz_mode: quizMode,
+          selected_questions: selectedQuestions,
+          current_question_index: currentQuestionIndex,
+          score,
+          time_limit: timeLimit,
+        });
+      } catch (error) {
+        // Silently fail - don't retry on error to prevent loops
+        console.error('Error saving quiz progress:', error);
+      } finally {
+        isSavingProgressRef.current = false;
+      }
+    }, 500);
+
+    // Cleanup function
+    return () => {
+      if (saveProgressTimeoutRef.current) {
+        clearTimeout(saveProgressTimeoutRef.current);
+        saveProgressTimeoutRef.current = null;
+      }
+    };
+  }, [screen, quizMode, selectedQuestions.length, currentQuestionIndex, score, timeLimit, user?.id, guestId]);
 
   const getQuestionCount = (mode: QuizMode): number => {
     switch (mode) {
