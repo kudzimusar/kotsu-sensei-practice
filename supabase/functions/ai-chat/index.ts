@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.77.0";
 import { corsHeaders } from "../_shared/cors.ts";
-import { findWikimediaImage, mapFlashcardCategoryToDbCategory, incrementImageUsage } from "../_shared/wikimedia-image-lookup.ts";
+import { findWikimediaImage } from "../_shared/wikimedia-image-lookup.ts";
 
 // Detect if user question needs visual aid
 function needsVisualAid(userMessage: string): boolean {
@@ -17,40 +17,130 @@ function needsVisualAid(userMessage: string): boolean {
   return visualKeywords.some(keyword => lowercaseMessage.includes(keyword));
 }
 
-// Fetch image with metadata (tries Wikimedia Commons first, then Serper)
-async function fetchImageWithMetadata(
-  supabase: ReturnType<typeof createClient>,
-  query: string,
-  category?: string | null
-): Promise<{
-  image: string | null;
+// Intelligent query parsing - maps common terms to sign types
+function parseSignQuery(query: string): { searchTerms: string[]; category?: string; signType?: string } {
+  const lowerQuery = query.toLowerCase();
+  const searchTerms: string[] = [];
+  let category: string | undefined;
+  let signType: string | undefined;
+
+  // Extract sign type keywords
+  if (lowerQuery.includes('stop')) {
+    signType = 'stop';
+    searchTerms.push('stop', '326', '止まれ', 'tomare');
+    category = 'regulatory';
+  } else if (lowerQuery.includes('speed limit') || lowerQuery.includes('speed')) {
+    signType = 'speed';
+    searchTerms.push('speed', 'limit');
+    category = 'regulatory';
+  } else if (lowerQuery.includes('yield') || lowerQuery.includes('give way')) {
+    signType = 'yield';
+    searchTerms.push('yield', 'give way');
+    category = 'regulatory';
+  } else if (lowerQuery.includes('no parking')) {
+    signType = 'no parking';
+    searchTerms.push('parking', '禁止');
+    category = 'regulatory';
+  } else if (lowerQuery.includes('no entry')) {
+    signType = 'no entry';
+    searchTerms.push('entry', '進入禁止');
+    category = 'regulatory';
+  } else if (lowerQuery.includes('pedestrian') || lowerQuery.includes('crosswalk')) {
+    signType = 'pedestrian';
+    searchTerms.push('pedestrian', 'crosswalk', '歩行者');
+    category = 'warning';
+  } else if (lowerQuery.includes('curve') || lowerQuery.includes('bend')) {
+    signType = 'curve';
+    searchTerms.push('curve', 'bend', 'カーブ');
+    category = 'warning';
+  } else if (lowerQuery.includes('bus') || lowerQuery.includes('バス')) {
+    signType = 'bus';
+    searchTerms.push('bus', 'バス', '124');
+    category = 'guidance';
+  } else if (lowerQuery.includes('railway') || lowerQuery.includes('train')) {
+    signType = 'railway';
+    searchTerms.push('railway', 'train', '踏切');
+    category = 'warning';
+  } else if (lowerQuery.includes('school')) {
+    signType = 'school';
+    searchTerms.push('school', '学校');
+    category = 'warning';
+  } else if (lowerQuery.includes('hospital')) {
+    signType = 'hospital';
+    searchTerms.push('hospital', '病院');
+    category = 'guidance';
+  } else if (lowerQuery.includes('parking')) {
+    signType = 'parking';
+    searchTerms.push('parking', '駐車');
+    category = 'guidance';
+  }
+
+  // Extract other meaningful terms from query
+  const words = lowerQuery.split(/\s+/);
+  words.forEach(word => {
+    if (word.length >= 3 && !['japan', 'japanese', 'road', 'sign', 'the', 'a', 'an', 'this', 'that'].includes(word)) {
+      searchTerms.push(word);
+    }
+  });
+
+  return { searchTerms: [...new Set(searchTerms)], category, signType };
+}
+
+// Fetch a single image for a specific query - tries database first, then Serper API
+async function fetchImage(query: string): Promise<{ 
+  imageUrl: string | null; 
   attribution?: string;
-  imageSource?: string;
-  wikimediaPageUrl?: string;
   licenseInfo?: string;
+  wikimediaPageUrl?: string;
+  signNameEn?: string;
+  signNameJp?: string;
 } | null> {
-  // Strategy 1: Try Wikimedia Commons database first
-  const dbCategory = category ? mapFlashcardCategoryToDbCategory(category) : null;
-  const wikimediaImage = await findWikimediaImage(supabase, dbCategory, query);
-  
-  if (wikimediaImage) {
-    await incrementImageUsage(supabase, wikimediaImage.id);
-    
-    // Fetch full metadata
-    const { data: fullMetadata } = await supabase
-      .from('road_sign_images')
-      .select('attribution_text, license_info, wikimedia_page_url, image_source')
-      .eq('id', wikimediaImage.id)
-      .single();
-    
-    console.log(`Using Wikimedia Commons image for: ${query}`);
-    return {
-      image: wikimediaImage.storage_url,
-      attribution: fullMetadata?.attribution_text || undefined,
-      imageSource: fullMetadata?.image_source || 'wikimedia_commons',
-      wikimediaPageUrl: fullMetadata?.wikimedia_page_url || undefined,
-      licenseInfo: fullMetadata?.license_info || undefined,
-    };
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  // Strategy 1: Try Wikimedia Commons database with intelligent matching
+  if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      });
+
+      // Parse query to extract sign type and category
+      const { searchTerms, category, signType } = parseSignQuery(query);
+      console.log(`🔍 Searching for image: query="${query}", signType="${signType}", category="${category}", terms=[${searchTerms.join(', ')}]`);
+
+      // Use the improved findWikimediaImage function which searches ALL metadata columns
+      // including file_name, filename_slug, wikimedia_file_name, sign numbers, etc.
+      // This will automatically match sign numbers (326 for stop, 124 for bus, etc.)
+      let wikimediaImage = await findWikimediaImage(supabase, category, query);
+
+      // If we found a match, return it with metadata
+      if (wikimediaImage) {
+        // Fetch full metadata
+        const { data: fullMetadata } = await supabase
+          .from('road_sign_images')
+          .select('sign_name_en, sign_name_jp, attribution_text, license_info, wikimedia_page_url')
+          .eq('id', wikimediaImage.id)
+          .single();
+
+        console.log(`✅ Found Wikimedia Commons image: ${fullMetadata?.sign_name_en || 'Unknown'}`);
+        return {
+          imageUrl: wikimediaImage.storage_url,
+          attribution: fullMetadata?.attribution_text || wikimediaImage.attribution_text || undefined,
+          licenseInfo: fullMetadata?.license_info || wikimediaImage.license_info || undefined,
+          wikimediaPageUrl: fullMetadata?.wikimedia_page_url || wikimediaImage.wikimedia_page_url || undefined,
+          signNameEn: fullMetadata?.sign_name_en || undefined,
+          signNameJp: fullMetadata?.sign_name_jp || undefined,
+        };
+      }
+
+      console.log(`❌ No Wikimedia Commons match found for: "${query}"`);
+    } catch (error) {
+      console.error('Error querying Wikimedia Commons database:', error);
+    }
   }
 
   // Strategy 2: Fallback to Serper API
@@ -59,9 +149,10 @@ async function fetchImageWithMetadata(
     
     if (!SERPER_API_KEY) {
       console.log('SERPER_API_KEY not configured, skipping image search');
-      return { image: null };
+      return null;
     }
 
+    console.log(`🔍 Falling back to Serper API for: "${query}"`);
     const response = await fetch('https://google.serper.dev/images', {
       method: 'POST',
       headers: {
@@ -76,43 +167,36 @@ async function fetchImageWithMetadata(
 
     if (!response.ok) {
       console.error('Serper API error:', response.status);
-      return { image: null };
+      return null;
     }
 
     const data = await response.json();
     const imageUrl = data.images?.[0]?.imageUrl || null;
     
     if (imageUrl) {
-      console.log(`Using Serper API image for: ${query}`);
-      return {
-        image: imageUrl,
-        imageSource: 'serper'
-      };
+      console.log(`✅ Found image via Serper API`);
+      return { imageUrl };
     }
-    
-    return { image: null };
   } catch (error) {
-    console.error('Error fetching image:', error);
-    return { image: null };
+    console.error('Error fetching image from Serper:', error);
   }
+
+  return null;
 }
 
-// Fetch images for multiple sections with metadata
-async function fetchImagesForSections(
-  supabase: ReturnType<typeof createClient>,
-  sections: any[]
-): Promise<any[]> {
+// Fetch images for multiple sections
+async function fetchImagesForSections(sections: any[]): Promise<any[]> {
   const promises = sections.map(async (section) => {
     if (section.imageQuery) {
-      const imageData = await fetchImageWithMetadata(supabase, section.imageQuery);
-      if (imageData && imageData.image) {
+      const imageResult = await fetchImage(section.imageQuery);
+      if (imageResult) {
         return {
           ...section,
-          image: imageData.image,
-          attribution: imageData.attribution,
-          imageSource: imageData.imageSource,
-          wikimediaPageUrl: imageData.wikimediaPageUrl,
-          licenseInfo: imageData.licenseInfo,
+          image: imageResult.imageUrl,
+          attribution: imageResult.attribution,
+          licenseInfo: imageResult.licenseInfo,
+          wikimediaPageUrl: imageResult.wikimediaPageUrl,
+          imageSource: imageResult.attribution ? 'wikimedia_commons' : 'external',
         };
       }
     }
@@ -132,8 +216,6 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     const GOOGLE_AI_STUDIO_API_KEY = Deno.env.get("GOOGLE_AI_STUDIO_API_KEY");
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     // Use GOOGLE_AI_STUDIO_API_KEY as primary fallback, then GEMINI_API_KEY
     const fallbackApiKey = GOOGLE_AI_STUDIO_API_KEY || GEMINI_API_KEY;
@@ -143,17 +225,6 @@ serve(async (req) => {
     
     if (!LOVABLE_API_KEY && !fallbackApiKey) {
       throw new Error("Neither LOVABLE_API_KEY nor GOOGLE_AI_STUDIO_API_KEY/GEMINI_API_KEY is configured");
-    }
-
-    // Create Supabase client for image lookups
-    let supabase: ReturnType<typeof createClient> | null = null;
-    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
-      supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      });
     }
 
     const systemPrompt = `You are a friendly and knowledgeable Japanese driving instructor assistant named "Kōtsū Sensei" (交通先生). Your role is to help students understand Japanese traffic laws, road signs, driving techniques, and test preparation.
@@ -197,9 +268,9 @@ Topics you can help with:
 - Test preparation strategies
 - Common mistakes to avoid`;
 
-    let response: Response;
     let assistantMessage: string | null = null;
     let useFallback = false;
+    let response: Response;
 
     if (LOVABLE_API_KEY) {
       try {
@@ -214,16 +285,31 @@ Topics you can help with:
             model: "google/gemini-2.5-flash",
             messages: [
               { role: "system", content: systemPrompt },
-              ...messages.map((msg: any) => ({
-                role: msg.role,
-                content: msg.content || '',
-              })),
+              ...messages,
             ],
             stream: false,
           }),
         });
 
         if (!response.ok) {
+          if (response.status === 429) {
+            return new Response(
+              JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), 
+              {
+                status: 429,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+              }
+            );
+          }
+          if (response.status === 402) {
+            return new Response(
+              JSON.stringify({ error: "AI service quota exceeded. Please contact support." }), 
+              {
+                status: 402,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+              }
+            );
+          }
           let errorText = '';
           try {
             errorText = await response.text();
@@ -234,14 +320,7 @@ Topics you can help with:
           throw new Error(`Primary API error: ${response.status} - ${errorText.substring(0, 100)}`);
         }
 
-        let data: any;
-        try {
-          data = await response.json();
-        } catch (e) {
-          console.error("Failed to parse primary API response:", e);
-          throw new Error(`Primary API returned invalid JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
-        }
-        
+        const data = await response.json();
         assistantMessage = data.choices?.[0]?.message?.content;
         
         if (!assistantMessage) {
@@ -291,9 +370,9 @@ Topics you can help with:
         response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${fallbackApiKey}`,
           {
-            method: 'POST',
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({
               contents: conversationHistory,
@@ -306,8 +385,6 @@ Topics you can help with:
         );
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Fallback API error:", response.status, errorText.substring(0, 200));
           throw new Error(`Fallback API error: ${response.status}`);
         }
 
@@ -317,12 +394,14 @@ Topics you can help with:
         if (!assistantMessage) {
           throw new Error("Fallback API returned empty response");
         }
-        
-        console.log("Fallback API succeeded, response length:", assistantMessage.length);
       } catch (error) {
         console.error("Fallback API also failed:", error);
-        throw new Error("All API methods failed");
+        throw new Error("Both primary and fallback APIs failed");
       }
+    }
+
+    if (!assistantMessage) {
+      throw new Error("No response from AI");
     }
 
     if (!assistantMessage) {
@@ -358,30 +437,16 @@ Topics you can help with:
     // If structured response with sections, fetch images for each section
     if (parsedResponse && parsedResponse.sections && Array.isArray(parsedResponse.sections)) {
       console.log(`Processing ${parsedResponse.sections.length} sections with images...`);
+      const sectionsWithImages = await fetchImagesForSections(parsedResponse.sections);
       
-      if (supabase) {
-        const sectionsWithImages = await fetchImagesForSections(supabase, parsedResponse.sections);
-        
-        return new Response(
-          JSON.stringify({ 
-            sections: sectionsWithImages
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      } else {
-        // No Supabase client available, return sections without images
-        console.warn('Supabase client not available, returning sections without images');
-        return new Response(
-          JSON.stringify({ 
-            sections: parsedResponse.sections
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
+      return new Response(
+        JSON.stringify({ 
+          sections: sectionsWithImages
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Plain text response (backward compatibility)
