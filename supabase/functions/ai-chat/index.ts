@@ -87,7 +87,10 @@ function parseSignQuery(query: string): { searchTerms: string[]; category?: stri
 }
 
 // Fetch a single image for a specific query - tries database first, then Serper API
-async function fetchImage(query: string): Promise<{ 
+async function fetchImage(
+  query: string,
+  supabaseClient?: ReturnType<typeof createClient> | null
+): Promise<{ 
   imageUrl: string | null; 
   attribution?: string;
   licenseInfo?: string;
@@ -95,38 +98,38 @@ async function fetchImage(query: string): Promise<{
   signNameEn?: string;
   signNameJp?: string;
 } | null> {
-  const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-  // Strategy 1: Try Wikimedia Commons database with intelligent matching
-  if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+  console.log(`📸 fetchImage called with query: "${query}"`);
+  
+  // Strategy 1: Try Wikimedia Commons database with intelligent matching (ALWAYS FIRST)
+  if (supabaseClient) {
     try {
-      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      });
-
       // Parse query to extract sign type and category
       const { searchTerms, category, signType } = parseSignQuery(query);
-      console.log(`🔍 Searching for image: query="${query}", signType="${signType}", category="${category}", terms=[${searchTerms.join(', ')}]`);
+      console.log(`🔍 Database search - query="${query}", signType="${signType}", category="${category}", terms=[${searchTerms.join(', ')}]`);
 
       // Use the improved findWikimediaImage function which searches ALL metadata columns
       // including file_name, filename_slug, wikimedia_file_name, sign numbers, etc.
       // This will automatically match sign numbers (326 for stop, 124 for bus, etc.)
-      let wikimediaImage = await findWikimediaImage(supabase, category, query);
+      console.log(`🔍 Calling findWikimediaImage()...`);
+      let wikimediaImage = await findWikimediaImage(supabaseClient, category, query);
 
       // If we found a match, return it with metadata
       if (wikimediaImage) {
+        console.log(`✅ Database match found! Image ID: ${wikimediaImage.id}, URL: ${wikimediaImage.storage_url}`);
+        
         // Fetch full metadata
-        const { data: fullMetadata } = await supabase
+        const { data: fullMetadata, error: metadataError } = await supabaseClient
           .from('road_sign_images')
           .select('sign_name_en, sign_name_jp, attribution_text, license_info, wikimedia_page_url')
           .eq('id', wikimediaImage.id)
           .single();
 
-        console.log(`✅ Found Wikimedia Commons image: ${fullMetadata?.sign_name_en || 'Unknown'}`);
+        if (metadataError) {
+          console.error(`⚠️ Error fetching full metadata:`, metadataError);
+        } else {
+          console.log(`✅ Full metadata retrieved: ${fullMetadata?.sign_name_en || 'Unknown'}`);
+        }
+
         return {
           imageUrl: wikimediaImage.storage_url,
           attribution: fullMetadata?.attribution_text || wikimediaImage.attribution_text || undefined,
@@ -137,10 +140,14 @@ async function fetchImage(query: string): Promise<{
         };
       }
 
-      console.log(`❌ No Wikimedia Commons match found for: "${query}"`);
+      console.log(`❌ No Wikimedia Commons match found in database for: "${query}"`);
     } catch (error) {
-      console.error('Error querying Wikimedia Commons database:', error);
+      console.error(`❌ Error querying Wikimedia Commons database:`, error);
+      console.error(`Error details:`, error instanceof Error ? error.stack : String(error));
+      // Continue to fallback
     }
+  } else {
+    console.warn(`⚠️ No Supabase client provided - skipping database lookup`);
   }
 
   // Strategy 2: Fallback to Serper API
@@ -185,10 +192,13 @@ async function fetchImage(query: string): Promise<{
 }
 
 // Fetch images for multiple sections
-async function fetchImagesForSections(sections: any[]): Promise<any[]> {
+async function fetchImagesForSections(
+  sections: any[],
+  supabaseClient?: ReturnType<typeof createClient> | null
+): Promise<any[]> {
   const promises = sections.map(async (section) => {
     if (section.imageQuery) {
-      const imageResult = await fetchImage(section.imageQuery);
+      const imageResult = await fetchImage(section.imageQuery, supabaseClient);
       if (imageResult) {
         return {
           ...section,
@@ -212,6 +222,27 @@ serve(async (req) => {
   }
 
   try {
+    // Get Supabase client - try multiple methods
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || Deno.env.get('SUPABASE_PROJECT_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
+    
+    // Create Supabase client for database queries (use service role key if available, otherwise anon key)
+    const supabaseForDB = SUPABASE_URL && (SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY)
+      ? createClient(
+          SUPABASE_URL,
+          SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY || '',
+          {
+            auth: {
+              autoRefreshToken: false,
+              persistSession: false,
+            },
+          }
+        )
+      : null;
+    
+    console.log(`🔧 Supabase client initialized: ${!!supabaseForDB}, using SERVICE_ROLE: ${!!SUPABASE_SERVICE_ROLE_KEY}`);
+
     const { messages } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
@@ -437,7 +468,8 @@ Topics you can help with:
     // If structured response with sections, fetch images for each section
     if (parsedResponse && parsedResponse.sections && Array.isArray(parsedResponse.sections)) {
       console.log(`Processing ${parsedResponse.sections.length} sections with images...`);
-      const sectionsWithImages = await fetchImagesForSections(parsedResponse.sections);
+      // Pass Supabase client to fetchImagesForSections so it can query the database
+      const sectionsWithImages = await fetchImagesForSections(parsedResponse.sections, supabaseForDB);
       
       return new Response(
         JSON.stringify({ 
