@@ -264,3 +264,4 @@ Users can cancel during the 7-day trial:
 - Payment page speed depends on Edge Function warm-up
 - Need to verify payment methods in Stripe Dashboard
 
+

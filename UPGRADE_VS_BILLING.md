@@ -190,3 +190,4 @@ onClick={() => navigate(isPremium ? "/account" : "/payment")}
 - **Premium Hook:** `src/hooks/usePremium.tsx`
 - **Protected Routes:** `src/components/ProtectedRoute.tsx`
 
+

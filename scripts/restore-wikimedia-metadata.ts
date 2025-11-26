@@ -260,30 +260,36 @@ async function listStorageFiles(): Promise<StorageFile[]> {
  */
 async function fetchWikimediaFilesList(): Promise<string[]> {
   console.log('📥 Fetching Wikimedia Commons file list...');
-  console.log('  Using category: Category:Road signs of Japan');
+  console.log('  Using category: Category:Road_signs_in_Japan (matching download script)');
   
   const files: string[] = [];
   let continueParam: string | undefined = undefined;
 
   do {
+    // Use generator=categorymembers (same as download script) for better compatibility
     const params = new URLSearchParams({
       action: 'query',
       format: 'json',
-      list: 'categorymembers',
-      cmtitle: 'Category:Road signs of Japan', // Use spaces, not underscores
-      cmtype: 'file', // Use cmtype=file instead of cmnamespace
-      cmlimit: 'max', // Get maximum results per page
+      generator: 'categorymembers', // Use generator instead of list (matches download script)
+      gcmtitle: 'Category:Road_signs_in_Japan', // Match the exact category from download script
+      gcmtype: 'file',
+      gcmlimit: '500',
+      prop: 'title', // Only need titles when using generator
       origin: '*',
     });
 
     if (continueParam) {
-      params.append('cmcontinue', continueParam);
+      params.append('gcmcontinue', continueParam);
     }
 
     const url = `${WIKIMEDIA_API_URL}?${params.toString()}`;
     console.log(`  Fetching page... (${files.length} files so far)`);
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'KotsuSensei/1.0 (Wikimedia Metadata Restoration; https://github.com/kudzimusar/kotsu-sensei-practice)',
+      },
+    });
     
     if (!response.ok) {
       console.error(`  ❌ API request failed: ${response.status} ${response.statusText}`);
@@ -300,9 +306,24 @@ async function fetchWikimediaFilesList(): Promise<string[]> {
       break;
     }
 
-    if (data.query?.categorymembers) {
-      const batchSize = data.query.categorymembers.length;
+    // When using generator, results are in query.pages (not query.categorymembers)
+    if (data.query?.pages) {
+      const pageIds = Object.keys(data.query.pages);
+      const batchSize = pageIds.length;
       console.log(`  📄 Retrieved ${batchSize} items from this page`);
+      
+      for (const pageId of pageIds) {
+        const page = data.query.pages[pageId];
+        if (page.title && page.title.startsWith('File:')) {
+          files.push(page.title);
+        }
+      }
+      
+      console.log(`  ✅ Total files found: ${files.length}`);
+    } else if (data.query?.categorymembers) {
+      // Fallback: if it returns categorymembers (list mode)
+      const batchSize = data.query.categorymembers.length;
+      console.log(`  📄 Retrieved ${batchSize} items from this page (list mode)`);
       
       for (const member of data.query.categorymembers) {
         if (member.title && member.title.startsWith('File:')) {
@@ -312,13 +333,19 @@ async function fetchWikimediaFilesList(): Promise<string[]> {
       
       console.log(`  ✅ Total files found: ${files.length}`);
     } else {
-      console.warn('  ⚠️  No categorymembers in response');
+      console.warn('  ⚠️  No pages or categorymembers in response');
       if (data.query) {
-        console.warn(`  Response structure: ${JSON.stringify(Object.keys(data.query)).substring(0, 200)}`);
+        const queryKeys = Object.keys(data.query);
+        console.warn(`  Response query keys: ${queryKeys.join(', ')}`);
       }
+      if (data.warnings) {
+        console.warn(`  API warnings: ${JSON.stringify(data.warnings)}`);
+      }
+      // Log first 500 chars of response for debugging
+      console.warn(`  Full response preview: ${JSON.stringify(data).substring(0, 500)}`);
     }
 
-    continueParam = data.continue?.cmcontinue;
+    continueParam = data.continue?.gcmcontinue; // Use gcmcontinue for generator mode
     
     // Rate limiting between pages
     if (continueParam) {
@@ -363,7 +390,11 @@ async function fetchWikimediaMetadata(
 
   try {
     const url = `${WIKIMEDIA_API_URL}?${params.toString()}`;
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'KotsuSensei/1.0 (Wikimedia Metadata Restoration; https://github.com/kudzimusar/kotsu-sensei-practice)',
+      },
+    });
     
     if (!response.ok) {
       console.error(`  ⚠️  Failed to fetch metadata for ${fileTitle}: ${response.status}`);

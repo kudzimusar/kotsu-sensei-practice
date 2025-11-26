@@ -171,6 +171,7 @@ export function mapFlashcardCategoryToDbCategory(category: string): string | nul
     'guidance-signs': 'guidance',
     'auxiliary-signs': 'auxiliary',
     'road-markings': 'road-markings',
+    'traffic-signals': null, // No matching category in database yet
   };
   
   return categoryMap[category] || null;

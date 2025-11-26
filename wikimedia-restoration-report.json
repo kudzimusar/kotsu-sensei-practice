@@ -1,0 +1,21 @@
+{
+  "storageFilesScanned": 270,
+  "wikimediaEntriesFetched": 8,
+  "matchedByFilename": 8,
+  "matchedBySize": 0,
+  "matchedByHash": 0,
+  "matchedByWikimediaFilename": 261,
+  "recordsUpdated": 269,
+  "recordsCreated": 0,
+  "unmatchedStorage": [
+    {
+      "name": "Japan-road-sign-323-(100).svg",
+      "path": "wikimedia-commons/Japan-road-sign-323-(100).svg",
+      "size": 4340,
+      "updated_at": "2025-11-25T12:48:36.223Z",
+      "publicUrl": "https://ndulrvfwcqyvutcviebk.supabase.co/storage/v1/object/public/road-sign-images/wikimedia-commons/Japan-road-sign-323-(100).svg"
+    }
+  ],
+  "unmatchedWikimedia": [],
+  "errors": []
+}

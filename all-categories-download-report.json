@@ -1,0 +1,176 @@
+{
+  "startTime": "2025-11-26T04:20:39.592Z",
+  "endTime": "2025-11-26T04:35:59.188Z",
+  "durationMinutes": 15.33,
+  "dryRun": false,
+  "categories": [
+    "SVG_road_signs_in_Japan",
+    "Diagrams_of_regulatory_road_signs_of_Japan",
+    "Diagrams_of_information_road_signs_of_Japan",
+    "Diagrams_of_instruction_road_signs_of_Japan",
+    "Diagrams_of_warning_road_signs_of_Japan",
+    "Diagrams_of_mandatory_road_signs_of_Japan",
+    "Diagrams_of_prohibitory_road_signs_of_Japan",
+    "Diagrams_of_priority_road_signs_of_Japan",
+    "Diagrams_of_guide_road_signs_in_Japan",
+    "Symbols_of_road_signs_of_Japan",
+    "Diagrams_of_road_markings_of_Japan",
+    "Diagrams_of_additional_road_signs_of_Japan",
+    "Diagrams_of_expressway_exit_signs_of_Japan",
+    "Diagrams_of_traffic_signals_of_Japan"
+  ],
+  "results": [
+    {
+      "category": "SVG_road_signs_in_Japan",
+      "success": true,
+      "filesFound": 142,
+      "uploaded": 1,
+      "skipped": 5,
+      "created": 0,
+      "updated": 90,
+      "errors": 6
+    },
+    {
+      "category": "Diagrams_of_regulatory_road_signs_of_Japan",
+      "success": true,
+      "filesFound": 22,
+      "uploaded": 1,
+      "skipped": 5,
+      "created": 3,
+      "updated": 2,
+      "errors": 0
+    },
+    {
+      "category": "Diagrams_of_information_road_signs_of_Japan",
+      "success": true,
+      "filesFound": 93,
+      "uploaded": 6,
+      "skipped": 0,
+      "created": 93,
+      "updated": 0,
+      "errors": 0
+    },
+    {
+      "category": "Diagrams_of_instruction_road_signs_of_Japan",
+      "success": true,
+      "filesFound": 18,
+      "uploaded": 3,
+      "skipped": 3,
+      "created": 9,
+      "updated": 1,
+      "errors": 0
+    },
+    {
+      "category": "Diagrams_of_warning_road_signs_of_Japan",
+      "success": false,
+      "filesFound": 0,
+      "uploaded": 0,
+      "skipped": 0,
+      "created": 0,
+      "updated": 0,
+      "errors": 0,
+      "errorMessage": "Process exited with code 1"
+    },
+    {
+      "category": "Diagrams_of_mandatory_road_signs_of_Japan",
+      "success": true,
+      "filesFound": 4,
+      "uploaded": 2,
+      "skipped": 0,
+      "created": 2,
+      "updated": 0,
+      "errors": 2
+    },
+    {
+      "category": "Diagrams_of_prohibitory_road_signs_of_Japan",
+      "success": false,
+      "filesFound": 0,
+      "uploaded": 0,
+      "skipped": 0,
+      "created": 0,
+      "updated": 0,
+      "errors": 0,
+      "errorMessage": "Process exited with code 1"
+    },
+    {
+      "category": "Diagrams_of_priority_road_signs_of_Japan",
+      "success": true,
+      "filesFound": 1,
+      "uploaded": 1,
+      "skipped": 0,
+      "created": 1,
+      "updated": 0,
+      "errors": 0
+    },
+    {
+      "category": "Diagrams_of_guide_road_signs_in_Japan",
+      "success": false,
+      "filesFound": 0,
+      "uploaded": 0,
+      "skipped": 0,
+      "created": 0,
+      "updated": 0,
+      "errors": 0,
+      "errorMessage": "Process exited with code 1"
+    },
+    {
+      "category": "Symbols_of_road_signs_of_Japan",
+      "success": true,
+      "filesFound": 4,
+      "uploaded": 4,
+      "skipped": 0,
+      "created": 4,
+      "updated": 0,
+      "errors": 0
+    },
+    {
+      "category": "Diagrams_of_road_markings_of_Japan",
+      "success": true,
+      "filesFound": 30,
+      "uploaded": 6,
+      "skipped": 0,
+      "created": 29,
+      "updated": 0,
+      "errors": 0
+    },
+    {
+      "category": "Diagrams_of_additional_road_signs_of_Japan",
+      "success": true,
+      "filesFound": 9,
+      "uploaded": 6,
+      "skipped": 0,
+      "created": 7,
+      "updated": 0,
+      "errors": 0
+    },
+    {
+      "category": "Diagrams_of_expressway_exit_signs_of_Japan",
+      "success": true,
+      "filesFound": 225,
+      "uploaded": 6,
+      "skipped": 0,
+      "created": 225,
+      "updated": 0,
+      "errors": 0
+    },
+    {
+      "category": "Diagrams_of_traffic_signals_of_Japan",
+      "success": true,
+      "filesFound": 29,
+      "uploaded": 6,
+      "skipped": 0,
+      "created": 28,
+      "updated": 0,
+      "errors": 0
+    }
+  ],
+  "totals": {
+    "filesFound": 577,
+    "uploaded": 42,
+    "skipped": 13,
+    "created": 401,
+    "updated": 93,
+    "errors": 8,
+    "successful": 11
+  }
+}

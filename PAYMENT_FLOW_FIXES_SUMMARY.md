@@ -331,3 +331,4 @@ if (status === "active" || status === "trialing") {
 3. Confirm UI updates immediately
 4. Check profile and account pages
 
+

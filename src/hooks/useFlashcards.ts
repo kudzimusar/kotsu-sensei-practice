@@ -7,6 +7,16 @@ export interface Flashcard {
   answer: string;
   explanation: string;
   imageUrl: string | null;
+  // Metadata from Wikimedia Commons (optional)
+  roadSignImageId?: string;
+  signNameEn?: string | null;
+  signNameJp?: string | null;
+  signCategory?: string | null;
+  attributionText?: string | null;
+  licenseInfo?: string | null;
+  wikimediaPageUrl?: string | null;
+  artistName?: string | null;
+  imageSource?: string | null;
 }
 
 export interface FlashcardSession {
@@ -173,5 +183,6 @@ export const useFlashcards = () => {
     getIncorrectFlashcards,
   };
 };
+
 
 

@@ -9,10 +9,13 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 export interface ChatSection {
   heading: string;
-  imageQuery: string;
+  imageQuery?: string;
   content: string;
   summary?: string;
   image?: string;
+  attribution?: string;
+  imageSource?: string;
+  wikimediaPageUrl?: string;
 }
 
 export interface RoadSignImage {

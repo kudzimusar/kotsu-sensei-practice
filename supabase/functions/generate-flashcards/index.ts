@@ -437,14 +437,81 @@ Make sure:
             ...flashcard,
             imageUrl: recycledImg.storage_url,
             roadSignImageId: recycledImg.id,
+            // Include metadata for Wikimedia Commons images
+            signNameEn: recycledImg.sign_name_en || null,
+            signNameJp: recycledImg.sign_name_jp || null,
+            signCategory: recycledImg.sign_category || null,
+            attributionText: recycledImg.attribution_text || null,
+            licenseInfo: recycledImg.license_info || null,
+            wikimediaPageUrl: recycledImg.wikimedia_page_url || null,
+            artistName: recycledImg.artist_name || null,
+            imageSource: recycledImg.image_source || null,
           };
         }
         
-        // Otherwise try Wikimedia Commons first, then Serper fallback
-        const imageUrl = await fetchImage(supabaseForImages, flashcard.imageQuery, category);
+        // Otherwise try Wikimedia Commons first (with full metadata)
+        const dbCategory = category ? mapFlashcardCategoryToDbCategory(category) : null;
+        const wikimediaImage = await findWikimediaImage(supabaseForImages, dbCategory, flashcard.imageQuery);
+        if (wikimediaImage) {
+          await incrementImageUsage(supabaseForImages, wikimediaImage.id);
+          // Fetch full metadata for Wikimedia image
+          const { data: fullMetadata } = await supabaseForImages
+            .from('road_sign_images')
+            .select('sign_name_en, sign_name_jp, sign_category, attribution_text, license_info, wikimedia_page_url, artist_name, image_source')
+            .eq('id', wikimediaImage.id)
+            .single();
+          
+          return {
+            ...flashcard,
+            imageUrl: wikimediaImage.storage_url,
+            roadSignImageId: wikimediaImage.id,
+            signNameEn: fullMetadata?.sign_name_en || null,
+            signNameJp: fullMetadata?.sign_name_jp || null,
+            signCategory: fullMetadata?.sign_category || null,
+            attributionText: fullMetadata?.attribution_text || null,
+            licenseInfo: fullMetadata?.license_info || null,
+            wikimediaPageUrl: fullMetadata?.wikimedia_page_url || null,
+            artistName: fullMetadata?.artist_name || null,
+            imageSource: fullMetadata?.image_source || null,
+          };
+        }
+        
+        // Fallback to Serper API only (fetchImage already tried Wikimedia, so just use Serper part)
+        try {
+          const SERPER_API_KEY = Deno.env.get('SERPER_API_KEY');
+          if (SERPER_API_KEY) {
+            const response = await fetch('https://google.serper.dev/images', {
+              method: 'POST',
+              headers: {
+                'X-API-KEY': SERPER_API_KEY,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                q: `${flashcard.imageQuery} japan driving traffic road`,
+                num: 1
+              })
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              const imageUrl = data.images?.[0]?.imageUrl || null;
+              if (imageUrl) {
+                console.log(`Using Serper API image for: ${flashcard.imageQuery}`);
+                return {
+                  ...flashcard,
+                  imageUrl: imageUrl
+                };
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching image from Serper:', error);
+        }
+        
+        // No image found
         return {
           ...flashcard,
-          imageUrl: imageUrl || null
+          imageUrl: null
         };
       })
     );

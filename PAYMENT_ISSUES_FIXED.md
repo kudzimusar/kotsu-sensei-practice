@@ -208,3 +208,4 @@ const cancelUrl = `${baseUrl}${pathPrefix}/payment?canceled=true`;
 3. Verify prices in Stripe Dashboard
 4. Check Edge Function logs for any errors
 
+
