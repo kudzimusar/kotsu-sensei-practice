@@ -13,7 +13,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.77.0";
  * @returns Image URL or null if not found
  */
 export async function findWikimediaImage(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   category?: string | null,
   query?: string | null
 ): Promise<{ 
@@ -39,23 +39,23 @@ export async function findWikimediaImage(
     if (query && queryTerms.length > 0) {
       // Strategy 1: Try exact name match with category filter (most specific)
       if (category) {
-        for (const term of queryTerms) {
-          const { data: exactMatch, error: exactError } = await supabase
-            .from('road_sign_images')
-            .select('storage_url, id, attribution_text, license_info, wikimedia_page_url, artist_name')
-            .eq('image_source', 'wikimedia_commons')
-            .eq('is_verified', true)
-            .eq('sign_category', category)
-            .or(`sign_name_en.ilike.%${term}%,sign_name_jp.ilike.%${term}%`)
-            .order('usage_count', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+      for (const term of queryTerms) {
+        const { data: exactMatch, error: exactError } = await supabase
+          .from('road_sign_images')
+          .select('storage_url, id, attribution_text, license_info, wikimedia_page_url, artist_name')
+          .eq('image_source', 'wikimedia_commons')
+          .eq('is_verified', true)
+          .eq('sign_category', category)
+          .or(`sign_name_en.ilike.%${term}%,sign_name_jp.ilike.%${term}%,sign_meaning.ilike.%${term}%`)
+          .order('usage_count', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-          if (!exactError && exactMatch) {
-            console.log(`Found Wikimedia image by name+category match: ${term} in ${category}`);
-            return exactMatch;
-          }
+        if (!exactError && exactMatch) {
+          console.log(`Found Wikimedia image by name+category match: ${term} in ${category}`);
+          return exactMatch;
         }
+      }
       }
 
       // Strategy 2: Try name match without category (broader)
@@ -65,7 +65,7 @@ export async function findWikimediaImage(
           .select('storage_url, id, attribution_text, license_info, wikimedia_page_url, artist_name')
           .eq('image_source', 'wikimedia_commons')
           .eq('is_verified', true)
-          .or(`sign_name_en.ilike.%${term}%,sign_name_jp.ilike.%${term}%`)
+          .or(`sign_name_en.ilike.%${term}%,sign_name_jp.ilike.%${term}%,sign_meaning.ilike.%${term}%`)
           .order('usage_count', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -122,7 +122,7 @@ export async function findWikimediaImage(
           .select('storage_url, id, attribution_text, license_info, wikimedia_page_url, artist_name')
           .eq('image_source', 'wikimedia_commons')
           .eq('is_verified', true)
-          .or(`sign_name_en.ilike.%${searchQuery}%,sign_name_jp.ilike.%${searchQuery}%`)
+          .or(`sign_name_en.ilike.%${searchQuery}%,sign_name_jp.ilike.%${searchQuery}%,sign_meaning.ilike.%${searchQuery}%`)
           .order('usage_count', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -164,14 +164,14 @@ export async function findWikimediaImage(
  * Map flashcard category to database category
  */
 export function mapFlashcardCategoryToDbCategory(category: string): string | null {
-  const categoryMap: { [key: string]: string } = {
+  const categoryMap: { [key: string]: string | null } = {
     'regulatory-signs': 'regulatory',
     'warning-signs': 'warning',
     'indication-signs': 'indication',
     'guidance-signs': 'guidance',
     'auxiliary-signs': 'auxiliary',
     'road-markings': 'road-markings',
-    'traffic-signals': null, // No matching category in database yet
+    'traffic-signals': null,
   };
   
   return categoryMap[category] || null;
@@ -181,7 +181,7 @@ export function mapFlashcardCategoryToDbCategory(category: string): string | nul
  * Increment usage count for an image
  */
 export async function incrementImageUsage(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   imageId: string
 ): Promise<void> {
   try {
@@ -207,7 +207,7 @@ export async function incrementImageUsage(
       return;
     }
     
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('road_sign_images')
       .update({ usage_count: (currentData.usage_count || 0) + 1 })
       .eq('id', imageId);

@@ -432,7 +432,7 @@ Make sure:
         if (recycledImages[index]) {
           const recycledImg = recycledImages[index];
           // Increment usage count
-          await incrementImageUsage(supabaseForImages, recycledImg.id);
+          await incrementImageUsage(supabaseForImages as any, recycledImg.id);
           return {
             ...flashcard,
             imageUrl: recycledImg.storage_url,
@@ -451,9 +451,9 @@ Make sure:
         
         // Otherwise try Wikimedia Commons first (with full metadata)
         const dbCategory = category ? mapFlashcardCategoryToDbCategory(category) : null;
-        const wikimediaImage = await findWikimediaImage(supabaseForImages, dbCategory, flashcard.imageQuery);
+        const wikimediaImage = await findWikimediaImage(supabaseForImages as any, dbCategory, flashcard.imageQuery);
         if (wikimediaImage) {
-          await incrementImageUsage(supabaseForImages, wikimediaImage.id);
+          await incrementImageUsage(supabaseForImages as any, wikimediaImage.id);
           // Fetch full metadata for Wikimedia image
           const { data: fullMetadata } = await supabaseForImages
             .from('road_sign_images')

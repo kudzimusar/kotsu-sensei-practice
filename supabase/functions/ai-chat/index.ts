@@ -37,7 +37,7 @@ async function fetchImageWithMetadata(
     await incrementImageUsage(supabase, wikimediaImage.id);
     
     // Fetch full metadata
-    const { data: fullMetadata } = await supabase
+    const { data: fullMetadata } = await (supabase as any)
       .from('road_sign_images')
       .select('attribution_text, license_info, wikimedia_page_url, image_source')
       .eq('id', wikimediaImage.id)
@@ -46,10 +46,10 @@ async function fetchImageWithMetadata(
     console.log(`Using Wikimedia Commons image for: ${query}`);
     return {
       image: wikimediaImage.storage_url,
-      attribution: fullMetadata?.attribution_text || undefined,
-      imageSource: fullMetadata?.image_source || 'wikimedia_commons',
-      wikimediaPageUrl: fullMetadata?.wikimedia_page_url || undefined,
-      licenseInfo: fullMetadata?.license_info || undefined,
+      attribution: (fullMetadata as any)?.attribution_text || undefined,
+      imageSource: (fullMetadata as any)?.image_source || 'wikimedia_commons',
+      wikimediaPageUrl: (fullMetadata as any)?.wikimedia_page_url || undefined,
+      licenseInfo: (fullMetadata as any)?.license_info || undefined,
     };
   }
 
