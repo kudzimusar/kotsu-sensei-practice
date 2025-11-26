@@ -236,9 +236,8 @@ const AIChatbot = () => {
                                       )}
                                     </div>
                                   )}
-                                </div>
+                                 </div>
                               )}
-                              {!section.image && console.warn(`⚠️ Section "${section.heading}" missing image property`)}
                               
                               {/* Content */}
                               <ReactMarkdown 

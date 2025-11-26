@@ -1151,6 +1151,175 @@ export type Database = {
           },
         ]
       }
+      road_sign_flashcards: {
+        Row: {
+          answer: string
+          category: string | null
+          created_at: string
+          explanation: string | null
+          id: string
+          question: string
+          road_sign_image_id: string | null
+        }
+        Insert: {
+          answer: string
+          category?: string | null
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          question: string
+          road_sign_image_id?: string | null
+        }
+        Update: {
+          answer?: string
+          category?: string | null
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          question?: string
+          road_sign_image_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "road_sign_flashcards_road_sign_image_id_fkey"
+            columns: ["road_sign_image_id"]
+            isOneToOne: false
+            referencedRelation: "road_sign_images"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      road_sign_images: {
+        Row: {
+          ai_confidence: number | null
+          ai_explanation: string | null
+          artist_name: string | null
+          attribution_text: string | null
+          created_at: string
+          file_name: string
+          file_size: number | null
+          filename_slug: string | null
+          id: string
+          image_source: string | null
+          is_verified: boolean | null
+          license_info: string | null
+          mime_type: string | null
+          sha1: string | null
+          sign_category: string | null
+          sign_meaning: string | null
+          sign_name_en: string | null
+          sign_name_jp: string | null
+          storage_path: string
+          storage_type: string
+          storage_url: string
+          tags: string[] | null
+          updated_at: string
+          usage_count: number | null
+          user_id: string | null
+          wikimedia_file_name: string | null
+          wikimedia_page_url: string | null
+          wikimedia_raw: Json | null
+        }
+        Insert: {
+          ai_confidence?: number | null
+          ai_explanation?: string | null
+          artist_name?: string | null
+          attribution_text?: string | null
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          filename_slug?: string | null
+          id?: string
+          image_source?: string | null
+          is_verified?: boolean | null
+          license_info?: string | null
+          mime_type?: string | null
+          sha1?: string | null
+          sign_category?: string | null
+          sign_meaning?: string | null
+          sign_name_en?: string | null
+          sign_name_jp?: string | null
+          storage_path: string
+          storage_type?: string
+          storage_url: string
+          tags?: string[] | null
+          updated_at?: string
+          usage_count?: number | null
+          user_id?: string | null
+          wikimedia_file_name?: string | null
+          wikimedia_page_url?: string | null
+          wikimedia_raw?: Json | null
+        }
+        Update: {
+          ai_confidence?: number | null
+          ai_explanation?: string | null
+          artist_name?: string | null
+          attribution_text?: string | null
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          filename_slug?: string | null
+          id?: string
+          image_source?: string | null
+          is_verified?: boolean | null
+          license_info?: string | null
+          mime_type?: string | null
+          sha1?: string | null
+          sign_category?: string | null
+          sign_meaning?: string | null
+          sign_name_en?: string | null
+          sign_name_jp?: string | null
+          storage_path?: string
+          storage_type?: string
+          storage_url?: string
+          tags?: string[] | null
+          updated_at?: string
+          usage_count?: number | null
+          user_id?: string | null
+          wikimedia_file_name?: string | null
+          wikimedia_page_url?: string | null
+          wikimedia_raw?: Json | null
+        }
+        Relationships: []
+      }
+      road_sign_questions: {
+        Row: {
+          answer: boolean
+          created_at: string
+          difficulty: string | null
+          explanation: string
+          id: string
+          question_text: string
+          road_sign_image_id: string | null
+        }
+        Insert: {
+          answer: boolean
+          created_at?: string
+          difficulty?: string | null
+          explanation: string
+          id?: string
+          question_text: string
+          road_sign_image_id?: string | null
+        }
+        Update: {
+          answer?: boolean
+          created_at?: string
+          difficulty?: string | null
+          explanation?: string
+          id?: string
+          question_text?: string
+          road_sign_image_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "road_sign_questions_road_sign_image_id_fkey"
+            columns: ["road_sign_image_id"]
+            isOneToOne: false
+            referencedRelation: "road_sign_images"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       study_events: {
         Row: {
           created_at: string
@@ -1769,6 +1938,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_image_usage: { Args: { image_id: string }; Returns: undefined }
       initialize_user_curriculum: {
         Args: { p_user_id: string }
         Returns: undefined

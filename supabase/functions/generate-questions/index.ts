@@ -186,10 +186,10 @@ Make sure to return valid JSON only, no additional text.`
             };
             
             const category = extractCategory(q.image_description);
-            const wikimediaImage = await findWikimediaImage(supabase, category, q.image_description);
-            
-            if (wikimediaImage) {
-              await incrementImageUsage(supabase, wikimediaImage.id);
+      const wikimediaImage = await findWikimediaImage(supabase as any, category, q.image_description);
+      
+      if (wikimediaImage) {
+        await incrementImageUsage(supabase as any, wikimediaImage.id);
               figureUrl = wikimediaImage.storage_url;
               console.log(`Using Wikimedia Commons image for question: ${q.image_description}`);
             }
