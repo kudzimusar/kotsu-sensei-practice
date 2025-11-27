@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.77.0";
+import { deterministicSignSearch } from "./deterministic-sign-search.ts";
 
 /**
  * Parse query to extract sign numbers and types
@@ -67,56 +68,39 @@ export async function findWikimediaImage(
   artist_name?: string;
 } | null> {
   try {
-    // Build search query - include category if provided
-    let searchQuery = query || '';
-    
-    // If category is provided, prepend it to help with category detection in the function
-    if (category && searchQuery) {
-      searchQuery = `${category} ${searchQuery}`;
-    } else if (category) {
-      searchQuery = category;
-    }
+    const searchQuery = query || '';
     
     if (!searchQuery || !searchQuery.trim()) {
       console.log(`⚠️ Empty search query provided`);
       return null;
     }
     
-    console.log(`🔍 Using 6-tier search algorithm: query="${query}", category="${category}", combined="${searchQuery}"`);
+    console.log(`🔍 Using DETERMINISTIC search: query="${query}", category="${category}"`);
     
-    // Use the new comprehensive search_road_signs RPC function
-    // This function implements all 6 tiers of matching with intelligent scoring
-    // Now uses raw_q parameter and enhanced term matching for all queries
-    const { data: results, error: searchError } = await supabase
-      .rpc('search_road_signs', { raw_q: searchQuery });
+    // USE DETERMINISTIC SEARCH FIRST - extracts sign numbers and does exact matching
+    // This is the ONLY way to guarantee correct results
+    const deterministicResult = await deterministicSignSearch(supabase, searchQuery, category);
     
-    if (searchError) {
-      console.error(`❌ Error calling search_road_signs RPC:`, searchError);
-      return null;
+    if (deterministicResult) {
+      console.log(`✅ DETERMINISTIC match found: ${deterministicResult.file_name}`);
+      
+      // Increment usage count for the selected image
+      if (deterministicResult.id) {
+        await incrementImageUsage(supabase, deterministicResult.id);
+      }
+      
+      return {
+        storage_url: deterministicResult.storage_url,
+        id: deterministicResult.id,
+        attribution_text: deterministicResult.attribution_text || undefined,
+        license_info: deterministicResult.license_info || undefined,
+        wikimedia_page_url: deterministicResult.wikimedia_page_url || undefined,
+        artist_name: deterministicResult.artist_name || undefined,
+      };
     }
     
-    if (!results || results.length === 0) {
-      console.log(`❌ No match found for: category="${category}", query="${query}"`);
-      return null;
-    }
-    
-    // Get the top result (highest score)
-    const topResult = results[0];
-    console.log(`✅ Found match using 6-tier algorithm: score=${topResult.score}, id=${topResult.id}, file_name=${topResult.file_name}`);
-    
-    // Increment usage count for the selected image
-    if (topResult.id) {
-      await incrementImageUsage(supabase, topResult.id);
-    }
-    
-    return {
-      storage_url: topResult.storage_url,
-      id: topResult.id,
-      attribution_text: topResult.attribution_text || undefined,
-      license_info: topResult.license_info || undefined,
-      wikimedia_page_url: topResult.wikimedia_page_url || undefined,
-      artist_name: topResult.artist_name || undefined,
-    };
+    console.log(`❌ No deterministic match found for: category="${category}", query="${query}"`);
+    return null;
   } catch (error) {
     console.error('Error finding Wikimedia image:', error);
     return null;
