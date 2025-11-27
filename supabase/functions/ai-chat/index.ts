@@ -75,7 +75,7 @@ function parseSignQuery(query: string): { searchTerms: string[]; category?: stri
     category = 'guidance';
   } else if (lowerQuery.includes('steep') || lowerQuery.includes('ascent') || lowerQuery.includes('upgrade') || lowerQuery.includes('急勾配')) {
     signType = 'steep';
-    searchTerms.push('steep', 'ascent', 'upgrade', '急勾配', '328');
+    searchTerms.push('steep', 'ascent', 'upgrade', '急勾配', '212-3');  // Fixed: Changed from '328' (horn) to '212-3' (steep ascent)
     category = 'warning';
   } else if (lowerQuery.includes('descent') || lowerQuery.includes('downgrade') || lowerQuery.includes('下り急勾配')) {
     signType = 'steep descent';
