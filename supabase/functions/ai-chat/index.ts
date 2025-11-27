@@ -1,7 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.77.0";
-import { corsHeaders } from "../_shared/cors.ts";
 import { findWikimediaImage } from "../_shared/wikimedia-image-lookup.ts";
+
+// CORS headers inline
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 // Detect if user question needs visual aid
 function needsVisualAid(userMessage: string): boolean {
@@ -94,7 +99,7 @@ function parseSignQuery(query: string): { searchTerms: string[]; category?: stri
   return { searchTerms: [...new Set(searchTerms)], category, signType };
 }
 
-// Fetch a single image for a specific query - tries database first, then Serper API
+// Fetch a single image for a specific query - Serper API FIRST (default), then database fallback
 async function fetchImage(
   query: string,
   supabaseClient?: ReturnType<typeof createClient> | null
@@ -108,22 +113,112 @@ async function fetchImage(
 } | null> {
   console.log(`📸 fetchImage called with query: "${query}"`);
   
-  // Strategy 1: Try Wikimedia Commons database with intelligent matching (ALWAYS FIRST)
+  // Strategy 1: Serper API FIRST (default image fetcher)
+  try {
+    const SERPER_API_KEY = Deno.env.get('SERPER_API_KEY');
+    
+    if (!SERPER_API_KEY) {
+      console.log('SERPER_API_KEY not configured, skipping Serper search');
+    } else {
+      console.log(`🔍 Using Serper API as default for: "${query}"`);
+      
+      // Build query to prioritize Wikimedia SVG images
+      const serperQuery = `${query} japan road sign filetype:svg site:wikimedia.org OR site:commons.wikimedia.org`;
+      
+      const response = await fetch('https://google.serper.dev/images', {
+        method: 'POST',
+        headers: {
+          'X-API-KEY': SERPER_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          q: serperQuery,
+          num: 10, // Get more results to filter for SVG/Wikimedia
+          gl: 'jp', // Japan location bias
+          hl: 'en' // English language
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Filter results to prioritize:
+        // 1. Wikimedia Commons SVG images
+        // 2. Other SVG images
+        // 3. Other Wikimedia images
+        let imageUrl = null;
+        let selectedImage: any = null;
+        
+        if (data.images && data.images.length > 0) {
+          // First, try to find Wikimedia Commons SVG
+          const wikimediaSvg = data.images.find((img: any) => 
+            img.imageUrl?.endsWith('.svg') && 
+            (img.link?.includes('wikimedia.org') || img.link?.includes('commons.wikimedia.org'))
+          );
+          
+          if (wikimediaSvg) {
+            imageUrl = wikimediaSvg.imageUrl;
+            selectedImage = wikimediaSvg;
+            console.log(`✅ Found Wikimedia SVG via Serper API: ${imageUrl}`);
+          } else {
+            // Try any SVG image
+            const anySvg = data.images.find((img: any) => img.imageUrl?.endsWith('.svg'));
+            if (anySvg) {
+              imageUrl = anySvg.imageUrl;
+              selectedImage = anySvg;
+              console.log(`✅ Found SVG via Serper API: ${imageUrl}`);
+            } else {
+              // Try Wikimedia non-SVG
+              const wikimediaAny = data.images.find((img: any) => 
+                img.link?.includes('wikimedia.org') || img.link?.includes('commons.wikimedia.org')
+              );
+              if (wikimediaAny) {
+                imageUrl = wikimediaAny.imageUrl;
+                selectedImage = wikimediaAny;
+                console.log(`✅ Found Wikimedia image via Serper API: ${imageUrl}`);
+              } else {
+                // Fallback to first result
+                imageUrl = data.images[0]?.imageUrl || null;
+                selectedImage = data.images[0] || null;
+                if (imageUrl) {
+                  console.log(`✅ Found image via Serper API: ${imageUrl}`);
+                }
+              }
+            }
+          }
+          
+          if (imageUrl) {
+            // Extract Wikimedia page URL if available
+            const wikimediaPageUrl = selectedImage?.link || undefined;
+            
+            return { 
+              imageUrl,
+              wikimediaPageUrl,
+              // Note: Attribution and license info would need to be fetched separately from Wikimedia API
+            };
+          }
+        }
+      } else {
+        console.error('Serper API error:', response.status);
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching image from Serper:', error);
+    // Continue to fallback
+  }
+
+  // Strategy 2: Fallback to Wikimedia Commons database
   if (supabaseClient) {
     try {
       // Parse query to extract sign type and category
       const { searchTerms, category, signType } = parseSignQuery(query);
-      console.log(`🔍 Database search - query="${query}", signType="${signType}", category="${category}", terms=[${searchTerms.join(', ')}]`);
+      console.log(`🔍 Database fallback search - query="${query}", signType="${signType}", category="${category}"`);
 
-      // Use the improved findWikimediaImage function which searches ALL metadata columns
-      // including file_name, filename_slug, wikimedia_file_name, sign numbers, etc.
-      // This will automatically match sign numbers (326 for stop, 124 for bus, etc.)
-      console.log(`🔍 Calling findWikimediaImage()...`);
+      // Use the improved findWikimediaImage function
       let wikimediaImage = await findWikimediaImage(supabaseClient, category, query);
 
-      // If we found a match, return it with metadata
       if (wikimediaImage) {
-        console.log(`✅ Database match found! Image ID: ${wikimediaImage.id}, URL: ${wikimediaImage.storage_url}`);
+        console.log(`✅ Database fallback match found! Image ID: ${wikimediaImage.id}`);
         
         // Fetch full metadata
         const { data: fullMetadata, error: metadataError } = await supabaseClient
@@ -134,8 +229,6 @@ async function fetchImage(
 
         if (metadataError) {
           console.error(`⚠️ Error fetching full metadata:`, metadataError);
-        } else {
-          console.log(`✅ Full metadata retrieved: ${fullMetadata?.sign_name_en || 'Unknown'}`);
         }
 
         return {
@@ -148,52 +241,13 @@ async function fetchImage(
         };
       }
 
-      console.log(`❌ No Wikimedia Commons match found in database for: "${query}"`);
+      console.log(`❌ No database match found for: "${query}"`);
     } catch (error) {
-      console.error(`❌ Error querying Wikimedia Commons database:`, error);
+      console.error(`❌ Error querying database:`, error);
       console.error(`Error details:`, error instanceof Error ? error.stack : String(error));
-      // Continue to fallback
     }
   } else {
     console.warn(`⚠️ No Supabase client provided - skipping database lookup`);
-  }
-
-  // Strategy 2: Fallback to Serper API
-  try {
-    const SERPER_API_KEY = Deno.env.get('SERPER_API_KEY');
-    
-    if (!SERPER_API_KEY) {
-      console.log('SERPER_API_KEY not configured, skipping image search');
-      return null;
-    }
-
-    console.log(`🔍 Falling back to Serper API for: "${query}"`);
-    const response = await fetch('https://google.serper.dev/images', {
-      method: 'POST',
-      headers: {
-        'X-API-KEY': SERPER_API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        q: `${query} japan driving traffic road`,
-        num: 1
-      })
-    });
-
-    if (!response.ok) {
-      console.error('Serper API error:', response.status);
-      return null;
-    }
-
-    const data = await response.json();
-    const imageUrl = data.images?.[0]?.imageUrl || null;
-    
-    if (imageUrl) {
-      console.log(`✅ Found image via Serper API`);
-      return { imageUrl };
-    }
-  } catch (error) {
-    console.error('Error fetching image from Serper:', error);
   }
 
   return null;
