@@ -1,4 +1,4 @@
-import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays, Bell, BookOpen, Video, AlertTriangle, Car, ClipboardList, CreditCard } from "lucide-react";
+import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays, Bell, BookOpen, Video, AlertTriangle, Car, ClipboardList } from "lucide-react";
 import { testCategories } from "@/data/questions";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -446,16 +446,6 @@ const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: Q
           <h2 className="font-bold text-lg mb-3">Study Tools</h2>
           <div className="grid grid-cols-3 gap-3">
             <button
-              onClick={() => navigate('/flashcards')}
-              className="bg-white rounded-xl shadow p-3 transform transition active:scale-[0.98]"
-            >
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-2">
-                <CreditCard className="text-blue-600" size={20} />
-              </div>
-              <h3 className="font-medium text-xs">Flashcards</h3>
-            </button>
-            
-            <button
               onClick={() => navigate('/lectures?tab=textbook')}
               className="bg-white rounded-xl shadow p-3 transform transition active:scale-[0.98]"
             >
@@ -474,17 +464,15 @@ const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: Q
               </div>
               <h3 className="font-medium text-xs">Lectures</h3>
             </button>
-          </div>
-          
-          <div className="mt-3">
+            
             <button
               onClick={() => navigate('/planner')}
-              className="bg-white rounded-xl shadow p-3 w-full transform transition active:scale-[0.98] flex items-center"
+              className="bg-white rounded-xl shadow p-3 transform transition active:scale-[0.98]"
             >
-              <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mr-3">
+              <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mb-2">
                 <CalendarDays className="text-emerald-600" size={20} />
               </div>
-              <h3 className="font-medium text-sm">Driving Schedule</h3>
+              <h3 className="font-medium text-xs">Driving Schedule</h3>
             </button>
           </div>
         </section>

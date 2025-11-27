@@ -1,64 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.77.0";
 import { corsHeaders } from "../_shared/cors.ts";
-import { findWikimediaImage, mapFlashcardCategoryToDbCategory, incrementImageUsage } from "../_shared/wikimedia-image-lookup.ts";
-
-// Fetch a single image - tries Wikimedia Commons first, then Serper API as fallback
-async function fetchImage(
-  supabase: ReturnType<typeof createClient>,
-  query: string,
-  category?: string | null
-): Promise<string | null> {
-  // Strategy 1: Try Wikimedia Commons database first
-  const dbCategory = category ? mapFlashcardCategoryToDbCategory(category) : null;
-  const wikimediaImage = await findWikimediaImage(supabase, dbCategory, query);
-  
-  if (wikimediaImage) {
-    // Increment usage count
-    await incrementImageUsage(supabase, wikimediaImage.id);
-    console.log(`Using Wikimedia Commons image for: ${query}`);
-    return wikimediaImage.storage_url;
-  }
-
-  // Strategy 2: Fallback to Serper API
-  try {
-    const SERPER_API_KEY = Deno.env.get('SERPER_API_KEY');
-    
-    if (!SERPER_API_KEY) {
-      console.log('SERPER_API_KEY not configured, skipping image search');
-      return null;
-    }
-
-    const response = await fetch('https://google.serper.dev/images', {
-      method: 'POST',
-      headers: {
-        'X-API-KEY': SERPER_API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        q: `${query} japan driving traffic road`,
-        num: 1
-      })
-    });
-
-    if (!response.ok) {
-      console.error('Serper API error:', response.status);
-      return null;
-    }
-
-    const data = await response.json();
-    const imageUrl = data.images?.[0]?.imageUrl || null;
-    
-    if (imageUrl) {
-      console.log(`Using Serper API image for: ${query}`);
-    }
-    
-    return imageUrl;
-  } catch (error) {
-    console.error('Error fetching image from Serper:', error);
-    return null;
-  }
-}
+import { mapFlashcardCategoryToDbCategory } from "../_shared/wikimedia-image-lookup.ts";
+import { fetchEnhancedImage } from "../_shared/enhanced-image-fetcher.ts";
 
 // Flashcard categories with their Japanese names and queries
 const FLASHCARD_CATEGORIES = {
@@ -403,13 +347,13 @@ Make sure:
         const existing = flashcards.find(f => f.imageQuery === query);
         if (existing) return existing;
       
-      return {
+        return {
           imageQuery: query,
           question: `What does this ${categoryInfo.name.toLowerCase()} mean?`,
           answer: `This is a Japanese ${categoryInfo.name.toLowerCase()}. See explanation.`,
           explanation: `This sign/marking indicates important traffic information. Study this carefully for your driving test.`
-      };
-    });
+        };
+      });
     }
 
     // Fetch images for each flashcard (use recycled images if available)
@@ -426,17 +370,63 @@ Make sure:
       },
     });
     
+    // Fetch distractors for generating options
+    const dbCategory = category ? mapFlashcardCategoryToDbCategory(category) : null;
+    let allDistractors: any[] = [];
+    try {
+      const { data: distractorsData, error: distractorsError } = await supabaseForImages
+        .from('road_sign_images')
+        .select('sign_name_en, sign_name_jp, sign_category')
+        .eq('is_verified', true)
+        .limit(50);
+      
+      if (!distractorsError && distractorsData) {
+        allDistractors = distractorsData;
+      }
+    } catch (error) {
+      console.error('Error fetching distractors:', error);
+      // Continue with empty array
+    }
+
     const flashcardsWithImages = await Promise.all(
       flashcards.map(async (flashcard, index) => {
+        // Ensure flashcard has required fields
+        if (!flashcard || !flashcard.question || !flashcard.answer) {
+          console.error('Invalid flashcard at index', index, flashcard);
+          return null;
+        }
+
         // Use recycled image if available
         if (recycledImages[index]) {
           const recycledImg = recycledImages[index];
-          // Increment usage count
-          await incrementImageUsage(supabaseForImages as any, recycledImg.id);
+          // Get distractors from same category
+          const categoryDistractors = (allDistractors || [])
+            .filter((d: any) => d.sign_category === recycledImg.sign_category && d.sign_name_en !== recycledImg.sign_name_en)
+            .map((d: any) => d.sign_name_en)
+            .filter(Boolean)
+            .slice(0, 3);
+
+          // Build options array
+          const options = [
+            recycledImg.sign_name_en,
+            ...categoryDistractors
+          ]
+            .filter((v, i, a) => a.indexOf(v) === i) // Remove duplicates
+            .sort(() => Math.random() - 0.5) // Shuffle
+            .slice(0, 4); // Max 4 options
+
+          // Ensure correct answer is in options
+          if (!options.includes(recycledImg.sign_name_en)) {
+            options[0] = recycledImg.sign_name_en;
+          }
+
           return {
             ...flashcard,
             imageUrl: recycledImg.storage_url,
             roadSignImageId: recycledImg.id,
+            correct_answer: recycledImg.sign_name_en,
+            options: options,
+            difficulty: 'easy',
             // Include metadata for Wikimedia Commons images
             signNameEn: recycledImg.sign_name_en || null,
             signNameJp: recycledImg.sign_name_jp || null,
@@ -449,69 +439,87 @@ Make sure:
           };
         }
         
-        // Otherwise try Wikimedia Commons first (with full metadata)
-        const dbCategory = category ? mapFlashcardCategoryToDbCategory(category) : null;
-        const wikimediaImage = await findWikimediaImage(supabaseForImages as any, dbCategory, flashcard.imageQuery);
-        if (wikimediaImage) {
-          await incrementImageUsage(supabaseForImages as any, wikimediaImage.id);
-          // Fetch full metadata for Wikimedia image
-          const { data: fullMetadata } = await supabaseForImages
-            .from('road_sign_images')
-            .select('sign_name_en, sign_name_jp, sign_category, attribution_text, license_info, wikimedia_page_url, artist_name, image_source')
-            .eq('id', wikimediaImage.id)
-            .single();
-          
+        // Use enhanced image fetcher for better image retrieval
+        let imageResult = null;
+        try {
+          if (flashcard.imageQuery) {
+            imageResult = await fetchEnhancedImage(
+              supabaseForImages,
+              flashcard.imageQuery,
+              dbCategory
+            );
+          }
+        } catch (imageError) {
+          console.error(`Error fetching image for ${flashcard.imageQuery}:`, imageError);
+          // Continue without image
+        }
+
+        if (imageResult) {
+          // Get distractors from same category
+          const categoryDistractors = (allDistractors || [])
+            .filter((d: any) => d.sign_category === imageResult.signCategory && d.sign_name_en !== imageResult.signNameEn)
+            .map((d: any) => d.sign_name_en)
+            .filter(Boolean)
+            .slice(0, 3);
+
+          // Build options array
+          const options = [
+            imageResult.signNameEn || flashcard.answer,
+            ...categoryDistractors
+          ]
+            .filter((v, i, a) => a.indexOf(v) === i) // Remove duplicates
+            .sort(() => Math.random() - 0.5) // Shuffle
+            .slice(0, 4); // Max 4 options
+
+          // Ensure correct answer is in options
+          const correctAnswer = imageResult.signNameEn || flashcard.answer;
+          if (!options.includes(correctAnswer)) {
+            options[0] = correctAnswer;
+          }
+
           return {
             ...flashcard,
-            imageUrl: wikimediaImage.storage_url,
-            roadSignImageId: wikimediaImage.id,
-            signNameEn: fullMetadata?.sign_name_en || null,
-            signNameJp: fullMetadata?.sign_name_jp || null,
-            signCategory: fullMetadata?.sign_category || null,
-            attributionText: fullMetadata?.attribution_text || null,
-            licenseInfo: fullMetadata?.license_info || null,
-            wikimediaPageUrl: fullMetadata?.wikimedia_page_url || null,
-            artistName: fullMetadata?.artist_name || null,
-            imageSource: fullMetadata?.image_source || null,
+            imageUrl: imageResult.imageUrl,
+            roadSignImageId: imageResult.signId,
+            correct_answer: correctAnswer,
+            options: options,
+            difficulty: 'easy',
+            signNameEn: imageResult.signNameEn || null,
+            signNameJp: imageResult.signNameJp || null,
+            signCategory: imageResult.signCategory || null,
+            attributionText: imageResult.attributionText || null,
+            licenseInfo: imageResult.licenseInfo || null,
+            wikimediaPageUrl: imageResult.wikimediaPageUrl || null,
+            artistName: imageResult.artistName || null,
+            imageSource: imageResult.imageSource || null,
           };
         }
         
-        // Fallback to Serper API only (fetchImage already tried Wikimedia, so just use Serper part)
-        try {
-          const SERPER_API_KEY = Deno.env.get('SERPER_API_KEY');
-          if (SERPER_API_KEY) {
-            const response = await fetch('https://google.serper.dev/images', {
-              method: 'POST',
-              headers: {
-                'X-API-KEY': SERPER_API_KEY,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                q: `${flashcard.imageQuery} japan driving traffic road`,
-                num: 1
-              })
-            });
-            
-            if (response.ok) {
-              const data = await response.json();
-              const imageUrl = data.images?.[0]?.imageUrl || null;
-              if (imageUrl) {
-                console.log(`Using Serper API image for: ${flashcard.imageQuery}`);
-                return {
-                  ...flashcard,
-                  imageUrl: imageUrl
-                };
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching image from Serper:', error);
+        // No image found - still create flashcard with options
+        const categoryDistractors = (allDistractors || [])
+          .filter((d: any) => d.sign_category === dbCategory)
+          .map((d: any) => d.sign_name_en)
+          .filter(Boolean)
+          .slice(0, 3);
+
+        const options = [
+          flashcard.answer,
+          ...categoryDistractors
+        ]
+          .filter((v, i, a) => a.indexOf(v) === i)
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 4);
+
+        if (!options.includes(flashcard.answer)) {
+          options[0] = flashcard.answer;
         }
-        
-        // No image found
+
         return {
           ...flashcard,
-          imageUrl: null
+          imageUrl: null,
+          correct_answer: flashcard.answer,
+          options: options,
+          difficulty: 'easy'
         };
       })
     );
@@ -531,7 +539,10 @@ Make sure:
           road_sign_image_id: fc.roadSignImageId,
           question: fc.question,
           answer: fc.answer,
+          correct_answer: fc.correct_answer || fc.answer,
+          options: fc.options || [],
           explanation: fc.explanation,
+          difficulty: fc.difficulty || 'easy',
           category: category,
         }));
       
@@ -546,13 +557,16 @@ Make sure:
       }
     }
 
-    console.log(`Generated ${flashcardsWithImages.length} flashcards with ${flashcardsWithImages.filter(f => f.imageUrl).length} images`);
+    // Filter out null flashcards
+    const validFlashcards = flashcardsWithImages.filter((f: any) => f !== null);
+    
+    console.log(`Generated ${validFlashcards.length} flashcards with ${validFlashcards.filter((f: any) => f.imageUrl).length} images`);
 
     return new Response(
       JSON.stringify({ 
-        flashcards: flashcardsWithImages,
+        flashcards: validFlashcards,
         category: categoryInfo.name,
-        count: flashcardsWithImages.length
+        count: validFlashcards.length
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

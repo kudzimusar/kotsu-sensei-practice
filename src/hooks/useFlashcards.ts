@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Flashcard {
-  imageQuery: string;
+  imageQuery?: string;
   question: string;
-  answer: string;
+  answer: string; // Legacy support
+  correct_answer?: string; // New field
+  options?: string[]; // Multiple choice options
   explanation: string;
   imageUrl: string | null;
+  difficulty?: 'easy' | 'medium' | 'hard';
   // Metadata from Wikimedia Commons (optional)
   roadSignImageId?: string;
   signNameEn?: string | null;
@@ -39,13 +42,30 @@ export const useFlashcards = () => {
   const [error, setError] = useState<string | null>(null);
   const [session, setSession] = useState<FlashcardSession | null>(null);
 
-  const generateFlashcards = async (category: string, count: number = 10): Promise<Flashcard[]> => {
+  const generateFlashcards = async (
+    category: string, 
+    count: number = 10,
+    difficulty: 'easy' | 'medium' | 'hard' = 'easy',
+    useDeckGenerator: boolean = false
+  ): Promise<Flashcard[]> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const { data, error: functionError } = await supabase.functions.invoke('generate-flashcards', {
-        body: { category, count },
+      // Use new deck generator if requested, otherwise use legacy generator
+      const functionName = useDeckGenerator ? 'generate-flashcard-deck' : 'generate-flashcards';
+      
+      // Get user ID for adaptive learning
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error: functionError } = await supabase.functions.invoke(functionName, {
+        body: { 
+          category, 
+          count,
+          difficulty,
+          userId: user?.id || null,
+          adaptive: false // Can enable adaptive learning later
+        },
       });
 
       if (functionError) {
@@ -56,7 +76,15 @@ export const useFlashcards = () => {
         throw new Error(data.error);
       }
 
-      return data?.flashcards || [];
+      // Normalize flashcard data - ensure correct_answer and options are set
+      const flashcards = (data?.flashcards || []).map((fc: any) => ({
+        ...fc,
+        correct_answer: fc.correct_answer || fc.answer,
+        options: fc.options || [fc.answer],
+        answer: fc.answer || fc.correct_answer, // Legacy support
+      }));
+
+      return flashcards;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
@@ -86,7 +114,7 @@ export const useFlashcards = () => {
     }
   };
 
-  const submitAnswer = (
+  const submitAnswer = async (
     flashcardIndex: number,
     userAnswer: string,
     isCorrect: boolean,
@@ -100,6 +128,35 @@ export const useFlashcards = () => {
       isCorrect,
       responseTime,
     };
+
+    // Record progress in database if flashcard has an ID
+    const flashcard = session.flashcards[flashcardIndex];
+    if (flashcard.roadSignImageId) {
+      try {
+        // Get the flashcard ID from database
+        const { data: flashcardData } = await supabase
+          .from('road_sign_flashcards')
+          .select('id')
+          .eq('road_sign_image_id', flashcard.roadSignImageId)
+          .single();
+
+        if (flashcardData?.id) {
+          // Get current user
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            // Record progress using RPC function
+            await (supabase.rpc as any)('update_flashcard_progress', {
+              p_user_id: user.id,
+              p_flashcard_id: flashcardData.id,
+              p_is_correct: isCorrect
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error recording flashcard progress:', error);
+        // Continue even if progress recording fails
+      }
+    }
 
     const updatedResponses = [...session.responses, response];
     const updatedSession: FlashcardSession = {
