@@ -49,6 +49,30 @@ export async function extractSignNumber(
     console.error('Error checking sign_number_map:', error);
   }
 
+  // Layer 1b: Try to find sign number in official metadata (extmetadata P5544)
+  // This uses the hydrated official metadata from Wikimedia API
+  try {
+    const { data: metadataMatch, error: metadataError } = await supabase
+      .from('road_sign_images')
+      .select('sign_number, extmetadata')
+      .eq('image_source', 'wikimedia_commons')
+      .eq('is_verified', true)
+      .eq('metadata_hydrated', true)
+      .or(`sign_name_en.ilike.%${normalizedQuery}%,sign_name_jp.ilike.%${normalizedQuery}%`)
+      .limit(5);
+
+    if (!metadataError && metadataMatch && metadataMatch.length > 0) {
+      // Check if any result has sign_number populated from metadata
+      const withSignNumber = metadataMatch.find(m => m.sign_number);
+      if (withSignNumber?.sign_number) {
+        console.log(`✅ Sign number found in hydrated metadata: "${withSignNumber.sign_number}"`);
+        return withSignNumber.sign_number;
+      }
+    }
+  } catch (error) {
+    console.error('Error checking hydrated metadata:', error);
+  }
+
   // Layer 2: Extract sign number from query using regex (e.g., "212-3", "326", "124-A")
   const numberMatch = normalizedQuery.match(/\b(\d{3}(?:[-_]?\d+)?(?:-[A-Z])?)\b/);
   if (numberMatch) {
