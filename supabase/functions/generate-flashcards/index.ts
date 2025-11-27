@@ -110,8 +110,9 @@ serve(async (req) => {
         },
       });
       
-      // Map category to sign_category
+      // Map category to sign_category (store for later use)
       const signCategory = mapFlashcardCategoryToDbCategory(category) || category;
+      const dbCategory = signCategory; // Use this for image fetching later
       
       // Try to find Wikimedia Commons images first, then other verified images
       // Query wikimedia_commons images first
@@ -344,7 +345,7 @@ Make sure:
       console.log('Regenerating flashcards to match queries...');
       flashcards = selectedQueries.map((query, index) => {
         // Find matching flashcard or create default
-        const existing = flashcards.find(f => f.imageQuery === query);
+        const existing = flashcards.find(f => f && f.imageQuery === query);
         if (existing) return existing;
       
         return {
@@ -355,6 +356,15 @@ Make sure:
         };
       });
     }
+    
+    // Ensure all flashcards have required fields
+    flashcards = flashcards.filter(f => f && f.question && f.answer).map(f => ({
+      ...f,
+      imageQuery: f.imageQuery || '',
+      question: f.question || 'What does this sign mean?',
+      answer: f.answer || 'Unknown',
+      explanation: f.explanation || 'No explanation available'
+    }));
 
     // Fetch images for each flashcard (use recycled images if available)
     console.log(`Processing ${flashcards.length} flashcards...`);
@@ -371,7 +381,7 @@ Make sure:
     });
     
     // Fetch distractors for generating options
-    const dbCategory = category ? mapFlashcardCategoryToDbCategory(category) : null;
+    const dbCategoryForDistractors = category ? mapFlashcardCategoryToDbCategory(category) : null;
     let allDistractors: any[] = [];
     try {
       const { data: distractorsData, error: distractorsError } = await supabaseForImages
@@ -390,63 +400,72 @@ Make sure:
 
     const flashcardsWithImages = await Promise.all(
       flashcards.map(async (flashcard, index) => {
-        // Ensure flashcard has required fields
-        if (!flashcard || !flashcard.question || !flashcard.answer) {
-          console.error('Invalid flashcard at index', index, flashcard);
-          return null;
-        }
-
-        // Use recycled image if available
-        if (recycledImages[index]) {
-          const recycledImg = recycledImages[index];
-          // Get distractors from same category
-          const categoryDistractors = (allDistractors || [])
-            .filter((d: any) => d.sign_category === recycledImg.sign_category && d.sign_name_en !== recycledImg.sign_name_en)
-            .map((d: any) => d.sign_name_en)
-            .filter(Boolean)
-            .slice(0, 3);
-
-          // Build options array
-          const options = [
-            recycledImg.sign_name_en,
-            ...categoryDistractors
-          ]
-            .filter((v, i, a) => a.indexOf(v) === i) // Remove duplicates
-            .sort(() => Math.random() - 0.5) // Shuffle
-            .slice(0, 4); // Max 4 options
-
-          // Ensure correct answer is in options
-          if (!options.includes(recycledImg.sign_name_en)) {
-            options[0] = recycledImg.sign_name_en;
+        try {
+          // Ensure flashcard has required fields
+          if (!flashcard || !flashcard.question || !flashcard.answer) {
+            console.error('Invalid flashcard at index', index, flashcard);
+            return null;
           }
 
-          return {
-            ...flashcard,
-            imageUrl: recycledImg.storage_url,
-            roadSignImageId: recycledImg.id,
-            correct_answer: recycledImg.sign_name_en,
-            options: options,
-            difficulty: 'easy',
-            // Include metadata for Wikimedia Commons images
-            signNameEn: recycledImg.sign_name_en || null,
-            signNameJp: recycledImg.sign_name_jp || null,
-            signCategory: recycledImg.sign_category || null,
-            attributionText: recycledImg.attribution_text || null,
-            licenseInfo: recycledImg.license_info || null,
-            wikimediaPageUrl: recycledImg.wikimedia_page_url || null,
-            artistName: recycledImg.artist_name || null,
-            imageSource: recycledImg.image_source || null,
-          };
-        }
+          // Use recycled image if available
+          if (recycledImages[index]) {
+            const recycledImg = recycledImages[index];
+            
+            // Ensure we have a sign name
+            if (!recycledImg.sign_name_en) {
+              console.error('Recycled image missing sign_name_en at index', index);
+              // Fall through to regular image fetching
+            } else {
+              // Get distractors from same category
+              const categoryDistractors = (allDistractors || [])
+                .filter((d: any) => d.sign_category === recycledImg.sign_category && d.sign_name_en && d.sign_name_en !== recycledImg.sign_name_en)
+                .map((d: any) => d.sign_name_en)
+                .filter(Boolean)
+                .slice(0, 3);
+
+              // Build options array
+              const options = [
+                recycledImg.sign_name_en,
+                ...categoryDistractors
+              ]
+                .filter((v, i, a) => a.indexOf(v) === i) // Remove duplicates
+                .sort(() => Math.random() - 0.5) // Shuffle
+                .slice(0, 4); // Max 4 options
+
+              // Ensure correct answer is in options
+              if (!options.includes(recycledImg.sign_name_en)) {
+                options[0] = recycledImg.sign_name_en;
+              }
+
+              return {
+                ...flashcard,
+                imageUrl: recycledImg.storage_url || null,
+                roadSignImageId: recycledImg.id,
+                correct_answer: recycledImg.sign_name_en,
+                options: options.length > 0 ? options : [recycledImg.sign_name_en],
+                difficulty: 'easy',
+                // Include metadata for Wikimedia Commons images
+                signNameEn: recycledImg.sign_name_en || null,
+                signNameJp: recycledImg.sign_name_jp || null,
+                signCategory: recycledImg.sign_category || null,
+                attributionText: recycledImg.attribution_text || null,
+                licenseInfo: recycledImg.license_info || null,
+                wikimediaPageUrl: recycledImg.wikimedia_page_url || null,
+                artistName: recycledImg.artist_name || null,
+                imageSource: recycledImg.image_source || null,
+              };
+            }
+          }
         
         // Use enhanced image fetcher for better image retrieval
         let imageResult = null;
         try {
           if (flashcard.imageQuery) {
+            const dbCategoryForImage = category ? mapFlashcardCategoryToDbCategory(category) : null;
             imageResult = await fetchEnhancedImage(
               supabaseForImages,
               flashcard.imageQuery,
-              dbCategory
+              dbCategoryForImage
             );
           }
         } catch (imageError) {
@@ -495,32 +514,43 @@ Make sure:
           };
         }
         
-        // No image found - still create flashcard with options
-        const categoryDistractors = (allDistractors || [])
-          .filter((d: any) => d.sign_category === dbCategory)
-          .map((d: any) => d.sign_name_en)
-          .filter(Boolean)
-          .slice(0, 3);
+          // No image found - still create flashcard with options
+          const categoryDistractors = (allDistractors || [])
+            .filter((d: any) => !dbCategoryForDistractors || d.sign_category === dbCategoryForDistractors)
+            .map((d: any) => d.sign_name_en)
+            .filter(Boolean)
+            .slice(0, 3);
 
-        const options = [
-          flashcard.answer,
-          ...categoryDistractors
-        ]
-          .filter((v, i, a) => a.indexOf(v) === i)
-          .sort(() => Math.random() - 0.5)
-          .slice(0, 4);
+          const options = [
+            flashcard.answer,
+            ...categoryDistractors
+          ]
+            .filter((v, i, a) => a.indexOf(v) === i)
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 4);
 
-        if (!options.includes(flashcard.answer)) {
-          options[0] = flashcard.answer;
+          if (!options.includes(flashcard.answer)) {
+            options[0] = flashcard.answer;
+          }
+
+          return {
+            ...flashcard,
+            imageUrl: null,
+            correct_answer: flashcard.answer,
+            options: options.length > 0 ? options : [flashcard.answer],
+            difficulty: 'easy'
+          };
+        } catch (error) {
+          console.error(`Error processing flashcard at index ${index}:`, error);
+          // Return a basic flashcard even if there's an error
+          return {
+            ...flashcard,
+            imageUrl: null,
+            correct_answer: flashcard.answer || 'Unknown',
+            options: [flashcard.answer || 'Unknown'],
+            difficulty: 'easy'
+          };
         }
-
-        return {
-          ...flashcard,
-          imageUrl: null,
-          correct_answer: flashcard.answer,
-          options: options,
-          difficulty: 'easy'
-        };
       })
     );
     
@@ -574,8 +604,12 @@ Make sure:
     );
   } catch (error) {
     console.error("Error in generate-flashcards function:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace');
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error occurred" }), 
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : "Unknown error occurred",
+        details: error instanceof Error ? error.stack : undefined
+      }), 
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
