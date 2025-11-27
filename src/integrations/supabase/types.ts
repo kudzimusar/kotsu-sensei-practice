@@ -1155,29 +1155,41 @@ export type Database = {
         Row: {
           answer: string
           category: string | null
+          correct_answer: string | null
           created_at: string
+          difficulty: string | null
           explanation: string | null
           id: string
+          options: string[] | null
           question: string
           road_sign_image_id: string | null
+          updated_at: string | null
         }
         Insert: {
           answer: string
           category?: string | null
+          correct_answer?: string | null
           created_at?: string
+          difficulty?: string | null
           explanation?: string | null
           id?: string
+          options?: string[] | null
           question: string
           road_sign_image_id?: string | null
+          updated_at?: string | null
         }
         Update: {
           answer?: string
           category?: string | null
+          correct_answer?: string | null
           created_at?: string
+          difficulty?: string | null
           explanation?: string | null
           id?: string
+          options?: string[] | null
           question?: string
           road_sign_image_id?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -1195,20 +1207,28 @@ export type Database = {
           ai_explanation: string | null
           artist_name: string | null
           attribution_text: string | null
+          commonmetadata: Json | null
           created_at: string
+          exif_metadata: Json | null
+          extmetadata: Json | null
           file_name: string
           file_size: number | null
           filename_slug: string | null
+          flashcard_ready: boolean | null
           id: string
           image_source: string | null
           is_verified: boolean | null
           license_info: string | null
+          metadata_hydrated: boolean | null
+          metadata_hydrated_at: string | null
           mime_type: string | null
+          revision_id: number | null
           sha1: string | null
           sign_category: string | null
           sign_meaning: string | null
           sign_name_en: string | null
           sign_name_jp: string | null
+          sign_number: string | null
           storage_path: string
           storage_type: string
           storage_url: string
@@ -1218,6 +1238,7 @@ export type Database = {
           user_id: string | null
           wikimedia_file_name: string | null
           wikimedia_page_url: string | null
+          wikimedia_pageid: number | null
           wikimedia_raw: Json | null
         }
         Insert: {
@@ -1225,20 +1246,28 @@ export type Database = {
           ai_explanation?: string | null
           artist_name?: string | null
           attribution_text?: string | null
+          commonmetadata?: Json | null
           created_at?: string
+          exif_metadata?: Json | null
+          extmetadata?: Json | null
           file_name: string
           file_size?: number | null
           filename_slug?: string | null
+          flashcard_ready?: boolean | null
           id?: string
           image_source?: string | null
           is_verified?: boolean | null
           license_info?: string | null
+          metadata_hydrated?: boolean | null
+          metadata_hydrated_at?: string | null
           mime_type?: string | null
+          revision_id?: number | null
           sha1?: string | null
           sign_category?: string | null
           sign_meaning?: string | null
           sign_name_en?: string | null
           sign_name_jp?: string | null
+          sign_number?: string | null
           storage_path: string
           storage_type?: string
           storage_url: string
@@ -1248,6 +1277,7 @@ export type Database = {
           user_id?: string | null
           wikimedia_file_name?: string | null
           wikimedia_page_url?: string | null
+          wikimedia_pageid?: number | null
           wikimedia_raw?: Json | null
         }
         Update: {
@@ -1255,20 +1285,28 @@ export type Database = {
           ai_explanation?: string | null
           artist_name?: string | null
           attribution_text?: string | null
+          commonmetadata?: Json | null
           created_at?: string
+          exif_metadata?: Json | null
+          extmetadata?: Json | null
           file_name?: string
           file_size?: number | null
           filename_slug?: string | null
+          flashcard_ready?: boolean | null
           id?: string
           image_source?: string | null
           is_verified?: boolean | null
           license_info?: string | null
+          metadata_hydrated?: boolean | null
+          metadata_hydrated_at?: string | null
           mime_type?: string | null
+          revision_id?: number | null
           sha1?: string | null
           sign_category?: string | null
           sign_meaning?: string | null
           sign_name_en?: string | null
           sign_name_jp?: string | null
+          sign_number?: string | null
           storage_path?: string
           storage_type?: string
           storage_url?: string
@@ -1278,6 +1316,7 @@ export type Database = {
           user_id?: string | null
           wikimedia_file_name?: string | null
           wikimedia_page_url?: string | null
+          wikimedia_pageid?: number | null
           wikimedia_raw?: Json | null
         }
         Relationships: []
@@ -1319,6 +1358,56 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      road_sign_tags: {
+        Row: {
+          created_at: string
+          id: string
+          sign_id: string
+          tag: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          sign_id: string
+          tag: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          sign_id?: string
+          tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "road_sign_tags_sign_id_fkey"
+            columns: ["sign_id"]
+            isOneToOne: false
+            referencedRelation: "road_sign_images"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sign_number_map: {
+        Row: {
+          created_at: string
+          keyword: string
+          sign_number: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          keyword: string
+          sign_number: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          keyword?: string
+          sign_number?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       study_events: {
         Row: {
@@ -1749,6 +1838,59 @@ export type Database = {
         }
         Relationships: []
       }
+      user_flashcard_progress: {
+        Row: {
+          attempts: number | null
+          correct: number | null
+          first_seen: string | null
+          flashcard_id: string
+          id: string
+          incorrect: number | null
+          last_correct: string | null
+          last_incorrect: string | null
+          last_seen: string | null
+          mastered: boolean | null
+          mastered_at: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number | null
+          correct?: number | null
+          first_seen?: string | null
+          flashcard_id: string
+          id?: string
+          incorrect?: number | null
+          last_correct?: string | null
+          last_incorrect?: string | null
+          last_seen?: string | null
+          mastered?: boolean | null
+          mastered_at?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number | null
+          correct?: number | null
+          first_seen?: string | null
+          flashcard_id?: string
+          id?: string
+          incorrect?: number | null
+          last_correct?: string | null
+          last_incorrect?: string | null
+          last_seen?: string | null
+          mastered?: boolean | null
+          mastered_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_flashcard_progress_flashcard_id_fkey"
+            columns: ["flashcard_id"]
+            isOneToOne: false
+            referencedRelation: "road_sign_flashcards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_lecture_schedule: {
         Row: {
           completed_at: string | null
@@ -1927,9 +2069,28 @@ export type Database = {
         }
         Returns: Json
       }
+      get_hydration_status: {
+        Args: never
+        Returns: {
+          hydrated_count: number
+          hydration_percentage: number
+          total_images: number
+          unhydrated_count: number
+        }[]
+      }
       get_user_feature_limit: {
         Args: { p_feature_type: string; p_user_id: string }
         Returns: number
+      }
+      get_user_weak_areas: {
+        Args: { p_limit?: number; p_user_id: string }
+        Returns: {
+          accuracy: number
+          attempts: number
+          correct: number
+          flashcard_id: string
+          sign_category: string
+        }[]
       }
       has_role: {
         Args: {
@@ -1985,6 +2146,36 @@ export type Database = {
         Returns: Json
       }
       reset_daily_usage: { Args: never; Returns: undefined }
+      search_road_signs: {
+        Args: { raw_q: string }
+        Returns: {
+          artist_name: string
+          attribution_text: string
+          file_name: string
+          filename_slug: string
+          id: string
+          license_info: string
+          score: number
+          sign_category: string
+          sign_name_en: string
+          sign_name_jp: string
+          sign_number: string
+          storage_url: string
+          tags: string[]
+          wikimedia_file_name: string
+          wikimedia_page_url: string
+        }[]
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      update_flashcard_progress: {
+        Args: {
+          p_flashcard_id: string
+          p_is_correct: boolean
+          p_user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

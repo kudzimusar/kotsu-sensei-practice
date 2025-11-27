@@ -6,7 +6,7 @@ import { RotateCw, ZoomIn, ExternalLink, Info } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 
 export interface FlashcardData {
-  imageQuery: string;
+  imageQuery?: string;
   question: string;
   answer: string;
   explanation: string;
