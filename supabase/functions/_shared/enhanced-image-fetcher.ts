@@ -36,7 +36,7 @@ export async function fetchEnhancedImage(
   try {
     // Strategy 1: If signId provided, fetch directly from database
     if (signId) {
-      const { data: sign, error } = await supabase
+      const { data: sign, error } = await (supabase as any)
         .from('road_sign_images')
         .select('*')
         .eq('id', signId)
@@ -66,7 +66,7 @@ export async function fetchEnhancedImage(
     
     if (wikimediaImage) {
       // Fetch full metadata
-      const { data: fullMetadata } = await supabase
+      const { data: fullMetadata } = await (supabase as any)
         .from('road_sign_images')
         .select('sign_name_en, sign_name_jp, sign_category, attribution_text, license_info, wikimedia_page_url, artist_name, image_source')
         .eq('id', wikimediaImage.id)
@@ -88,7 +88,7 @@ export async function fetchEnhancedImage(
 
     // Strategy 3: Try database verified images (non-Wikimedia)
     if (dbCategory) {
-      const { data: verifiedImages } = await supabase
+      const { data: verifiedImages } = await (supabase as any)
         .from('road_sign_images')
         .select('*')
         .eq('sign_category', dbCategory)
@@ -100,13 +100,13 @@ export async function fetchEnhancedImage(
       if (verifiedImages && verifiedImages.length > 0) {
         // Try to match by name similarity
         const queryLower = query.toLowerCase();
-        const matched = verifiedImages.find(img => 
+        const matched = verifiedImages.find((img: any) => 
           img.sign_name_en?.toLowerCase().includes(queryLower) ||
           img.sign_name_jp?.toLowerCase().includes(queryLower) ||
           queryLower.includes(img.sign_name_en?.toLowerCase() || '')
         );
 
-        const selected = matched || verifiedImages[0];
+        const selected: any = matched || verifiedImages[0];
         await incrementImageUsage(supabase, selected.id);
 
         return {

@@ -111,12 +111,17 @@ serve(async (req) => {
       });
       
       // Map category to sign_category (store for later use)
-      const signCategory = mapFlashcardCategoryToDbCategory(category) || category;
+      const signCategory = mapFlashcardCategoryToDbCategory(category);
+      
+      if (!signCategory) {
+        throw new Error(`Unable to map category "${category}" to database category. Valid categories: regulatory-signs, warning-signs, indication-signs, guidance-signs, auxiliary-signs, road-markings`);
+      }
+      
       const dbCategory = signCategory; // Use this for image fetching later
       
       // Try to find Wikimedia Commons images first, then other verified images
       // Query wikimedia_commons images first
-      const { data: wikimediaImages, error: wikiError } = await supabase
+      const { data: wikimediaImages, error: wikiError } = await (supabase as any)
         .from('road_sign_images')
         .select('*')
         .eq('sign_category', signCategory)
@@ -125,11 +130,11 @@ serve(async (req) => {
         .order('usage_count', { ascending: false })
         .limit(count);
       
-      let signImages = wikimediaImages || [];
+      let signImages: any[] = wikimediaImages || [];
       
       // If we need more images, get other verified images
       if (signImages.length < count) {
-        const { data: otherImages, error: otherError } = await supabase
+        const { data: otherImages, error: otherError } = await (supabase as any)
           .from('road_sign_images')
           .select('*')
           .eq('sign_category', signCategory)
@@ -463,7 +468,7 @@ Make sure:
           if (flashcard.imageQuery) {
             const dbCategoryForImage = category ? mapFlashcardCategoryToDbCategory(category) : null;
             imageResult = await fetchEnhancedImage(
-              supabaseForImages,
+              supabaseForImages as any,
               flashcard.imageQuery,
               dbCategoryForImage
             );

@@ -111,7 +111,7 @@ export async function findWikimediaImage(
  * Map flashcard category to database category
  */
 export function mapFlashcardCategoryToDbCategory(category: string): string | null {
-  const categoryMap: { [key: string]: string } = {
+  const categoryMap: { [key: string]: string | null } = {
     'regulatory-signs': 'regulatory',
     'warning-signs': 'warning',
     'indication-signs': 'indication',
@@ -133,7 +133,7 @@ export async function incrementImageUsage(
 ): Promise<void> {
   try {
     // Try RPC first
-    const { error: rpcError } = await supabase.rpc('increment_image_usage', { image_id: imageId });
+    const { error: rpcError } = await (supabase as any).rpc('increment_image_usage', { image_id: imageId });
     if (!rpcError) {
       return; // Success
     }
@@ -143,7 +143,7 @@ export async function incrementImageUsage(
   
   // Fallback: Update directly using SQL increment
   try {
-    const { data: currentData, error: fetchError } = await supabase
+    const { data: currentData, error: fetchError } = await (supabase as any)
       .from('road_sign_images')
       .select('usage_count')
       .eq('id', imageId)
@@ -154,7 +154,7 @@ export async function incrementImageUsage(
       return;
     }
     
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('road_sign_images')
       .update({ usage_count: (currentData.usage_count || 0) + 1 })
       .eq('id', imageId);

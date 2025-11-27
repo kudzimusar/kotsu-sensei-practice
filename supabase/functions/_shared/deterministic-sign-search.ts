@@ -18,7 +18,7 @@ export async function extractSignNumber(
   // Layer 1: Check sign_number_map table FIRST (most reliable)
   // This uses the database mappings we created
   try {
-    const { data: mapping, error } = await supabase
+    const { data: mapping, error } = await (supabase as any)
       .from('sign_number_map')
       .select('sign_number')
       .eq('keyword', normalizedQuery)
@@ -33,7 +33,7 @@ export async function extractSignNumber(
     // Try individual terms if whole query didn't match
     const terms = normalizedQuery.split(/\s+/).filter(t => t.length >= 2);
     for (const term of terms) {
-      const { data: termMapping, error: termError } = await supabase
+      const { data: termMapping, error: termError } = await (supabase as any)
         .from('sign_number_map')
         .select('sign_number')
         .eq('keyword', term)
@@ -52,7 +52,7 @@ export async function extractSignNumber(
   // Layer 1b: Try to find sign number in official metadata (extmetadata P5544)
   // This uses the hydrated official metadata from Wikimedia API
   try {
-    const { data: metadataMatch, error: metadataError } = await supabase
+    const { data: metadataMatch, error: metadataError } = await (supabase as any)
       .from('road_sign_images')
       .select('sign_number, extmetadata')
       .eq('image_source', 'wikimedia_commons')
@@ -63,7 +63,7 @@ export async function extractSignNumber(
 
     if (!metadataError && metadataMatch && metadataMatch.length > 0) {
       // Check if any result has sign_number populated from metadata
-      const withSignNumber = metadataMatch.find(m => m.sign_number);
+      const withSignNumber = metadataMatch.find((m: any) => m.sign_number);
       if (withSignNumber?.sign_number) {
         console.log(`✅ Sign number found in hydrated metadata: "${withSignNumber.sign_number}"`);
         return withSignNumber.sign_number;
@@ -115,7 +115,7 @@ export async function findExactSignByNumber(
 
   // EXACT MATCH ONLY - no fuzzy search
   // Try exact sign_number match first
-  let { data: results, error } = await supabase
+  let { data: results, error } = await (supabase as any)
     .from('road_sign_images')
     .select('id, storage_url, file_name, filename_slug, wikimedia_file_name, sign_number, sign_name_en, sign_name_jp, attribution_text, license_info, wikimedia_page_url, artist_name')
     .eq('image_source', 'wikimedia_commons')
@@ -125,7 +125,7 @@ export async function findExactSignByNumber(
 
   // If no exact sign_number match, try filename matches
   if ((!results || results.length === 0) && !error) {
-    const { data: filenameResults, error: filenameError } = await supabase
+    const { data: filenameResults, error: filenameError } = await (supabase as any)
       .from('road_sign_images')
       .select('id, storage_url, file_name, filename_slug, wikimedia_file_name, sign_number, sign_name_en, sign_name_jp, attribution_text, license_info, wikimedia_page_url, artist_name')
       .eq('image_source', 'wikimedia_commons')
@@ -148,9 +148,9 @@ export async function findExactSignByNumber(
   }
 
   // Prioritize: exact sign_number match > filename match > wikimedia filename match
-  let bestMatch = results.find(r => r.sign_number === normalizedNumber || r.sign_number === altFormat);
+  let bestMatch: any = results.find((r: any) => r.sign_number === normalizedNumber || r.sign_number === altFormat);
   if (!bestMatch) {
-    bestMatch = results.find(r => 
+    bestMatch = results.find((r: any) => 
       r.file_name?.includes(normalizedNumber) || 
       r.file_name?.includes(altFormat) ||
       r.filename_slug?.includes(normalizedNumber) ||
@@ -165,7 +165,7 @@ export async function findExactSignByNumber(
   if (bestMatch.file_name?.toLowerCase().includes(' and ') || 
       bestMatch.file_name?.toLowerCase().includes(' & ')) {
     // Look for a non-composite file
-    const nonComposite = results.find(r => 
+    const nonComposite = results.find((r: any) => 
       !r.file_name?.toLowerCase().includes(' and ') &&
       !r.file_name?.toLowerCase().includes(' & ') &&
       (r.sign_number === normalizedNumber || 
@@ -230,7 +230,7 @@ export async function deterministicSignSearch(
   // LAYER 3: Exact English name match (only if no sign number found)
   if (!signNumber) {
     console.log(`🔍 Layer 3: Trying exact English name match`);
-    const { data: englishMatches, error: englishError } = await supabase
+    const { data: englishMatches, error: englishError } = await (supabase as any)
       .from('road_sign_images')
       .select('id, storage_url, file_name, filename_slug, wikimedia_file_name, sign_name_en, sign_name_jp, attribution_text, license_info, wikimedia_page_url, artist_name')
       .eq('image_source', 'wikimedia_commons')
@@ -239,7 +239,7 @@ export async function deterministicSignSearch(
       .limit(5);
 
     if (!englishError && englishMatches && englishMatches.length > 0) {
-      const match = englishMatches[0];
+      const match: any = englishMatches[0];
       console.log(`✅ Layer 3 SUCCESS: English name match`);
       return {
         storage_url: match.storage_url || '',
@@ -258,7 +258,7 @@ export async function deterministicSignSearch(
   // LAYER 4: Exact Japanese name match
   if (!signNumber) {
     console.log(`🔍 Layer 4: Trying exact Japanese name match`);
-    const { data: japaneseMatches, error: japaneseError } = await supabase
+    const { data: japaneseMatches, error: japaneseError } = await (supabase as any)
       .from('road_sign_images')
       .select('id, storage_url, file_name, filename_slug, wikimedia_file_name, sign_name_en, sign_name_jp, attribution_text, license_info, wikimedia_page_url, artist_name')
       .eq('image_source', 'wikimedia_commons')
@@ -267,7 +267,7 @@ export async function deterministicSignSearch(
       .limit(5);
 
     if (!japaneseError && japaneseMatches && japaneseMatches.length > 0) {
-      const match = japaneseMatches[0];
+      const match: any = japaneseMatches[0];
       console.log(`✅ Layer 4 SUCCESS: Japanese name match`);
       return {
         storage_url: match.storage_url || '',
@@ -288,11 +288,11 @@ export async function deterministicSignSearch(
   if (!signNumber) {
     console.log(`🔍 Layer 5: Falling back to RPC search (fuzzy - should rarely happen)`);
     try {
-      const { data: rpcResults, error: rpcError } = await supabase
+      const { data: rpcResults, error: rpcError } = await (supabase as any)
         .rpc('search_road_signs', { raw_q: query.toLowerCase().trim() });
 
       if (!rpcError && rpcResults && rpcResults.length > 0) {
-        const topResult = rpcResults[0];
+        const topResult: any = rpcResults[0];
         console.log(`⚠️ Layer 5 RESULT (fuzzy): ${topResult.file_name}`);
         return {
           storage_url: topResult.storage_url || '',

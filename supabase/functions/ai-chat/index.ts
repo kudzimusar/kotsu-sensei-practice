@@ -221,7 +221,7 @@ async function fetchImage(
         console.log(`✅ Database fallback match found! Image ID: ${wikimediaImage.id}`);
         
         // Fetch full metadata
-        const { data: fullMetadata, error: metadataError } = await supabaseClient
+        const { data: fullMetadata, error: metadataError } = await (supabaseClient as any)
           .from('road_sign_images')
           .select('sign_name_en, sign_name_jp, attribution_text, license_info, wikimedia_page_url')
           .eq('id', wikimediaImage.id)
@@ -527,11 +527,11 @@ Topics you can help with:
       console.log('Response is plain text, not JSON structured:', e instanceof Error ? e.message : 'Parse error');
     }
 
-    // If structured response with sections, fetch images for each section
+      // If structured response with sections, fetch images for each section
     if (parsedResponse && parsedResponse.sections && Array.isArray(parsedResponse.sections)) {
       console.log(`Processing ${parsedResponse.sections.length} sections with images...`);
       // Pass Supabase client to fetchImagesForSections so it can query the database
-      const sectionsWithImages = await fetchImagesForSections(parsedResponse.sections, supabaseForDB);
+      const sectionsWithImages = await fetchImagesForSections(parsedResponse.sections, supabaseForDB as any);
       
       return new Response(
         JSON.stringify({ 
