@@ -86,8 +86,9 @@ export async function findWikimediaImage(
     
     // Use the new comprehensive search_road_signs RPC function
     // This function implements all 6 tiers of matching with intelligent scoring
+    // Now uses raw_q parameter and enhanced term matching for all queries
     const { data: results, error: searchError } = await supabase
-      .rpc('search_road_signs', { q: searchQuery });
+      .rpc('search_road_signs', { raw_q: searchQuery });
     
     if (searchError) {
       console.error(`❌ Error calling search_road_signs RPC:`, searchError);

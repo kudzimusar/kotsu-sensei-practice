@@ -73,6 +73,14 @@ function parseSignQuery(query: string): { searchTerms: string[]; category?: stri
     signType = 'parking';
     searchTerms.push('parking', '駐車');
     category = 'guidance';
+  } else if (lowerQuery.includes('steep') || lowerQuery.includes('ascent') || lowerQuery.includes('upgrade') || lowerQuery.includes('急勾配')) {
+    signType = 'steep';
+    searchTerms.push('steep', 'ascent', 'upgrade', '急勾配', '328');
+    category = 'warning';
+  } else if (lowerQuery.includes('descent') || lowerQuery.includes('downgrade') || lowerQuery.includes('下り急勾配')) {
+    signType = 'steep descent';
+    searchTerms.push('descent', 'downgrade', '下り急勾配', '329');
+    category = 'warning';
   }
 
   // Extract other meaningful terms from query
