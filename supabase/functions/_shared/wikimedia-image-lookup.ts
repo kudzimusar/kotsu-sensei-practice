@@ -39,14 +39,15 @@ function parseSignNumber(query: string): { signNumber?: string; signType?: strin
 }
 
 /**
- * Find a Wikimedia Commons image from the database using ALL available metadata columns
- * Tries multiple matching strategies in order of specificity:
- * 1. Filename matching (file_name, filename_slug, wikimedia_file_name)
- * 2. Sign number matching (326 for stop, 124 for bus, etc.)
- * 3. Sign name matching (sign_name_en, sign_name_jp)
- * 4. Category + query term matching
- * 5. wikimedia_raw JSONB search
- * 6. Tags matching
+ * Find a Wikimedia Commons image from the database using the refined 6-tier search algorithm
+ * 
+ * The algorithm uses a comprehensive multi-layer approach:
+ * Tier 1: Exact sign_code match (most accurate) - e.g., "326" for stop sign
+ * Tier 2: Filename match (cleanest metadata) - file_name, filename_slug, wikimedia_file_name
+ * Tier 3: Keyword Synonym Match - English + Japanese + romaji names
+ * Tier 4: Tags Match - tags array automatically extracted
+ * Tier 5: Category Match - regulatory, warning, prohibitory, markings, expressway, etc.
+ * Tier 6: Vector / Semantic Search Fallback - embedding search across everything
  * 
  * @param supabase - Supabase client instance
  * @param category - Sign category (regulatory, warning, indication, guidance, auxiliary, road-markings)
@@ -66,145 +67,55 @@ export async function findWikimediaImage(
   artist_name?: string;
 } | null> {
   try {
-    const searchQuery = query ? query.toLowerCase().trim() : '';
-    const queryTerms = searchQuery ? searchQuery.split(/\s+/)
-      .filter(term => term.length >= 2 && !['the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'japan', 'japanese', 'road', 'sign'].includes(term))
-      .sort((a, b) => b.length - a.length)
-      : [];
+    // Build search query - include category if provided
+    let searchQuery = query || '';
     
-    // Parse sign number from query
-    const { signNumber, signType } = parseSignNumber(searchQuery);
-    
-    console.log(`🔍 Looking up image: query="${query}", category="${category}", signNumber="${signNumber}", signType="${signType}", terms=[${queryTerms.join(', ')}]`);
-    
-    const baseQuery = supabase
-      .from('road_sign_images')
-      .select('storage_url, id, attribution_text, license_info, wikimedia_page_url, artist_name')
-      .eq('image_source', 'wikimedia_commons')
-      .eq('is_verified', true);
-    
-    // Strategy 1: Filename matching (most accurate - uses actual stored filenames)
-    if (searchQuery) {
-      const filenameTerms = [...queryTerms];
-      if (signNumber) filenameTerms.push(signNumber);
-      if (signType) filenameTerms.push(signType);
-      
-      for (const term of filenameTerms) {
-        // Search in file_name, filename_slug, and wikimedia_file_name
-        let filenameQuery = baseQuery
-          .or(`file_name.ilike.%${term}%,filename_slug.ilike.%${term}%,wikimedia_file_name.ilike.%${term}%`)
-          .order('usage_count', { ascending: false })
-          .limit(1);
-        
-        if (category) {
-          filenameQuery = filenameQuery.eq('sign_category', category);
-        }
-        
-        const { data: filenameMatch, error: filenameError } = await filenameQuery.maybeSingle();
-        
-        if (!filenameError && filenameMatch) {
-          console.log(`✅ Found by filename match: "${term}" (${filenameMatch.id})`);
-          return filenameMatch;
-        }
-      }
+    // If category is provided, prepend it to help with category detection in the function
+    if (category && searchQuery) {
+      searchQuery = `${category} ${searchQuery}`;
+    } else if (category) {
+      searchQuery = category;
     }
     
-    // Strategy 2: Sign number matching (for known sign numbers like 326 for stop)
-    if (signNumber) {
-      let signNumberQuery = baseQuery
-        .or(`file_name.ilike.%${signNumber}%,filename_slug.ilike.%${signNumber}%,wikimedia_file_name.ilike.%${signNumber}%,sign_name_en.ilike.%${signNumber}%`)
-        .order('usage_count', { ascending: false })
-        .limit(1);
-      
-      if (category) {
-        signNumberQuery = signNumberQuery.eq('sign_category', category);
-      }
-      
-      const { data: numberMatch, error: numberError } = await signNumberQuery.maybeSingle();
-      
-      if (!numberError && numberMatch) {
-        console.log(`✅ Found by sign number: "${signNumber}" (${numberMatch.id})`);
-        return numberMatch;
-      }
+    if (!searchQuery || !searchQuery.trim()) {
+      console.log(`⚠️ Empty search query provided`);
+      return null;
     }
     
-    // Strategy 3: Sign name matching (sign_name_en, sign_name_jp)
-    if (query && queryTerms.length > 0) {
-      for (const term of queryTerms) {
-        let nameQuery = baseQuery
-          .or(`sign_name_en.ilike.%${term}%,sign_name_jp.ilike.%${term}%`)
-          .order('usage_count', { ascending: false })
-          .limit(1);
-        
-        if (category) {
-          nameQuery = nameQuery.eq('sign_category', category);
-        }
-        
-        const { data: nameMatch, error: nameError } = await nameQuery.maybeSingle();
-        
-        if (!nameError && nameMatch) {
-          console.log(`✅ Found by sign name: "${term}" (${nameMatch.id})`);
-          return nameMatch;
-        }
-      }
+    console.log(`🔍 Using 6-tier search algorithm: query="${query}", category="${category}", combined="${searchQuery}"`);
+    
+    // Use the new comprehensive search_road_signs RPC function
+    // This function implements all 6 tiers of matching with intelligent scoring
+    const { data: results, error: searchError } = await supabase
+      .rpc('search_road_signs', { q: searchQuery });
+    
+    if (searchError) {
+      console.error(`❌ Error calling search_road_signs RPC:`, searchError);
+      return null;
     }
     
-    // Strategy 4: Tags matching
-    if (query && queryTerms.length > 0) {
-      for (const term of queryTerms) {
-        let tagQuery = baseQuery
-          .contains('tags', [term])
-          .order('usage_count', { ascending: false })
-          .limit(1);
-        
-        if (category) {
-          tagQuery = tagQuery.eq('sign_category', category);
-        }
-        
-        const { data: tagMatch, error: tagError } = await tagQuery.maybeSingle();
-        
-        if (!tagError && tagMatch) {
-          console.log(`✅ Found by tags: "${term}" (${tagMatch.id})`);
-          return tagMatch;
-        }
-      }
+    if (!results || results.length === 0) {
+      console.log(`❌ No match found for: category="${category}", query="${query}"`);
+      return null;
     }
     
-    // Strategy 5: Full query string search across all text fields
-    if (searchQuery.length >= 3) {
-      let fullQuery = baseQuery
-        .or(`file_name.ilike.%${searchQuery}%,filename_slug.ilike.%${searchQuery}%,wikimedia_file_name.ilike.%${searchQuery}%,sign_name_en.ilike.%${searchQuery}%,sign_name_jp.ilike.%${searchQuery}%`)
-        .order('usage_count', { ascending: false })
-        .limit(1);
-      
-      if (category) {
-        fullQuery = fullQuery.eq('sign_category', category);
-      }
-      
-      const { data: fullMatch, error: fullError } = await fullQuery.maybeSingle();
-      
-      if (!fullError && fullMatch) {
-        console.log(`✅ Found by full query: "${searchQuery}" (${fullMatch.id})`);
-        return fullMatch;
-      }
+    // Get the top result (highest score)
+    const topResult = results[0];
+    console.log(`✅ Found match using 6-tier algorithm: score=${topResult.score}, id=${topResult.id}, file_name=${topResult.file_name}`);
+    
+    // Increment usage count for the selected image
+    if (topResult.id) {
+      await incrementImageUsage(supabase, topResult.id);
     }
     
-    // Strategy 6: Category-only search (broadest, least specific)
-    if (category) {
-      const { data: categoryMatch, error: categoryError } = await baseQuery
-        .eq('sign_category', category)
-        .order('usage_count', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (!categoryError && categoryMatch) {
-        console.log(`⚠️ Found by category only: "${category}" (${categoryMatch.id})`);
-        return categoryMatch;
-      }
-    }
-    
-    console.log(`❌ No match found for: category="${category}", query="${query}"`);
-    return null;
+    return {
+      storage_url: topResult.storage_url,
+      id: topResult.id,
+      attribution_text: topResult.attribution_text || undefined,
+      license_info: topResult.license_info || undefined,
+      wikimedia_page_url: topResult.wikimedia_page_url || undefined,
+      artist_name: topResult.artist_name || undefined,
+    };
   } catch (error) {
     console.error('Error finding Wikimedia image:', error);
     return null;
