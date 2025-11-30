@@ -4,11 +4,11 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { mapFlashcardCategoryToDbCategory } from "../_shared/wikimedia-image-lookup.ts";
 import { fetchEnhancedImage } from "../_shared/enhanced-image-fetcher.ts";
 
-// Flashcard categories with their Japanese names and queries
+// Flashcard categories matching frontend categories
 const FLASHCARD_CATEGORIES = {
-  'road-signs': {
-    name: 'Road Signs (標識)',
-    description: 'Traffic signs and regulatory signs',
+  'regulatory-signs': {
+    name: 'Regulatory Signs (規制標識)',
+    description: 'Traffic signs and regulatory signs (59 signs)',
     queries: [
       'stop sign japan',
       'yield sign japan',
@@ -27,9 +27,51 @@ const FLASHCARD_CATEGORIES = {
       'railway crossing sign japan'
     ]
   },
+  'warning-signs': {
+    name: 'Warning Signs (警戒標識)',
+    description: 'Warning and caution signs (52 signs)',
+    queries: [
+      'curve warning sign japan',
+      'slippery road sign japan',
+      'falling rocks sign japan',
+      'children crossing sign japan',
+      'wildlife crossing sign japan',
+      'road work sign japan'
+    ]
+  },
+  'indication-signs': {
+    name: 'Indication Signs (指示標識)',
+    description: 'Directional and informational signs (14 signs)',
+    queries: [
+      'direction sign japan',
+      'parking sign japan',
+      'hospital sign japan',
+      'gas station sign japan',
+      'rest area sign japan'
+    ]
+  },
+  'guidance-signs': {
+    name: 'Guidance Signs (案内標識)',
+    description: 'Guidance and information signs (39 signs)',
+    queries: [
+      'route guidance japan',
+      'distance sign japan',
+      'service area sign japan',
+      'tourist information japan'
+    ]
+  },
+  'auxiliary-signs': {
+    name: 'Auxiliary Signs (補助標識)',
+    description: 'Auxiliary plates and supplementary signs (21 signs)',
+    queries: [
+      'time restriction sign japan',
+      'distance auxiliary sign japan',
+      'vehicle type auxiliary japan'
+    ]
+  },
   'road-markings': {
     name: 'Road Markings (道路標示)',
-    description: 'Pavement markings and lane indicators',
+    description: 'Regulatory road markings (29 signs)',
     queries: [
       'zebra crossing japan',
       'stop line marking japan',
@@ -50,41 +92,6 @@ const FLASHCARD_CATEGORIES = {
       'yellow light japan',
       'green arrow signal japan',
       'flashing signal japan'
-    ]
-  },
-  'warning-signs': {
-    name: 'Warning Signs (警戒標識)',
-    description: 'Warning and caution signs',
-    queries: [
-      'curve warning sign japan',
-      'slippery road sign japan',
-      'falling rocks sign japan',
-      'children crossing sign japan',
-      'wildlife crossing sign japan',
-      'road work sign japan'
-    ]
-  },
-  'prohibition-signs': {
-    name: 'Prohibition Signs (禁止標識)',
-    description: 'Signs indicating restrictions',
-    queries: [
-      'no entry sign japan',
-      'no parking sign japan',
-      'no stopping sign japan',
-      'no vehicles sign japan',
-      'weight limit sign japan',
-      'height limit sign japan'
-    ]
-  },
-  'instruction-signs': {
-    name: 'Instruction Signs (指示標識)',
-    description: 'Directional and informational signs',
-    queries: [
-      'direction sign japan',
-      'parking sign japan',
-      'hospital sign japan',
-      'gas station sign japan',
-      'rest area sign japan'
     ]
   }
 };
