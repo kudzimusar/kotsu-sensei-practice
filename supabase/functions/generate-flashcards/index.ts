@@ -155,18 +155,13 @@ serve(async (req) => {
         console.log(`Found ${recycledImages.length} images for category ${category} (${recycledImages.filter(img => img.image_source === 'wikimedia_commons').length} from Wikimedia Commons)`);
       }
     }
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const GOOGLE_AI_STUDIO_API_KEY = Deno.env.get("GOOGLE_AI_STUDIO_API_KEY");
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     
-    // Use GOOGLE_AI_STUDIO_API_KEY as primary, then LOVABLE_API_KEY, then GEMINI_API_KEY
-    const apiKey = GOOGLE_AI_STUDIO_API_KEY || LOVABLE_API_KEY || GEMINI_API_KEY;
-    
-    if (!apiKey) {
-      throw new Error("No API key configured. Please set GOOGLE_AI_STUDIO_API_KEY, LOVABLE_API_KEY, or GEMINI_API_KEY");
+    if (!GOOGLE_AI_STUDIO_API_KEY) {
+      throw new Error("GOOGLE_AI_STUDIO_API_KEY not configured");
     }
     
-    console.log('API Keys available: GOOGLE_AI_STUDIO=', !!GOOGLE_AI_STUDIO_API_KEY, 'LOVABLE=', !!LOVABLE_API_KEY, 'GEMINI=', !!GEMINI_API_KEY);
+    console.log('Using Google AI Studio API for flashcard generation');
 
     console.log(`Generating ${count} flashcards for category: ${category}`);
 
@@ -227,54 +222,25 @@ Make sure:
 - Explanations are educational and concise
 - Return valid JSON only, no additional text.`;
 
-    // Try LOVABLE_API_KEY first (gateway), then direct Google AI Studio API
-    let response;
-    let useDirectApi = false;
-    
-    if (LOVABLE_API_KEY) {
-      console.log("Using LOVABLE_API_KEY (gateway)");
-      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { 
-              role: "user", 
-              content: `Generate ${requestedCount} flashcards with these image queries: ${selectedQueries.join(', ')}. Return only valid JSON.` 
-            },
-          ],
-          stream: false,
-        }),
-      });
-    } else if (GOOGLE_AI_STUDIO_API_KEY || GEMINI_API_KEY) {
-      console.log("Using Google AI Studio API directly");
-      useDirectApi = true;
-      const directApiKey = GOOGLE_AI_STUDIO_API_KEY || GEMINI_API_KEY;
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${directApiKey}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: `${systemPrompt}\n\nUser: Generate ${requestedCount} flashcards with these image queries: ${selectedQueries.join(', ')}. Return only valid JSON.` }
-            ]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            responseMimeType: "application/json"
-          }
-        }),
-      });
-    } else {
-      throw new Error("No API key available");
-    }
+    // Use Google AI Studio API directly
+    console.log("Calling Google AI Studio API for flashcard generation");
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_AI_STUDIO_API_KEY}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: `${systemPrompt}\n\nUser: Generate ${requestedCount} flashcards with these image queries: ${selectedQueries.join(', ')}. Return only valid JSON.` }
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          responseMimeType: "application/json"
+        }
+      }),
+    });
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -303,21 +269,11 @@ Make sure:
 
     const data = await response.json();
     
-    // Handle different response formats
-    let assistantMessage: string;
-    if (useDirectApi) {
-      // Google AI Studio direct API format
-      assistantMessage = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      if (!assistantMessage) {
-        console.error("Google AI Studio API response:", JSON.stringify(data, null, 2));
-        throw new Error("No response from Google AI Studio API");
-      }
-    } else {
-      // Lovable gateway format
-      assistantMessage = data.choices?.[0]?.message?.content || "";
-      if (!assistantMessage) {
-        throw new Error("No response from AI");
-      }
+    // Handle Google AI Studio direct API response format
+    const assistantMessage = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    if (!assistantMessage) {
+      console.error("Google AI Studio API response:", JSON.stringify(data, null, 2));
+      throw new Error("No response from Google AI Studio API");
     }
 
     console.log('AI flashcard response generated successfully');
