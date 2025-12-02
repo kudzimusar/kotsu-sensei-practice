@@ -283,17 +283,45 @@ export async function deterministicSignSearch(
     }
   }
 
-  // LAYER 5: Use improved RPC search (only as last resort for non-number queries)
+  // LAYER 5: Search sign_meaning field (NEW - uses Wikimedia metadata)
+  if (!signNumber) {
+    console.log(`🔍 Layer 5: Trying sign_meaning search`);
+    const { data: meaningMatches, error: meaningError } = await (supabase as any)
+      .from('road_sign_images')
+      .select('id, storage_url, file_name, filename_slug, wikimedia_file_name, sign_name_en, sign_name_jp, sign_meaning, attribution_text, license_info, wikimedia_page_url, artist_name')
+      .eq('image_source', 'wikimedia_commons')
+      .eq('is_verified', true)
+      .ilike('sign_meaning', `%${query}%`)
+      .limit(5);
+
+    if (!meaningError && meaningMatches && meaningMatches.length > 0) {
+      const match: any = meaningMatches[0];
+      console.log(`✅ Layer 5 SUCCESS: sign_meaning match - "${match.sign_meaning?.substring(0, 50)}..."`);
+      return {
+        storage_url: match.storage_url || '',
+        id: match.id,
+        file_name: match.file_name || '',
+        sign_name_en: match.sign_name_en || undefined,
+        sign_name_jp: match.sign_name_jp || undefined,
+        attribution_text: match.attribution_text || undefined,
+        license_info: match.license_info || undefined,
+        wikimedia_page_url: match.wikimedia_page_url || undefined,
+        artist_name: match.artist_name || undefined,
+      };
+    }
+  }
+
+  // LAYER 6: Use improved RPC search (only as last resort for non-number queries)
   // This still has fuzzy matching but is better than nothing
   if (!signNumber) {
-    console.log(`🔍 Layer 5: Falling back to RPC search (fuzzy - should rarely happen)`);
+    console.log(`🔍 Layer 6: Falling back to RPC search (fuzzy - should rarely happen)`);
     try {
       const { data: rpcResults, error: rpcError } = await (supabase as any)
         .rpc('search_road_signs', { raw_q: query.toLowerCase().trim() });
 
       if (!rpcError && rpcResults && rpcResults.length > 0) {
         const topResult: any = rpcResults[0];
-        console.log(`⚠️ Layer 5 RESULT (fuzzy): ${topResult.file_name}`);
+        console.log(`⚠️ Layer 6 RESULT (fuzzy): ${topResult.file_name}`);
         return {
           storage_url: topResult.storage_url || '',
           id: topResult.id,

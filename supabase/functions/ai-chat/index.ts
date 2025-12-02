@@ -32,7 +32,7 @@ function parseSignQuery(query: string): { searchTerms: string[]; category?: stri
   // Extract sign type keywords
   if (lowerQuery.includes('stop')) {
     signType = 'stop';
-    searchTerms.push('stop', '326', '止まれ', 'tomare');
+    searchTerms.push('stop', '330', '止まれ', 'tomare', '一時停止');  // 330 is the correct Japanese stop sign number
     category = 'regulatory';
   } else if (lowerQuery.includes('speed limit') || lowerQuery.includes('speed')) {
     signType = 'speed';
