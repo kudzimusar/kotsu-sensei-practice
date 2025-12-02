@@ -1204,20 +1204,26 @@ export type Database = {
       road_sign_images: {
         Row: {
           ai_confidence: number | null
+          ai_enhanced: boolean | null
+          ai_enhanced_at: string | null
           ai_explanation: string | null
           artist_name: string | null
           attribution_text: string | null
           commonmetadata: Json | null
           created_at: string
+          driver_behavior: string | null
           exif_metadata: Json | null
+          expanded_meaning: string | null
           extmetadata: Json | null
           file_name: string
           file_size: number | null
           filename_slug: string | null
           flashcard_ready: boolean | null
+          gemini_category: string | null
           id: string
           image_source: string | null
           is_verified: boolean | null
+          legal_context: string | null
           license_info: string | null
           metadata_hydrated: boolean | null
           metadata_hydrated_at: string | null
@@ -1233,6 +1239,7 @@ export type Database = {
           storage_type: string
           storage_url: string
           tags: string[] | null
+          translated_japanese: string | null
           updated_at: string
           usage_count: number | null
           user_id: string | null
@@ -1243,20 +1250,26 @@ export type Database = {
         }
         Insert: {
           ai_confidence?: number | null
+          ai_enhanced?: boolean | null
+          ai_enhanced_at?: string | null
           ai_explanation?: string | null
           artist_name?: string | null
           attribution_text?: string | null
           commonmetadata?: Json | null
           created_at?: string
+          driver_behavior?: string | null
           exif_metadata?: Json | null
+          expanded_meaning?: string | null
           extmetadata?: Json | null
           file_name: string
           file_size?: number | null
           filename_slug?: string | null
           flashcard_ready?: boolean | null
+          gemini_category?: string | null
           id?: string
           image_source?: string | null
           is_verified?: boolean | null
+          legal_context?: string | null
           license_info?: string | null
           metadata_hydrated?: boolean | null
           metadata_hydrated_at?: string | null
@@ -1272,6 +1285,7 @@ export type Database = {
           storage_type?: string
           storage_url: string
           tags?: string[] | null
+          translated_japanese?: string | null
           updated_at?: string
           usage_count?: number | null
           user_id?: string | null
@@ -1282,20 +1296,26 @@ export type Database = {
         }
         Update: {
           ai_confidence?: number | null
+          ai_enhanced?: boolean | null
+          ai_enhanced_at?: string | null
           ai_explanation?: string | null
           artist_name?: string | null
           attribution_text?: string | null
           commonmetadata?: Json | null
           created_at?: string
+          driver_behavior?: string | null
           exif_metadata?: Json | null
+          expanded_meaning?: string | null
           extmetadata?: Json | null
           file_name?: string
           file_size?: number | null
           filename_slug?: string | null
           flashcard_ready?: boolean | null
+          gemini_category?: string | null
           id?: string
           image_source?: string | null
           is_verified?: boolean | null
+          legal_context?: string | null
           license_info?: string | null
           metadata_hydrated?: boolean | null
           metadata_hydrated_at?: string | null
@@ -1311,6 +1331,7 @@ export type Database = {
           storage_type?: string
           storage_url?: string
           tags?: string[] | null
+          translated_japanese?: string | null
           updated_at?: string
           usage_count?: number | null
           user_id?: string | null
