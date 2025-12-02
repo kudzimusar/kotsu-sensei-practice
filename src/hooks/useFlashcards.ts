@@ -20,6 +20,13 @@ export interface Flashcard {
   wikimediaPageUrl?: string | null;
   artistName?: string | null;
   imageSource?: string | null;
+  // AI-enhanced fields
+  aiEnhanced?: boolean;
+  expandedMeaning?: string | null;
+  driverBehavior?: string | null;
+  legalContext?: string | null;
+  translatedJapanese?: string | null;
+  signNumber?: string | null;
 }
 
 export interface FlashcardSession {
