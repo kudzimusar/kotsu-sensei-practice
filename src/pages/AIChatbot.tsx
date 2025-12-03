@@ -1,15 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Send, Trash2, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { MessageSquare, Send, Trash2, Sparkles, Target } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAIChat } from '@/hooks/useAIChat';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { TTSButton } from '@/components/ui/tts-button';
 import { ImageFile } from '@/components/ui/image-upload';
 import { ImageUploadMenu } from '@/components/ui/image-upload-menu';
+import { AIQuestionGenerator } from '@/components/AIQuestionGenerator';
 
 const SUGGESTED_QUESTIONS = [
   "What are the speed limits in different areas in Japan?",
@@ -60,15 +62,15 @@ const AIChatbot = () => {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white pb-20">
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
-                <MessageSquare className="w-6 h-6 text-blue-600" />
+                <MessageSquare className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Kōtsū Sensei AI</h1>
-                <p className="text-sm text-gray-500">Your Japanese Driving Assistant</p>
+                <h1 className="text-lg font-bold text-gray-900">Kōtsū Sensei AI</h1>
+                <p className="text-xs text-gray-500">Your Japanese Driving Assistant</p>
               </div>
             </div>
             {messages.length > 0 && (
@@ -85,7 +87,21 @@ const AIChatbot = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-4 pb-32">
+      <Tabs defaultValue="chat" className="max-w-4xl mx-auto">
+        <div className="sticky top-[72px] z-10 bg-gradient-to-b from-blue-50 to-blue-50/95 px-4 py-2">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="chat" className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Chat
+            </TabsTrigger>
+            <TabsTrigger value="generate" className="flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              Generate
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="chat" className="px-4 pb-32 mt-0">
         {/* Compact Welcome Message */}
         {messages.length === 0 && (
           <div className="mb-4">
@@ -395,7 +411,12 @@ const AIChatbot = () => {
             </div>
           </div>
         </div>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="generate" className="pb-24 mt-0">
+          <AIQuestionGenerator />
+        </TabsContent>
+      </Tabs>
 
       <BottomNav />
     </div>
