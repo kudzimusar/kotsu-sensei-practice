@@ -179,13 +179,13 @@ const AIChatbot = () => {
                         </div>
                       ) : message.sections ? (
                         // Structured section-based response
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                           {message.sections.map((section, sectionIdx) => {
                             const sectionText = `${section.heading}. ${section.content}${section.summary ? ` Summary: ${section.summary}` : ''}`;
                             return (
-                            <div key={sectionIdx} className="border-l-4 border-blue-500 pl-4">
-                              {/* Heading */}
-                              <div className="flex items-start gap-2 mb-3">
+                            <div key={sectionIdx} className="space-y-3">
+                              {/* Heading with TTS */}
+                              <div className="flex items-start gap-2 border-l-4 border-blue-500 pl-3">
                                 <h3 className="text-base font-bold text-gray-900 flex-1">
                                   {section.heading}
                                 </h3>
@@ -196,14 +196,13 @@ const AIChatbot = () => {
                                 />
                               </div>
                               
-                              {/* Image */}
+                              {/* Image - displayed prominently and separately */}
                               {section.image && (
-                                <div className="mb-3">
+                                <div className="flex flex-col items-center bg-gray-50 rounded-xl p-4">
                                   <img
                                     src={section.image}
                                     alt={section.heading || 'Road sign'}
-                                    className="w-full max-w-md h-48 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-90 transition"
-                                    onClick={() => window.open(section.image, '_blank')}
+                                    className="max-w-full w-auto max-h-[50vh] object-contain rounded-lg"
                                     onError={(e) => {
                                       console.error(`❌ Image failed to load for section "${section.heading}":`, {
                                         url: section.image,
@@ -237,30 +236,32 @@ const AIChatbot = () => {
                                       )}
                                     </div>
                                   )}
-                                 </div>
+                                </div>
                               )}
                               
-                              {/* Content */}
-                              <ReactMarkdown 
-                                remarkPlugins={[remarkGfm]}
-                                components={{
-                                  p: ({node, ...props}) => <p className="my-2 leading-relaxed text-gray-700" {...props} />,
-                                  ul: ({node, ...props}) => <ul className="my-2 ml-4 list-disc space-y-1" {...props} />,
-                                  ol: ({node, ...props}) => <ol className="my-2 ml-4 list-decimal space-y-1" {...props} />,
-                                  li: ({node, ...props}) => <li className="leading-relaxed" {...props} />,
-                                  strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
-                                  em: ({node, ...props}) => <em className="italic" {...props} />,
-                                  code: ({node, ...props}) => (
-                                    <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs" {...props} />
-                                  ),
-                                }}
-                              >
-                                {section.content}
-                              </ReactMarkdown>
+                              {/* Content - displayed after image */}
+                              <div className="px-1">
+                                <ReactMarkdown 
+                                  remarkPlugins={[remarkGfm]}
+                                  components={{
+                                    p: ({node, ...props}) => <p className="my-2 leading-relaxed text-gray-700" {...props} />,
+                                    ul: ({node, ...props}) => <ul className="my-2 ml-4 list-disc space-y-1" {...props} />,
+                                    ol: ({node, ...props}) => <ol className="my-2 ml-4 list-decimal space-y-1" {...props} />,
+                                    li: ({node, ...props}) => <li className="leading-relaxed" {...props} />,
+                                    strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
+                                    em: ({node, ...props}) => <em className="italic" {...props} />,
+                                    code: ({node, ...props}) => (
+                                      <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs" {...props} />
+                                    ),
+                                  }}
+                                >
+                                  {section.content}
+                                </ReactMarkdown>
+                              </div>
                               
                               {/* Summary */}
                               {section.summary && (
-                                <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                                   <p className="text-sm text-blue-900 flex items-start gap-2">
                                     <span className="text-base">💡</span>
                                     <span className="font-medium">{section.summary}</span>
