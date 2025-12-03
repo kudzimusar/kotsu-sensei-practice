@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ImageFile } from '@/components/ui/image-upload';
@@ -6,6 +6,8 @@ import { ImageFile } from '@/components/ui/image-upload';
 // Get Supabase URL and key for direct fetch calls
 const SUPABASE_URL = "https://ndulrvfwcqyvutcviebk.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdWxydmZ3Y3F5dnV0Y3ZpZWJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NDA1MzcsImV4cCI6MjA3NzMxNjUzN30.0dM5c4ft7UIc7Uy6GmBthgNRcfqttvNs9EiR85OTVIo";
+
+const STORAGE_KEY = 'ai-tutor-conversations';
 
 export interface ChatSection {
   heading: string;
@@ -36,9 +38,41 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
+// Helper to serialize messages for storage
+const serializeMessages = (messages: ChatMessage[]): string => {
+  return JSON.stringify(messages.map(m => ({
+    ...m,
+    timestamp: m.timestamp.toISOString()
+  })));
+};
+
+// Helper to deserialize messages from storage
+const deserializeMessages = (data: string): ChatMessage[] => {
+  try {
+    const parsed = JSON.parse(data);
+    return parsed.map((m: any) => ({
+      ...m,
+      timestamp: new Date(m.timestamp)
+    }));
+  } catch {
+    return [];
+  }
+};
+
 export const useAIChat = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    // Load from localStorage on init
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? deserializeMessages(saved) : [];
+  });
   const [isLoading, setIsLoading] = useState(false);
+
+  // Persist messages to localStorage whenever they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(STORAGE_KEY, serializeMessages(messages));
+    }
+  }, [messages]);
 
   const sendMessage = async (userMessage: string, images?: ImageFile[]) => {
     if (!userMessage.trim() && (!images || images.length === 0)) return;
@@ -205,9 +239,10 @@ export const useAIChat = () => {
     }
   };
 
-  const clearChat = () => {
+  const clearChat = useCallback(() => {
     setMessages([]);
-  };
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
 
   return {
     messages,
