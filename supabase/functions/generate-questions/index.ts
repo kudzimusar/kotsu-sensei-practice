@@ -73,28 +73,64 @@ serve(async (req) => {
 Generate questions specifically about this sign. Include the image URL in the question data.`;
     }
 
-    const systemPrompt = `You are an expert Japanese driving test question writer. Generate realistic, accurate practice questions based on official Japanese traffic rules.
+    const systemPrompt = `You are an expert Japanese driving license examination question writer creating questions for the 仮免許 (provisional license) and 本免許 (full license) tests based on Japan's 道路交通法 (Road Traffic Act).
 
-REQUIREMENTS:
-- Questions must be True/False format
-- Must reference specific articles or rules when applicable
-- Explanations must be clear, concise, and educational
-- Questions should test understanding, not just memorization
+CRITICAL REQUIREMENTS FOR AUTHENTIC JAPANESE TEST QUESTIONS:
+
+1. QUESTION STYLE:
+   - Use precise, formal language similar to official exams
+   - Include questions with tricky wording that test careful reading
+   - Use phrases like "必ず〜しなければならない" (must always), "〜することができる" (may/can), "〜してはならない" (must not)
+   - Include questions where the answer depends on specific conditions or exceptions
+
+2. QUESTION TYPES TO INCLUDE:
+   - Speed regulations (速度規制): speed limits in different zones, situations
+   - Right-of-way rules (優先関係): intersections, narrow roads, emergency vehicles
+   - Parking/stopping rules (駐停車): prohibited areas, exceptions
+   - Traffic signs and markings (標識・標示): meaning and required actions
+   - Vehicle operation (車両の運転): safe driving distance, overtaking, lane changes
+   - Special situations: rain, fog, night driving, pedestrians, school zones
+   - Emergency procedures: accidents, breakdowns, yielding to emergency vehicles
+
+3. DIFFICULTY VARIATIONS:
+   - Easy: Straightforward rules with clear true/false answers
+   - Medium: Rules with specific conditions or common misconceptions
+   - Hard: Exceptions to rules, tricky wording, situation-dependent answers
+
+4. INCLUDE THESE AUTHENTIC PATTERNS:
+   - Questions about specific distances (e.g., 5m, 10m from intersections)
+   - Questions about specific speeds (30km/h zones, highway speeds)
+   - Questions testing exceptions (when rules DON'T apply)
+   - Questions with absolute statements that are FALSE (e.g., "always", "never" when there are exceptions)
+
 - Difficulty: ${difficulty || 'medium'}
 - Category: ${category || 'general'}
-- Language: ${language || 'en'}${imageContext}
+- Language: ${language || 'en'} (If English, use clear formal English. Include Japanese terms in parentheses for key concepts)${imageContext}
 
-Generate ${count || 5} new, unique questions that test different aspects of the concept: "${concept || 'driving rules'}"`;
+Generate ${count || 5} unique questions testing different aspects of: "${concept || 'driving rules'}"`;
 
     const examples = `
-EXAMPLE QUESTIONS:
-1. Q: "When making a right turn at the intersection, you must move over as close as possible to the center of the road and slow down, pass just in front of the center of the intersection."
-   A: TRUE
-   E: "Article 34 requires vehicles to stay close to center line when turning right to allow other traffic to pass on left."
+EXAMPLE HIGH-QUALITY QUESTIONS:
 
-2. Q: "When there is an obstacle ahead, drivers must stop or slow down and yield to the vehicle moving in the opposite direction."
+1. Q: "Vehicles must stop at least 10 meters before a railroad crossing that has no gates or warning signals."
+   A: FALSE
+   E: "According to Article 33, vehicles must stop immediately before (直前) the railroad crossing, not 10 meters before. The 10-meter rule applies to parking restrictions near intersections."
+
+2. Q: "When an emergency vehicle (緊急自動車) approaches with sirens, you must always pull over to the left side of the road and stop."
+   A: FALSE
+   E: "While you must yield to emergency vehicles, you should move to the left OR right depending on the situation. On one-way streets, moving right may be appropriate. The key is to not obstruct the emergency vehicle's path."
+
+3. Q: "On roads with a speed limit of 60 km/h or higher, the minimum safe following distance should be calculated as the speed in km/h minus 15 meters."
+   A: FALSE
+   E: "Safe following distance depends on road conditions, weather, and vehicle type. The general rule is to maintain a 2-3 second gap, not a fixed formula. This varies with conditions."
+
+4. Q: "Mopeds (原動機付自転車) with engine displacement of 50cc or less must travel in the leftmost lane on roads with multiple lanes."
    A: TRUE
-   E: "The vehicle on the side with the obstacle must yield to oncoming traffic."`;
+   E: "Mopeds under 50cc must stay in the leftmost portion of the leftmost lane unless turning right, where two-stage right turns (二段階右折) may be required at certain intersections."
+
+5. Q: "Parking is prohibited within 5 meters of a fire hydrant (消火栓)."
+   A: TRUE
+   E: "Article 45 prohibits parking within 5 meters of fire hydrants, fire station entrances, and fire alarm boxes to ensure emergency access."`;
 
     // Call Gemini API for text generation
     const geminiResponse = await fetch(
