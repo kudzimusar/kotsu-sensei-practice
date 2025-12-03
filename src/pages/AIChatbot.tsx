@@ -85,41 +85,42 @@ const AIChatbot = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Welcome Message */}
+      <div className="max-w-4xl mx-auto px-4 py-4 pb-32">
+        {/* Compact Welcome Message */}
         {messages.length === 0 && (
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-              <Sparkles className="w-8 h-8 text-blue-600" />
+          <div className="mb-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-100 rounded-full">
+                <Sparkles className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Welcome to Kōtsū Sensei AI!</h2>
+                <p className="text-sm text-gray-600">Ask about Japanese traffic rules, signs, or driving.</p>
+              </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Welcome to Kōtsū Sensei AI!
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Ask me anything about Japanese traffic rules, road signs, or driving techniques.
-            </p>
 
-            {/* Suggested Questions */}
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700 mb-3">Try asking:</p>
+            {/* Suggested Questions - more compact */}
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-gray-500 mb-2">Try asking:</p>
               {SUGGESTED_QUESTIONS.map((question, index) => (
                 <Button
                   key={index}
                   variant="outline"
-                  className="w-full text-left justify-start h-auto py-3 px-4 whitespace-normal"
+                  size="sm"
+                  className="w-full text-left justify-start h-auto py-2 px-3 whitespace-normal text-xs"
                   onClick={() => handleSuggestedQuestion(question)}
                 >
-                  <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span className="text-sm">{question}</span>
+                  <MessageSquare className="w-3 h-3 mr-2 flex-shrink-0" />
+                  <span>{question}</span>
                 </Button>
               ))}
             </div>
           </div>
         )}
 
-        {/* Messages */}
+        {/* Messages - scrollable area */}
         {messages.length > 0 && (
-          <div className="h-[calc(100vh-280px)] mb-4 overflow-y-auto" ref={scrollRef}>
+          <div className="overflow-y-auto mb-4" ref={scrollRef} style={{ maxHeight: 'calc(100vh - 180px)' }}>
             <div className="space-y-4 p-4">
               {messages.map((message, index) => (
                 <div
@@ -345,20 +346,34 @@ const AIChatbot = () => {
           </div>
         )}
 
-        {/* Input Area */}
-        <div className="fixed bottom-20 left-0 right-0 bg-white border-t">
-          <div className="max-w-4xl mx-auto p-4">
-            {/* Upload Menu Component with Image Previews */}
-            <ImageUploadMenu
-              images={images}
-              onImagesChange={setImages}
-              maxImages={5}
-              disabled={isLoading}
-              trigger="icon"
-            />
+        {/* Input Area - compact with horizontal layout */}
+        <div className="fixed bottom-20 left-0 right-0 bg-white border-t shadow-lg">
+          <div className="max-w-4xl mx-auto px-3 py-2">
+            {/* Image previews row - only show if images selected */}
+            {images.length > 0 && (
+              <div className="mb-2">
+                <ImageUploadMenu
+                  images={images}
+                  onImagesChange={setImages}
+                  maxImages={5}
+                  disabled={isLoading}
+                  trigger="icon"
+                />
+              </div>
+            )}
             
-            {/* Input row */}
-            <div className="flex gap-2 items-center mt-2">
+            {/* Input row - all elements horizontal */}
+            <div className="flex gap-2 items-center">
+              {/* Image upload button - inline with input */}
+              {images.length === 0 && (
+                <ImageUploadMenu
+                  images={images}
+                  onImagesChange={setImages}
+                  maxImages={5}
+                  disabled={isLoading}
+                  trigger="icon"
+                />
+              )}
               <Input
                 ref={inputRef}
                 value={input}
@@ -366,15 +381,15 @@ const AIChatbot = () => {
                 onKeyPress={handleKeyPress}
                 placeholder={images.length > 0 ? "Ask about this sign..." : "Ask about Japanese driving rules..."}
                 disabled={isLoading}
-                className="flex-1"
+                className="flex-1 h-10"
               />
               <Button
                 onClick={handleSend}
                 disabled={(!input.trim() && images.length === 0) || isLoading}
                 size="icon"
-                className="flex-shrink-0"
+                className="flex-shrink-0 h-10 w-10"
               >
-                <Send className="w-5 h-5" />
+                <Send className="w-4 h-4" />
               </Button>
             </div>
           </div>
