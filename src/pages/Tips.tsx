@@ -79,15 +79,24 @@ Give actionable tips they can use on test day.`,
       }
 
       // Handle different response formats from ai-chat
+      let responseText = "";
       if (data?.message) {
-        setAiResponse(data.message);
+        responseText = data.message;
       } else if (data?.sections?.[0]?.content) {
-        setAiResponse(data.sections[0].content);
+        responseText = data.sections[0].content;
       } else if (data?.error) {
         throw new Error(data.error);
       } else {
         throw new Error("No response received");
       }
+      
+      // Clean up any raw JSON that might appear in the response
+      // Remove JSON blocks like { "sections": [...] }
+      responseText = responseText.replace(/\{\s*"sections"\s*:\s*\[[\s\S]*?\]\s*\}/g, '').trim();
+      // Remove any remaining markdown JSON code blocks
+      responseText = responseText.replace(/```(?:json)?[\s\S]*?```/g, '').trim();
+      
+      setAiResponse(responseText);
     } catch (error) {
       console.error('AI Tips error:', error);
       toast.error("Failed to get AI response. Please try again.");
