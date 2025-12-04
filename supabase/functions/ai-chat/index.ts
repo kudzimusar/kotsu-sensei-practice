@@ -362,80 +362,13 @@ Topics you can help with:
 - Common mistakes to avoid`;
 
     let assistantMessage: string | null = null;
-    let useFallback = false;
+    let useLovableFallback = false;
     let response: Response;
 
-    if (LOVABLE_API_KEY) {
+    // Prioritize Google AI Studio (faster and more reliable per project memory)
+    if (fallbackApiKey) {
       try {
-        console.log("Attempting primary API (LOVABLE_API_KEY)");
-        response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [
-              { role: "system", content: systemPrompt },
-              ...messages,
-            ],
-            stream: false,
-          }),
-        });
-
-        if (!response.ok) {
-          if (response.status === 429) {
-            return new Response(
-              JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), 
-              {
-                status: 429,
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-              }
-            );
-          }
-          if (response.status === 402) {
-            return new Response(
-              JSON.stringify({ error: "AI service quota exceeded. Please contact support." }), 
-              {
-                status: 402,
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-              }
-            );
-          }
-          let errorText = '';
-          try {
-            errorText = await response.text();
-          } catch (e) {
-            errorText = `Failed to read error response: ${e instanceof Error ? e.message : 'Unknown'}`;
-          }
-          console.error("Primary API error:", response.status, errorText.substring(0, 200));
-          throw new Error(`Primary API error: ${response.status} - ${errorText.substring(0, 100)}`);
-        }
-
-        const data = await response.json();
-        assistantMessage = data.choices?.[0]?.message?.content;
-        
-        if (!assistantMessage) {
-          console.error("Primary API returned empty response:", JSON.stringify(data));
-          throw new Error("Primary API returned empty response");
-        }
-        
-        console.log("Primary API succeeded, response length:", assistantMessage.length);
-      } catch (error) {
-        console.warn("LOVABLE_API_KEY failed, trying fallback:", error);
-        useFallback = true;
-        assistantMessage = null;
-      }
-    } else {
-      console.log("LOVABLE_API_KEY not available, using fallback");
-      useFallback = true;
-    }
-
-    // Fallback to GOOGLE_AI_STUDIO_API_KEY or GEMINI_API_KEY
-    if (useFallback && fallbackApiKey) {
-      console.log("Using GOOGLE_AI_STUDIO_API_KEY/GEMINI_API_KEY fallback");
-      try {
+        console.log("Attempting primary API (Google AI Studio)");
         // Build messages for Gemini API format
         const conversationHistory: any[] = [];
         
@@ -471,25 +404,81 @@ Topics you can help with:
               contents: conversationHistory,
               generationConfig: {
                 temperature: 0.7,
-                responseMimeType: "application/json"
               }
             }),
           }
         );
 
         if (!response.ok) {
-          throw new Error(`Fallback API error: ${response.status}`);
+          const errorText = await response.text();
+          console.error("Google AI Studio error:", response.status, errorText.substring(0, 200));
+          throw new Error(`Google AI Studio error: ${response.status}`);
         }
 
         const data = await response.json();
         assistantMessage = data.candidates?.[0]?.content?.parts?.[0]?.text || null;
         
         if (!assistantMessage) {
-          throw new Error("Fallback API returned empty response");
+          throw new Error("Google AI Studio returned empty response");
         }
+        
+        console.log("Google AI Studio succeeded, response length:", assistantMessage.length);
       } catch (error) {
-        console.error("Fallback API also failed:", error);
-        throw new Error("Both primary and fallback APIs failed");
+        console.warn("Google AI Studio failed, trying Lovable fallback:", error);
+        useLovableFallback = true;
+        assistantMessage = null;
+      }
+    } else {
+      console.log("Google AI Studio key not available, using Lovable API");
+      useLovableFallback = true;
+    }
+
+    // Fallback to LOVABLE_API_KEY if Google AI Studio failed
+    if (useLovableFallback && LOVABLE_API_KEY) {
+      console.log("Using LOVABLE_API_KEY fallback");
+      try {
+        response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: systemPrompt },
+              ...messages,
+            ],
+            stream: false,
+          }),
+        });
+
+        if (!response.ok) {
+          if (response.status === 429) {
+            return new Response(
+              JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), 
+              {
+                status: 429,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+              }
+            );
+          }
+          const errorText = await response.text();
+          console.error("Lovable API fallback error:", response.status, errorText.substring(0, 200));
+          throw new Error(`Lovable API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        assistantMessage = data.choices?.[0]?.message?.content;
+        
+        if (!assistantMessage) {
+          throw new Error("Lovable API returned empty response");
+        }
+        
+        console.log("Lovable API fallback succeeded, response length:", assistantMessage.length);
+      } catch (error) {
+        console.error("Lovable API fallback also failed:", error);
+        throw new Error("Both Google AI Studio and Lovable API failed");
       }
     }
 
