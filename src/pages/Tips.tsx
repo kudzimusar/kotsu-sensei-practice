@@ -77,8 +77,11 @@ Give actionable tips they can use on test day.`,
         throw error;
       }
 
-      if (data?.response) {
-        setAiResponse(data.response);
+      // Handle different response formats from ai-chat
+      if (data?.message) {
+        setAiResponse(data.message);
+      } else if (data?.sections?.[0]?.content) {
+        setAiResponse(data.sections[0].content);
       } else if (data?.error) {
         throw new Error(data.error);
       } else {
