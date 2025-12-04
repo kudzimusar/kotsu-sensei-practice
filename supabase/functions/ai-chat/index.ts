@@ -394,7 +394,7 @@ Topics you can help with:
         }
 
         response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${fallbackApiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${fallbackApiKey}`,
           {
             method: "POST",
             headers: {
