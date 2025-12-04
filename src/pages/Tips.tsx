@@ -1,6 +1,7 @@
 import { ArrowLeft, AlertTriangle, BookOpen, FileText, Lightbulb, CheckCircle2, XCircle, Send, Sparkles, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 import BottomNav from "@/components/BottomNav";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,27 +31,10 @@ const Tips = () => {
   ];
 
   const categoryPrompts: Record<string, string> = {
-    "tricky-wording": `You are helping a student understand tricky English wording on the Japanese driving test. Focus on:
-- Words like "must", "always", "never", "may" and how they affect true/false answers
-- How absolute statements are often false due to exceptions
-- Conditional phrases like "unless", "only if", "as long as"
-Give practical examples and explain why certain wordings make questions tricky.`,
-    "japanese-signs": `You are helping a student learn Japanese road sign terminology. Focus on:
-- Japanese terms for common traffic signs (止まれ, 駐車禁止, etc.)
-- How to recognize signs even when taking the test in English
-- The relationship between Japanese sign names and their meanings
-Give the Japanese term, romaji, and practical tips for remembering.`,
-    "rules-exceptions": `You are helping a student understand Japanese traffic rules and their exceptions. Focus on:
-- Specific regulations with distances and speeds (5m, 10m, 30km/h, etc.)
-- When rules have exceptions that make absolute statements false
-- Common rule areas: parking, overtaking, right-of-way, emergency vehicles
-Give specific examples from Japanese Road Traffic Law.`,
-    "test-strategy": `You are helping a student prepare strategies for the Japanese driving test. Focus on:
-- Reading questions carefully and identifying trap wording
-- Time management for 50 questions in 30 minutes
-- How to approach questions you're unsure about
-- Common patterns in incorrect answers
-Give actionable tips they can use on test day.`,
+    "tricky-wording": `You help students understand tricky English wording on the Japanese driving test. Be concise and practical. Focus on words like "must", "always", "never", "may" and how they affect answers. Give 2-3 brief examples maximum. No lengthy explanations.`,
+    "japanese-signs": `You help students learn Japanese road sign terms. Be brief and direct. Give the Japanese term, romaji, and one key tip for remembering. Maximum 3-4 terms per response. Keep explanations short.`,
+    "rules-exceptions": `You help students understand Japanese traffic rules. Be concise. Focus on specific distances/speeds (5m, 10m, 30km/h). Give 2-3 key rules with their exceptions. No lengthy background.`,
+    "test-strategy": `You help students prepare for the Japanese driving test. Give 3-4 actionable tips maximum. Be direct and practical. No lengthy explanations.`,
   };
 
   const handleAskAI = async () => {
@@ -234,13 +218,26 @@ Give actionable tips they can use on test day.`,
 
           {/* AI Response */}
           {aiResponse && (
-            <div className="mt-4 p-4 bg-white rounded-lg border border-violet-200">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="mt-4">
+              <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="text-violet-500" size={16} />
                 <span className="text-xs font-medium text-violet-700">AI Response</span>
               </div>
-              <div className="text-sm text-gray-700 whitespace-pre-wrap">
-                {aiResponse}
+              <div className="prose prose-sm prose-gray max-w-none">
+                <ReactMarkdown
+                  components={{
+                    h1: ({ children }) => <h3 className="text-base font-bold text-gray-800 mt-3 mb-2">{children}</h3>,
+                    h2: ({ children }) => <h4 className="text-sm font-semibold text-gray-800 mt-3 mb-2">{children}</h4>,
+                    h3: ({ children }) => <h5 className="text-sm font-semibold text-gray-700 mt-2 mb-1">{children}</h5>,
+                    p: ({ children }) => <p className="text-sm text-gray-700 mb-2 leading-relaxed">{children}</p>,
+                    ul: ({ children }) => <ul className="text-sm text-gray-700 mb-2 ml-4 space-y-1">{children}</ul>,
+                    ol: ({ children }) => <ol className="text-sm text-gray-700 mb-2 ml-4 space-y-1 list-decimal">{children}</ol>,
+                    li: ({ children }) => <li className="text-sm text-gray-700">{children}</li>,
+                    strong: ({ children }) => <strong className="font-semibold text-gray-800">{children}</strong>,
+                  }}
+                >
+                  {aiResponse}
+                </ReactMarkdown>
               </div>
             </div>
           )}
