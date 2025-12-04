@@ -29,6 +29,7 @@ import PracticeRoomDetails from "./pages/PracticeRoomDetails";
 import InstructorProfile from "./pages/InstructorProfile";
 import InstructorDashboard from "./pages/InstructorDashboard";
 import ShareReferral from "./pages/ShareReferral";
+import Tips from "./pages/Tips";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/tests" element={<Tests />} />
           <Route path="/planner" element={<Planner />} />
           <Route path="/flashcards" element={<Flashcards />} />
+          <Route path="/tips" element={<Tips />} />
           <Route path="/ai-chat" element={<AIChatbot />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
