@@ -1,8 +1,13 @@
-import { ArrowLeft, AlertTriangle, BookOpen, FileText, Lightbulb, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, AlertTriangle, BookOpen, FileText, Lightbulb, CheckCircle2, XCircle, Send, Sparkles, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import BottomNav from "@/components/BottomNav";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Accordion,
   AccordionContent,
@@ -12,6 +17,80 @@ import {
 
 const Tips = () => {
   const navigate = useNavigate();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [userQuestion, setUserQuestion] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const tipCategories = [
+    { id: "tricky-wording", label: "Tricky Test Wording", icon: AlertTriangle, color: "blue" },
+    { id: "japanese-signs", label: "Japanese Sign Terms", icon: BookOpen, color: "red" },
+    { id: "rules-exceptions", label: "Rules & Exceptions", icon: FileText, color: "purple" },
+    { id: "test-strategy", label: "Test Strategies", icon: Lightbulb, color: "amber" },
+  ];
+
+  const categoryPrompts: Record<string, string> = {
+    "tricky-wording": `You are helping a student understand tricky English wording on the Japanese driving test. Focus on:
+- Words like "must", "always", "never", "may" and how they affect true/false answers
+- How absolute statements are often false due to exceptions
+- Conditional phrases like "unless", "only if", "as long as"
+Give practical examples and explain why certain wordings make questions tricky.`,
+    "japanese-signs": `You are helping a student learn Japanese road sign terminology. Focus on:
+- Japanese terms for common traffic signs (止まれ, 駐車禁止, etc.)
+- How to recognize signs even when taking the test in English
+- The relationship between Japanese sign names and their meanings
+Give the Japanese term, romaji, and practical tips for remembering.`,
+    "rules-exceptions": `You are helping a student understand Japanese traffic rules and their exceptions. Focus on:
+- Specific regulations with distances and speeds (5m, 10m, 30km/h, etc.)
+- When rules have exceptions that make absolute statements false
+- Common rule areas: parking, overtaking, right-of-way, emergency vehicles
+Give specific examples from Japanese Road Traffic Law.`,
+    "test-strategy": `You are helping a student prepare strategies for the Japanese driving test. Focus on:
+- Reading questions carefully and identifying trap wording
+- Time management for 50 questions in 30 minutes
+- How to approach questions you're unsure about
+- Common patterns in incorrect answers
+Give actionable tips they can use on test day.`,
+  };
+
+  const handleAskAI = async () => {
+    if (!selectedCategory || !userQuestion.trim()) {
+      toast.error("Please select a category and enter your question");
+      return;
+    }
+
+    setIsLoading(true);
+    setAiResponse("");
+
+    try {
+      const systemPrompt = categoryPrompts[selectedCategory];
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        body: {
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userQuestion }
+          ]
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.response) {
+        setAiResponse(data.response);
+      } else if (data?.error) {
+        throw new Error(data.error);
+      } else {
+        throw new Error("No response received");
+      }
+    } catch (error) {
+      console.error('AI Tips error:', error);
+      toast.error("Failed to get AI response. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const keyTerms = [
     { phrase: "must / must not", importance: "Indicates a legal obligation or prohibition. These are often absolute, so confirm whether there are exceptions." },
@@ -85,6 +164,83 @@ const Tips = () => {
               </p>
             </div>
           </div>
+        </Card>
+
+        {/* AI Tips Assistant */}
+        <Card className="bg-gradient-to-br from-violet-50 to-purple-50 border-violet-200 p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="text-violet-600" size={20} />
+            <h3 className="font-bold text-violet-900">AI Tips Assistant</h3>
+          </div>
+          <p className="text-sm text-violet-700 mb-4">
+            Select a category and ask a question to get personalized tips!
+          </p>
+
+          {/* Category Selection */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {tipCategories.map((cat) => {
+              const Icon = cat.icon;
+              const isSelected = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`p-3 rounded-lg border-2 transition-all text-left ${
+                    isSelected 
+                      ? `border-${cat.color}-500 bg-${cat.color}-50` 
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 mb-1 ${isSelected ? `text-${cat.color}-600` : 'text-gray-500'}`} />
+                  <p className={`text-xs font-medium ${isSelected ? `text-${cat.color}-800` : 'text-gray-700'}`}>
+                    {cat.label}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Question Input */}
+          <Textarea
+            placeholder={selectedCategory 
+              ? "Ask your question about this topic..." 
+              : "Select a category first..."}
+            value={userQuestion}
+            onChange={(e) => setUserQuestion(e.target.value)}
+            disabled={!selectedCategory}
+            className="mb-3 min-h-[80px] bg-white"
+          />
+
+          <Button
+            onClick={handleAskAI}
+            disabled={!selectedCategory || !userQuestion.trim() || isLoading}
+            className="w-full bg-violet-600 hover:bg-violet-700"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Getting tips...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4 mr-2" />
+                Get AI Tips
+              </>
+            )}
+          </Button>
+
+          {/* AI Response */}
+          {aiResponse && (
+            <div className="mt-4 p-4 bg-white rounded-lg border border-violet-200">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="text-violet-500" size={16} />
+                <span className="text-xs font-medium text-violet-700">AI Response</span>
+              </div>
+              <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                {aiResponse}
+              </div>
+            </div>
+          )}
         </Card>
 
         <Accordion type="single" collapsible className="space-y-3">
