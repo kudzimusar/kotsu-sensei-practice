@@ -1,4 +1,4 @@
-import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays, Bell, BookOpen, Video, AlertTriangle, Car, ClipboardList, CreditCard } from "lucide-react";
+import { Zap, Target, FileText, Calendar as CalendarIcon, Flame, ChevronRight, MapPin, Clock, User, CalendarDays, Bell, BookOpen, Video, AlertTriangle, Car, ClipboardList, CreditCard, Lightbulb } from "lucide-react";
 import { testCategories } from "@/data/questions";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -466,13 +466,13 @@ const QuizHome = ({ onStartQuiz, onContinueLearning, isStartingQuiz = false }: Q
             </button>
             
             <button
-              onClick={() => navigate('/planner')}
+              onClick={() => navigate('/tips')}
               className="bg-white rounded-xl shadow p-3 transform transition active:scale-[0.98]"
             >
               <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mb-2">
-                <CalendarDays className="text-emerald-600" size={20} />
+                <Lightbulb className="text-emerald-600" size={20} />
               </div>
-              <h3 className="font-medium text-xs">Driving Schedule</h3>
+              <h3 className="font-medium text-xs">Tips</h3>
             </button>
             
             <button
