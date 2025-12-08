@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.check-payment-methods]
 verify_jwt = true
+
+[functions.hydrate-sign-metadata]
+verify_jwt = false
+
+[functions.generate-flashcards]
+verify_jwt = false

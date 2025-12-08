@@ -5,11 +5,11 @@ import { corsHeaders } from "../_shared/cors.ts";
 /**
  * IMAGE-FIRST Flashcard Generation
  * 
- * Fetches road sign images and creates educational flashcards.
- * Uses Gemini AI to generate proper learning content when metadata is missing.
+ * Fetches road sign images with AI-hydrated metadata and creates educational flashcards.
+ * Each flashcard has ONE sign, with proper name, meaning, and driver guidance.
  */
 
-// Category to database mapping
+// Category mapping
 const CATEGORY_DB_MAP: { [key: string]: string } = {
   'regulatory-signs': 'regulatory',
   'warning-signs': 'warning',
@@ -18,17 +18,6 @@ const CATEGORY_DB_MAP: { [key: string]: string } = {
   'auxiliary-signs': 'auxiliary',
   'road-markings': 'road-markings',
   'traffic-signals': 'traffic-signals',
-};
-
-// Human-readable category labels
-const CATEGORY_LABELS: { [key: string]: string } = {
-  'regulatory': 'Regulatory Sign',
-  'warning': 'Warning Sign',
-  'indication': 'Indication Sign', 
-  'guidance': 'Guidance Sign',
-  'auxiliary': 'Auxiliary Sign',
-  'road-markings': 'Road Marking',
-  'traffic-signals': 'Traffic Signal',
 };
 
 serve(async (req) => {
@@ -43,7 +32,6 @@ serve(async (req) => {
     
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const GEMINI_API_KEY = Deno.env.get('GOOGLE_AI_STUDIO_API_KEY') || Deno.env.get('GEMINI_API_KEY');
     
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error('Supabase credentials not configured');
@@ -55,11 +43,11 @@ serve(async (req) => {
     
     // Map frontend category to database category
     const dbCategory = CATEGORY_DB_MAP[category] || category;
-    const categoryLabel = CATEGORY_LABELS[dbCategory] || dbCategory;
     
     console.log(`📂 Database category: ${dbCategory}`);
     
-    // Fetch images with metadata
+    // Fetch ONLY AI-hydrated images with complete metadata
+    // Priority: signs with expanded_meaning (AI-enhanced) first
     const { data: images, error: queryError } = await supabase
       .from('road_sign_images')
       .select(`
@@ -73,150 +61,153 @@ serve(async (req) => {
         sign_category,
         gemini_category,
         expanded_meaning,
-        translated_japanese,
         driver_behavior,
         legal_context,
         ai_enhanced,
         attribution_text,
         license_info,
         wikimedia_page_url,
-        artist_name,
-        image_source
+        artist_name
       `)
       .or(`sign_category.eq.${dbCategory},gemini_category.eq.${dbCategory}`)
       .eq('is_verified', true)
-      .not('sign_name_en', 'is', null)
+      .not('expanded_meaning', 'is', null)  // Only get AI-hydrated signs
       .order('usage_count', { ascending: false, nullsFirst: false })
-      .limit(count * 3);
+      .limit(count * 2);
     
     if (queryError) {
       console.error('Query error:', queryError);
       throw new Error(`Database query failed: ${queryError.message}`);
     }
     
-    if (!images || images.length === 0) {
+    // If no AI-hydrated images, fall back to any verified images
+    let selectedImages = images || [];
+    
+    if (selectedImages.length === 0) {
+      console.log('⚠️ No AI-hydrated images, falling back to all verified images');
+      
+      const { data: fallbackImages, error: fallbackError } = await supabase
+        .from('road_sign_images')
+        .select(`
+          id,
+          storage_url,
+          file_name,
+          sign_number,
+          sign_name_en,
+          sign_name_jp,
+          sign_meaning,
+          sign_category,
+          gemini_category,
+          expanded_meaning,
+          driver_behavior,
+          legal_context,
+          ai_enhanced,
+          attribution_text,
+          license_info,
+          wikimedia_page_url,
+          artist_name
+        `)
+        .or(`sign_category.eq.${dbCategory},gemini_category.eq.${dbCategory}`)
+        .eq('is_verified', true)
+        .order('usage_count', { ascending: false, nullsFirst: false })
+        .limit(count * 2);
+      
+      if (fallbackError) {
+        throw new Error(`Fallback query failed: ${fallbackError.message}`);
+      }
+      
+      selectedImages = fallbackImages || [];
+    }
+    
+    if (selectedImages.length === 0) {
       throw new Error(`No images found for category: ${dbCategory}`);
     }
     
     // Shuffle and select requested count
-    const shuffledImages = images
+    const shuffledImages = selectedImages
       .sort(() => Math.random() - 0.5)
       .slice(0, count);
     
     console.log(`📸 Selected ${shuffledImages.length} images`);
     
-    // Build distractor pool from all signs in category
-    const { data: allCategorySigns } = await supabase
-      .from('road_sign_images')
-      .select('sign_name_en')
-      .or(`sign_category.eq.${dbCategory},gemini_category.eq.${dbCategory}`)
-      .eq('is_verified', true)
-      .not('sign_name_en', 'is', null)
-      .limit(100);
-    
-    const distractorPool = (allCategorySigns || [])
-      .map((s: { sign_name_en: string }) => s.sign_name_en)
-      .filter((v: string, i: number, a: string[]) => v && a.indexOf(v) === i);
-    
-    console.log(`🎯 Distractor pool: ${distractorPool.length} unique names`);
-    
-    // Generate flashcards with AI enhancement if available
-    const flashcards = [];
-    
-    for (let i = 0; i < shuffledImages.length; i++) {
-      const image = shuffledImages[i];
+    // Build flashcards
+    const flashcards = shuffledImages.map((image, index) => {
+      // Clean sign name
+      let signName = image.sign_name_en || '';
       
-      // Clean up sign name (remove file extensions, underscores)
-      let signNameEn = image.sign_name_en || 
-        image.file_name?.replace(/[-_]/g, ' ').replace(/\.(svg|png|jpg|gif)/gi, '').trim() ||
-        'Road Sign';
+      if (!signName || signName.length < 2) {
+        // Extract from filename as fallback
+        signName = image.file_name
+          .replace(/[-_]/g, ' ')
+          .replace(/\.(svg|png|jpg|gif)/gi, '')
+          .replace(/^japan(ese)?\s*(road\s*)?(sign\s*)?/i, '')
+          .trim();
+      }
       
-      // Clean up common filename patterns to make better display names
-      signNameEn = signNameEn
-        .replace(/^Japan road sign /i, '')
-        .replace(/^Japanese /i, '')
-        .replace(/ sign$/i, '')
-        .replace(/\s+/g, ' ')
+      // Clean up common patterns
+      signName = signName
+        .replace(/\s+\d+(\s+and\s+\d+)?$/i, '')  // Remove trailing numbers like "328 and 506"
+        .replace(/\s*\([^)]*\)/g, '')  // Remove parenthetical content
         .trim();
       
-      // Get explanation - use AI-enhanced if available, otherwise generate basic one
-      let explanation = image.expanded_meaning || image.sign_meaning;
-      let driverBehavior = image.driver_behavior;
-      let legalContext = image.legal_context;
+      // Capitalize first letter of each word
+      signName = signName
+        .split(' ')
+        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
       
-      // If no good explanation exists, create a basic educational one
-      if (!explanation || explanation.length < 20) {
-        explanation = `This ${categoryLabel.toLowerCase()} helps drivers understand road rules. When you see this sign, pay attention and follow its instruction for safe driving.`;
-      }
+      // Get the best explanation
+      const explanation = image.expanded_meaning || 
+        image.sign_meaning?.replace(/<[^>]*>/g, '') ||  // Strip HTML
+        `This ${dbCategory} sign provides important information for drivers.`;
       
-      // Get category
-      const signCategory = image.gemini_category || image.sign_category || dbCategory;
+      // Get driver behavior
+      const driverBehavior = image.driver_behavior || 
+        'Follow the instruction indicated by this sign for safe driving.';
       
-      // Generate distractors
-      const otherSigns = distractorPool
-        .filter((name: string) => name && name !== image.sign_name_en)
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 3);
+      // Get Japanese name
+      const signNameJp = image.sign_name_jp || '';
       
-      // Build options
-      const correctAnswer = signNameEn;
-      const options = [correctAnswer, ...otherSigns]
-        .filter((v: string, i: number, a: string[]) => a.indexOf(v) === i)
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 4);
+      // Get sign number
+      const signNumber = image.sign_number || null;
       
-      // Ensure correct answer is in options
-      if (!options.includes(correctAnswer)) {
-        options[0] = correctAnswer;
-      }
+      console.log(`✅ Card ${index + 1}: "${signName}" (${signNumber || 'no number'})`);
       
-      console.log(`✅ Card ${i + 1}: "${signNameEn}"`);
-      
-      flashcards.push({
+      return {
         // Core flashcard data
+        id: image.id,
         question: "What does this road sign mean?",
-        answer: correctAnswer,
-        correct_answer: correctAnswer,
+        answer: signName,
         explanation,
-        options,
-        difficulty: 'easy',
-        
-        // Image data
-        imageUrl: image.storage_url,
-        roadSignImageId: image.id,
-        
-        // Sign metadata
-        signNameEn,
-        signNameJp: image.translated_japanese || image.sign_name_jp || null,
-        signNumber: image.sign_number || null,
-        signCategory,
-        
-        // AI-enhanced content
-        aiEnhanced: image.ai_enhanced || false,
-        expandedMeaning: image.expanded_meaning || explanation,
         driverBehavior,
-        legalContext,
-        translatedJapanese: image.translated_japanese || null,
+        
+        // Image
+        imageUrl: image.storage_url,
+        
+        // Sign metadata for display
+        signName,
+        signNameJp,
+        signNumber,
+        category: image.gemini_category || image.sign_category || dbCategory,
         
         // Attribution
-        attributionText: image.artist_name 
-          ? `Image by ${image.artist_name}${image.license_info ? ` — License: ${image.license_info}` : ''}`
-          : (image.attribution_text || null),
-        licenseInfo: image.license_info || null,
-        wikimediaPageUrl: image.wikimedia_page_url || null,
-        artistName: image.artist_name || null,
-        imageSource: image.image_source || 'wikimedia_commons',
-      });
-    }
+        attribution: image.artist_name 
+          ? `Image by ${image.artist_name}${image.license_info ? ` — ${image.license_info}` : ''}`
+          : (image.attribution_text || 'Wikimedia Commons'),
+        wikimediaUrl: image.wikimedia_page_url || null,
+        
+        // Metadata
+        aiEnhanced: image.ai_enhanced || false,
+        legalContext: image.legal_context || null,
+      };
+    });
     
     console.log(`🎉 Generated ${flashcards.length} flashcards`);
     
-    // Update usage counts (best effort, don't fail if this doesn't work)
+    // Update usage counts (best effort)
     try {
       for (const card of flashcards) {
-        if (card.roadSignImageId) {
-          await supabase.rpc('increment_image_usage', { image_id: card.roadSignImageId });
-        }
+        await supabase.rpc('increment_image_usage', { image_id: card.id });
       }
     } catch (_e) {
       console.log('Note: Could not update usage counts');
@@ -228,11 +219,9 @@ serve(async (req) => {
         count: flashcards.length,
         category,
         dbCategory,
-        source: 'image-first',
+        aiHydrated: flashcards.filter(f => f.aiEnhanced).length,
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
     
   } catch (error) {
