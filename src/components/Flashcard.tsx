@@ -4,34 +4,10 @@ import { Button } from './ui/button';
 import { RotateCw, ExternalLink, Info, Scale, Car, BookOpen } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
-
-export interface FlashcardData {
-  imageQuery?: string;
-  question: string;
-  answer: string;
-  explanation: string;
-  imageUrl: string | null;
-  // Metadata from Wikimedia Commons
-  roadSignImageId?: string;
-  signNameEn?: string | null;
-  signNameJp?: string | null;
-  signCategory?: string | null;
-  attributionText?: string | null;
-  licenseInfo?: string | null;
-  wikimediaPageUrl?: string | null;
-  artistName?: string | null;
-  imageSource?: string | null;
-  // AI-enhanced fields
-  aiEnhanced?: boolean;
-  expandedMeaning?: string | null;
-  driverBehavior?: string | null;
-  legalContext?: string | null;
-  translatedJapanese?: string | null;
-  signNumber?: string | null;
-}
+import type { Flashcard as FlashcardType } from '@/hooks/useFlashcards';
 
 interface FlashcardProps {
-  flashcard: FlashcardData;
+  flashcard: FlashcardType;
   onAnswer?: (isCorrect: boolean) => void;
   showAnswer?: boolean;
   isAnswered?: boolean;
@@ -39,13 +15,13 @@ interface FlashcardProps {
 
 // Category display names and colors
 const CATEGORY_CONFIG: Record<string, { label: string; color: string }> = {
-  'regulatory': { label: 'Regulatory', color: 'bg-red-100 text-red-800 border-red-200' },
-  'warning': { label: 'Warning', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-  'indication': { label: 'Indication', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  'guidance': { label: 'Guidance', color: 'bg-green-100 text-green-800 border-green-200' },
-  'auxiliary': { label: 'Auxiliary', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-  'road-markings': { label: 'Road Marking', color: 'bg-gray-100 text-gray-800 border-gray-200' },
-  'traffic-signals': { label: 'Traffic Signal', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+  'regulatory': { label: 'Regulatory', color: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300' },
+  'warning': { label: 'Warning', color: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300' },
+  'indication': { label: 'Indication', color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300' },
+  'guidance': { label: 'Guidance', color: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300' },
+  'auxiliary': { label: 'Auxiliary', color: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300' },
+  'road-markings': { label: 'Road Marking', color: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300' },
+  'traffic-signals': { label: 'Traffic Signal', color: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300' },
 };
 
 export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered = false }: FlashcardProps) {
@@ -75,15 +51,15 @@ export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered 
     }
   };
 
-  const categoryConfig = flashcard.signCategory 
-    ? CATEGORY_CONFIG[flashcard.signCategory] || { label: flashcard.signCategory, color: 'bg-muted text-muted-foreground' }
+  const categoryConfig = flashcard.category 
+    ? CATEGORY_CONFIG[flashcard.category] || { label: flashcard.category, color: 'bg-muted text-muted-foreground' }
     : null;
 
-  // Get display name - clean up for better readability
-  const displayName = flashcard.signNameEn || flashcard.answer || 'Road Sign';
+  // Get display name
+  const displayName = flashcard.signName || flashcard.answer || 'Road Sign';
   
   // Get explanation text
-  const explanationText = flashcard.expandedMeaning || flashcard.explanation || 
+  const explanationText = flashcard.explanation || 
     `This is a ${categoryConfig?.label?.toLowerCase() || 'road'} sign used in Japan.`;
 
   return (
@@ -231,14 +207,14 @@ export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered 
               )}
 
               {/* Attribution footer */}
-              {flashcard.attributionText && (
+              {flashcard.attribution && (
                 <div className="bg-gray-50/80 dark:bg-gray-900/50 rounded-lg p-2 border border-gray-200 dark:border-gray-700">
                   <p className="text-[10px] text-muted-foreground leading-relaxed">
-                    {flashcard.attributionText}
+                    {flashcard.attribution}
                   </p>
-                  {flashcard.wikimediaPageUrl && (
+                  {flashcard.wikimediaUrl && (
                     <a
-                      href={flashcard.wikimediaPageUrl}
+                      href={flashcard.wikimediaUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline mt-1"
@@ -291,3 +267,6 @@ export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered 
     </div>
   );
 }
+
+// Re-export type for compatibility
+export type { FlashcardType as FlashcardData };
