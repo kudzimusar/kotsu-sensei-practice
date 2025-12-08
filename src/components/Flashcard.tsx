@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { RotateCw, ExternalLink, Info, AlertTriangle, Scale, Car } from 'lucide-react';
+import { RotateCw, ExternalLink, Info, Scale, Car, BookOpen } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 
@@ -53,13 +53,13 @@ export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered 
   const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
-    setIsFlipped(false);
+    setIsFlipped(showAnswer);
     setImageLoaded(false);
-  }, [flashcard.imageUrl, flashcard.question]);
+  }, [flashcard.imageUrl, flashcard.question, showAnswer]);
 
   const handleFlip = () => {
-    if (!isFlipped && !isAnswered) {
-      setIsFlipped(true);
+    if (!isAnswered) {
+      setIsFlipped(!isFlipped);
     }
   };
 
@@ -79,17 +79,24 @@ export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered 
     ? CATEGORY_CONFIG[flashcard.signCategory] || { label: flashcard.signCategory, color: 'bg-muted text-muted-foreground' }
     : null;
 
+  // Get display name - clean up for better readability
+  const displayName = flashcard.signNameEn || flashcard.answer || 'Road Sign';
+  
+  // Get explanation text
+  const explanationText = flashcard.expandedMeaning || flashcard.explanation || 
+    `This is a ${categoryConfig?.label?.toLowerCase() || 'road'} sign used in Japan.`;
+
   return (
     <div className="w-full max-w-md mx-auto" style={{ perspective: '1000px' }}>
       <div
-        className="relative w-full h-[560px] transition-transform duration-700 cursor-pointer"
+        className="relative w-full min-h-[520px] transition-transform duration-500 cursor-pointer"
         onClick={handleFlip}
         style={{
           transformStyle: 'preserve-3d',
           transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
         }}
       >
-        {/* Front of card */}
+        {/* Front of card - Shows image and question */}
         <div
           className={`absolute inset-0 w-full h-full ${isFlipped ? 'pointer-events-none' : ''}`}
           style={{
@@ -98,67 +105,55 @@ export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered 
             transform: 'rotateY(0deg)',
           }}
         >
-          <Card className="w-full h-full p-6 flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
-            {!imageLoaded && flashcard.imageUrl && (
-              <Skeleton className="w-full h-64 mb-4" />
+          <Card className="w-full h-full p-6 flex flex-col items-center justify-between bg-gradient-to-br from-background to-muted/30 border-2 border-primary/20">
+            {/* Category badge */}
+            {categoryConfig && (
+              <div className="self-start mb-4">
+                <Badge variant="outline" className={`text-xs ${categoryConfig.color}`}>
+                  {categoryConfig.label}
+                </Badge>
+              </div>
             )}
             
-            {flashcard.imageUrl ? (
-              <div className="w-full mb-4">
-                <div className="relative">
-                  <img
-                    src={flashcard.imageUrl}
-                    alt={flashcard.question}
-                    className={`w-full max-h-64 object-contain rounded-lg transition-opacity ${
-                      imageLoaded ? 'opacity-100' : 'opacity-0'
-                    }`}
-                    onLoad={() => setImageLoaded(true)}
-                    onError={() => setImageLoaded(true)}
-                    key={flashcard.imageUrl}
-                  />
-                  {!imageLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Skeleton className="w-full h-64 rounded-lg" />
-                    </div>
-                  )}
-                  {/* Category badge */}
-                  {categoryConfig && (
-                    <div className="absolute top-2 left-2">
-                      <Badge variant="outline" className={`text-xs ${categoryConfig.color}`}>
-                        {categoryConfig.label}
-                      </Badge>
-                    </div>
-                  )}
-                  {/* AI-enhanced badge */}
-                  {flashcard.aiEnhanced && (
-                    <div className="absolute top-2 right-2">
-                      <Badge variant="outline" className="text-xs bg-purple-100 text-purple-800 border-purple-200">
-                        AI Enhanced
-                      </Badge>
-                    </div>
-                  )}
+            {/* Image container - single centered image */}
+            <div className="flex-1 flex items-center justify-center w-full">
+              {!imageLoaded && flashcard.imageUrl && (
+                <Skeleton className="w-48 h-48 rounded-lg" />
+              )}
+              
+              {flashcard.imageUrl ? (
+                <img
+                  src={flashcard.imageUrl}
+                  alt="Road sign"
+                  className={`max-w-[200px] max-h-[200px] w-auto h-auto object-contain transition-opacity ${
+                    imageLoaded ? 'opacity-100' : 'opacity-0 absolute'
+                  }`}
+                  onLoad={() => setImageLoaded(true)}
+                  onError={() => setImageLoaded(true)}
+                  key={flashcard.imageUrl}
+                />
+              ) : (
+                <div className="w-48 h-48 bg-muted rounded-lg flex items-center justify-center">
+                  <p className="text-muted-foreground text-sm">No image</p>
                 </div>
-              </div>
-            ) : (
-              <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center mb-4">
-                <p className="text-muted-foreground text-sm">Loading image...</p>
-              </div>
-            )}
+              )}
+            </div>
 
-            <h3 className="text-lg font-bold text-center mb-2 text-card-foreground">
-              {flashcard.question}
-            </h3>
-            
-            <div className="mt-auto pt-4">
-              <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2">
+            {/* Question */}
+            <div className="mt-6 text-center">
+              <h3 className="text-lg font-bold text-foreground mb-4">
+                {flashcard.question || "What does this sign mean?"}
+              </h3>
+              
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
                 <RotateCw className="w-4 h-4" />
-                Tap to flip and see answer
-              </p>
+                <span className="text-sm">Tap to see answer</span>
+              </div>
             </div>
           </Card>
         </div>
 
-        {/* Back of card - Rich AI-enhanced content */}
+        {/* Back of card - Shows answer and explanation */}
         <div
           className={`absolute inset-0 w-full h-full ${!isFlipped ? 'pointer-events-none' : ''}`}
           style={{
@@ -167,22 +162,19 @@ export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered 
             transform: 'rotateY(180deg)',
           }}
         >
-          <Card className="w-full h-full p-5 flex flex-col bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 overflow-hidden">
+          <Card className="w-full h-full p-5 flex flex-col bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-300 dark:border-green-700 overflow-hidden">
             <div className="flex-1 overflow-y-auto space-y-3">
-              {/* Sign Name Header */}
-              <div className="bg-white/90 rounded-lg p-3 border border-green-200">
-                <div className="flex items-start gap-2 mb-1">
-                  <Info className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+              {/* Answer header */}
+              <div className="bg-white/90 dark:bg-background/90 rounded-lg p-4 border border-green-200 dark:border-green-700">
+                <div className="flex items-start gap-2">
+                  <Info className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-green-800 text-base leading-tight">
-                      {flashcard.signNameEn || flashcard.answer}
-                    </p>
+                    <h3 className="font-bold text-green-800 dark:text-green-200 text-lg leading-tight">
+                      {displayName}
+                    </h3>
                     {flashcard.signNameJp && (
                       <p className="text-sm text-muted-foreground mt-1">
                         🇯🇵 {flashcard.signNameJp}
-                        {flashcard.translatedJapanese && flashcard.translatedJapanese !== flashcard.signNameJp && (
-                          <span className="text-xs ml-1">({flashcard.translatedJapanese})</span>
-                        )}
                       </p>
                     )}
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -192,7 +184,7 @@ export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered 
                         </Badge>
                       )}
                       {flashcard.signNumber && (
-                        <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700">
+                        <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
                           #{flashcard.signNumber}
                         </Badge>
                       )}
@@ -202,21 +194,24 @@ export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered 
               </div>
 
               {/* Meaning/Explanation */}
-              <div className="bg-white/80 rounded-lg p-3">
-                <p className="font-semibold text-green-700 text-sm mb-1">📖 Meaning</p>
-                <p className="text-sm text-card-foreground leading-relaxed">
-                  {flashcard.expandedMeaning || flashcard.explanation}
+              <div className="bg-white/80 dark:bg-background/80 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <BookOpen className="w-4 h-4 text-green-600" />
+                  <p className="font-semibold text-green-700 dark:text-green-300 text-sm">Meaning</p>
+                </div>
+                <p className="text-sm text-foreground leading-relaxed">
+                  {explanationText}
                 </p>
               </div>
 
               {/* Driver Behavior - Only show if available */}
               {flashcard.driverBehavior && (
-                <div className="bg-blue-50/80 rounded-lg p-3 border border-blue-200">
+                <div className="bg-blue-50/80 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
                   <div className="flex items-center gap-2 mb-1">
                     <Car className="w-4 h-4 text-blue-600" />
-                    <p className="font-semibold text-blue-700 text-sm">What to Do</p>
+                    <p className="font-semibold text-blue-700 dark:text-blue-300 text-sm">What to Do</p>
                   </div>
-                  <p className="text-sm text-card-foreground leading-relaxed">
+                  <p className="text-sm text-foreground leading-relaxed">
                     {flashcard.driverBehavior}
                   </p>
                 </div>
@@ -224,20 +219,20 @@ export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered 
 
               {/* Legal Context - Only show if available */}
               {flashcard.legalContext && (
-                <div className="bg-amber-50/80 rounded-lg p-3 border border-amber-200">
+                <div className="bg-amber-50/80 dark:bg-amber-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-700">
                   <div className="flex items-center gap-2 mb-1">
                     <Scale className="w-4 h-4 text-amber-600" />
-                    <p className="font-semibold text-amber-700 text-sm">Legal</p>
+                    <p className="font-semibold text-amber-700 dark:text-amber-300 text-sm">Legal Note</p>
                   </div>
-                  <p className="text-xs text-card-foreground leading-relaxed">
+                  <p className="text-xs text-foreground leading-relaxed">
                     {flashcard.legalContext}
                   </p>
                 </div>
               )}
 
               {/* Attribution footer */}
-              {flashcard.imageSource === 'wikimedia_commons' && flashcard.attributionText && (
-                <div className="bg-gray-50/80 rounded-lg p-2 border border-gray-200">
+              {flashcard.attributionText && (
+                <div className="bg-gray-50/80 dark:bg-gray-900/50 rounded-lg p-2 border border-gray-200 dark:border-gray-700">
                   <p className="text-[10px] text-muted-foreground leading-relaxed">
                     {flashcard.attributionText}
                   </p>
@@ -246,7 +241,7 @@ export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered 
                       href={flashcard.wikimediaPageUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:underline mt-1"
+                      className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline mt-1"
                       onClick={(e) => e.stopPropagation()}
                     >
                       Wikimedia Commons
@@ -257,11 +252,12 @@ export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered 
               )}
             </div>
 
+            {/* Action buttons */}
             {!isAnswered && (
-              <div className="flex gap-3 mt-3 pt-3 border-t border-green-200">
+              <div className="flex gap-3 mt-4 pt-3 border-t border-green-200 dark:border-green-700">
                 <Button
                   variant="outline"
-                  className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
+                  className="flex-1 border-red-300 text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleIncorrect();
@@ -282,10 +278,10 @@ export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered 
             )}
 
             {isAnswered && (
-              <div className="mt-3 pt-3 border-t border-green-200">
+              <div className="mt-4 pt-3 border-t border-green-200 dark:border-green-700">
                 <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2">
                   <RotateCw className="w-4 h-4" />
-                  Tap to flip back
+                  Answered
                 </p>
               </div>
             )}
