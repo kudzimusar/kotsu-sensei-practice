@@ -47,3 +47,6 @@ verify_jwt = true
 
 [functions.create-video-session]
 verify_jwt = true
+
+[functions.cleanup-and-hydrate]
+verify_jwt = false
