@@ -174,7 +174,7 @@ export default function BookingFlow() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background pb-24">
+      <div className="min-h-screen bg-background pb-24 overflow-visible">
         <header className="bg-white shadow-sm sticky top-0 z-10">
           <div className="px-6 py-4">
             <div className="flex items-center gap-4">
@@ -191,7 +191,7 @@ export default function BookingFlow() {
           </div>
         </header>
 
-        <div className="max-w-2xl mx-auto p-4 space-y-6">
+        <div className="max-w-2xl mx-auto p-4 space-y-6 overflow-visible">
           {/* Progress indicator */}
           <div className="flex items-center justify-between mb-6">
             {[1, 2, 3, 4].map((num) => (
