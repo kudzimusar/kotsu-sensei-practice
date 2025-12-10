@@ -35,3 +35,15 @@ verify_jwt = false
 
 [functions.generate-flashcards]
 verify_jwt = false
+
+[functions.create-booking-payment]
+verify_jwt = true
+
+[functions.get-payment-methods]
+verify_jwt = true
+
+[functions.create-setup-intent]
+verify_jwt = true
+
+[functions.create-video-session]
+verify_jwt = true

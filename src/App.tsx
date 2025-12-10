@@ -23,6 +23,8 @@ import Account from "./pages/Account";
 import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import BookingPayment from "./pages/BookingPayment";
+import BookInstructor from "./pages/BookInstructor";
+import BookingFlow from "./pages/BookingFlow";
 import MyBookings from "./pages/MyBookings";
 import PracticeRooms from "./pages/PracticeRooms";
 import PracticeRoomDetails from "./pages/PracticeRoomDetails";
@@ -57,6 +59,8 @@ const App = () => (
           <Route path="/generate" element={<ProtectedRoute><QuestionGenerator /></ProtectedRoute>} />
           <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
           <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
+          <Route path="/book-instructor" element={<ProtectedRoute><BookInstructor /></ProtectedRoute>} />
+          <Route path="/book-instructor/:id" element={<ProtectedRoute><BookingFlow /></ProtectedRoute>} />
           <Route path="/booking/:id/payment" element={<ProtectedRoute><BookingPayment /></ProtectedRoute>} />
           <Route path="/booking/:id/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
           <Route path="/my-bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
