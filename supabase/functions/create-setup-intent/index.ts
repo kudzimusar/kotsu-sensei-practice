@@ -7,7 +7,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY");
+if (!STRIPE_SECRET_KEY) {
+  console.error("STRIPE_SECRET_KEY is not set");
+}
+
+const stripe = new Stripe(STRIPE_SECRET_KEY || "", {
   apiVersion: "2023-10-16",
   httpClient: Stripe.createFetchHttpClient(),
 });
@@ -79,6 +84,18 @@ serve(async (req) => {
       }
     }
 
+    // Validate Stripe key
+    if (!STRIPE_SECRET_KEY) {
+      console.error("STRIPE_SECRET_KEY is missing");
+      return new Response(
+        JSON.stringify({ error: "Stripe configuration error" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Create Setup Intent
     const setupIntent = await stripe.setupIntents.create({
       customer: customerId,
@@ -97,9 +114,21 @@ serve(async (req) => {
     );
   } catch (error: any) {
     console.error("Error creating setup intent:", error);
+    console.error("Error details:", JSON.stringify(error, null, 2));
+    console.error("Error stack:", error.stack);
+    
+    // Check for specific error types
+    let errorMessage = "Failed to create setup intent";
+    if (error.message) {
+      errorMessage = error.message;
+    } else if (error.type) {
+      errorMessage = `Stripe error: ${error.type}`;
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: error.message || "Failed to create setup intent",
+        error: errorMessage,
+        details: error.code || error.type || "Unknown error",
       }),
       {
         status: 500,

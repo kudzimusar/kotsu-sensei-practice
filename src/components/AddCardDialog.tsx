@@ -126,26 +126,36 @@ export function AddCardDialog({ open, onOpenChange, onSuccess }: AddCardDialogPr
         .then(({ data, error }) => {
           if (error) {
             console.error("Error creating setup intent:", error);
+            console.error("Error details:", data);
+            const errorMessage = data?.error || error.message || "Failed to initialize card form";
             toast({
               title: "Error",
-              description: "Failed to initialize card form. Please try again.",
+              description: errorMessage + ". Please try again or contact support.",
               variant: "destructive",
             });
-            onOpenChange(false);
+            setIsLoading(false);
             return;
           }
-          setClientSecret(data?.clientSecret || null);
+          if (!data?.clientSecret) {
+            console.error("No client secret returned:", data);
+            toast({
+              title: "Error",
+              description: "Invalid response from server. Please try again.",
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            return;
+          }
+          setClientSecret(data.clientSecret);
+          setIsLoading(false);
         })
         .catch((err) => {
           console.error("Error:", err);
           toast({
             title: "Error",
-            description: "Failed to initialize card form. Please try again.",
+            description: err.message || "Failed to initialize card form. Please try again.",
             variant: "destructive",
           });
-          onOpenChange(false);
-        })
-        .finally(() => {
           setIsLoading(false);
         });
     } else if (!open) {

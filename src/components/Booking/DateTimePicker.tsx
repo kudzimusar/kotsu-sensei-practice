@@ -99,7 +99,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
               {selectedDate ? format(selectedDate, 'PPP') : 'Pick a date'}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent className="w-auto p-0 z-[9999]" align="start" side="bottom">
             <div className="p-3">
               {/* Month Navigation */}
               <div className="flex items-center justify-between mb-4">
