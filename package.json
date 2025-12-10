@@ -8,7 +8,9 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "hydrate": "bash scripts/hydrate-signs.sh",
+    "hydrate:batch": "bash scripts/hydrate-signs.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
