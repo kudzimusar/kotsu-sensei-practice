@@ -4,22 +4,19 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { getInstructorById, getInstructorPricing } from "@/lib/supabase/instructors";
-import { createBooking, getAvailableTimeSlots, type CreateBookingData } from "@/lib/supabase/bookings";
+import { createBooking, type CreateBookingData } from "@/lib/supabase/bookings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ArrowLeft, CheckCircle2, Video, MapPin, Clock, FileText, CreditCard, Check } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Video, MapPin, FileText, CreditCard, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
-import { format, addDays, isBefore, isAfter, startOfToday } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { DateTimePicker } from "@/components/Booking/DateTimePicker";
 
 export default function BookingFlow() {
   const { id: instructorId } = useParams<{ id: string }>();
@@ -38,7 +35,6 @@ export default function BookingFlow() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [studentNotes, setStudentNotes] = useState("");
-  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const { data: instructor, isLoading: instructorLoading } = useQuery({
     queryKey: ["instructor", instructorId],
@@ -58,20 +54,6 @@ export default function BookingFlow() {
          p.booking_type === 'one_on_one'
   );
 
-  const { data: availableTimeSlots = [], isLoading: slotsLoading } = useQuery({
-    queryKey: ["available-slots", instructorId, selectedDate, sessionType, duration],
-    queryFn: () => {
-      if (!selectedDate) return [];
-      return getAvailableTimeSlots(
-        instructorId!,
-        format(selectedDate, 'yyyy-MM-dd'),
-        sessionType,
-        duration
-      );
-    },
-    enabled: !!instructorId && !!selectedDate && !!instructor && !!sessionType && !!duration,
-    staleTime: 30000, // Cache for 30 seconds
-  });
 
   const createBookingMutation = useMutation({
     mutationFn: (data: CreateBookingData) => createBooking(data),
@@ -188,9 +170,6 @@ export default function BookingFlow() {
     });
   };
 
-  const disabledDates = (date: Date) => {
-    return isBefore(date, startOfToday());
-  };
 
   return (
     <ProtectedRoute>
@@ -337,85 +316,16 @@ export default function BookingFlow() {
 
               {/* Step 2: Date & Time */}
               {step === 2 && (
-                <div className="space-y-6">
-                  <div>
-                    <Label className="text-base font-semibold mb-3 block">Select Date</Label>
-                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !selectedDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start" side="bottom">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={(date) => {
-                            setSelectedDate(date);
-                            setCalendarOpen(false);
-                            setSelectedTime(""); // Reset time when date changes
-                          }}
-                          disabled={disabledDates}
-                          initialFocus
-                          fixedWeeks={true}
-                          className="rounded-md border"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  {selectedDate && (
-                    <div>
-                      <Label className="text-base font-semibold mb-3 block">Select Time</Label>
-                      {slotsLoading ? (
-                        <div className="flex items-center justify-center py-8">
-                          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                          <span className="ml-2 text-sm text-muted-foreground">Loading available times...</span>
-                        </div>
-                      ) : availableTimeSlots.length === 0 ? (
-                        <Card className="p-6 border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800">
-                          <div className="text-center space-y-2">
-                            <Clock className="h-8 w-8 mx-auto text-yellow-600 dark:text-yellow-400" />
-                            <p className="font-medium text-yellow-900 dark:text-yellow-100">
-                              No available time slots for this date.
-                            </p>
-                            <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                              Please select another date or contact the instructor.
-                            </p>
-                          </div>
-                        </Card>
-                      ) : (
-                        <div className="space-y-3">
-                          <p className="text-sm text-muted-foreground">
-                            Available time slots for {format(selectedDate, "EEEE, MMMM d, yyyy")}
-                          </p>
-                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                            {availableTimeSlots.map((time) => (
-                              <Button
-                                key={time}
-                                variant={selectedTime === time ? "default" : "outline"}
-                                onClick={() => setSelectedTime(time)}
-                                className={cn(
-                                  "h-12 font-medium transition-all",
-                                  selectedTime === time && "ring-2 ring-primary ring-offset-2"
-                                )}
-                              >
-                                {time}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <DateTimePicker
+                  instructorId={instructor.id}
+                  sessionType={sessionType}
+                  durationMinutes={duration}
+                  selectedDate={selectedDate}
+                  selectedTime={selectedTime}
+                  onDateSelect={setSelectedDate}
+                  onTimeSelect={setSelectedTime}
+                  disabled={createBookingMutation.isPending}
+                />
               )}
 
               {/* Step 3: Notes */}
