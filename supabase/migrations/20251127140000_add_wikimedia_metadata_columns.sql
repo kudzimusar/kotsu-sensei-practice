@@ -43,3 +43,4 @@ CREATE INDEX IF NOT EXISTS road_sign_images_wikimedia_file_name_idx
 ON public.road_sign_images(wikimedia_file_name)
 WHERE wikimedia_file_name IS NOT NULL;
 
+

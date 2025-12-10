@@ -206,3 +206,4 @@ GRANT EXECUTE ON FUNCTION public.search_road_signs(TEXT) TO anon, authenticated;
 
 COMMENT ON FUNCTION public.search_road_signs IS 'Enhanced 6-tier search with individual term matching and composite file deprioritization. Searches by: 1) Sign code number, 2) Filename (full query + individual terms, deprioritizes composite files), 3) Sign names (full query + individual terms), 4) Tags, 5) Category, 6) Usage quality. Returns ranked results with relevance scores.';
 
+

@@ -155,3 +155,4 @@ After full hydration (all 550 images):
 - `sign_name_en` and `sign_name_jp` should be populated
 - Search queries like "steep ascent" should return correct images (212-3)
 
+

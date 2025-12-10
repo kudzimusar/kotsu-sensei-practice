@@ -135,3 +135,4 @@ This ensures full compliance with Wikimedia Commons licensing requirements.
 - **Flashcard Component**: `src/components/Flashcard.tsx`
 - **Flashcard Hook**: `src/hooks/useFlashcards.ts`
 
+

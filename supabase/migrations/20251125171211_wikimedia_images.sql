@@ -38,3 +38,4 @@ CREATE INDEX IF NOT EXISTS road_sign_images_sign_name_jp_idx
 ON public.road_sign_images(sign_name_jp);
 
 
+

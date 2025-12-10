@@ -32,3 +32,4 @@ ON CONFLICT (keyword) DO UPDATE
 SET sign_number = EXCLUDED.sign_number,
     updated_at = timezone('utc'::text, now());
 
+

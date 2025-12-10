@@ -50,3 +50,4 @@ SET sign_number = EXCLUDED.sign_number,
 -- WHERE keyword ILIKE '%steep%' OR keyword ILIKE '%ascent%' OR keyword ILIKE '%horn%'
 -- ORDER BY sign_number, keyword;
 
+

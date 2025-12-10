@@ -265,3 +265,4 @@ Users can cancel during the 7-day trial:
 - Need to verify payment methods in Stripe Dashboard
 
 
+
