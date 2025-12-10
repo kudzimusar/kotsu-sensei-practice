@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
 import { format } from "date-fns";
 import { DateTimePicker } from "@/components/Booking/DateTimePicker";
+import { cn } from "@/lib/utils";
 
 export default function BookingFlow() {
   const { id: instructorId } = useParams<{ id: string }>();
