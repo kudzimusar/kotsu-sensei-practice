@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { ExternalLink, Info, Scale, Car, BookOpen, Check, X } from 'lucide-react';
+import { RotateCw, ExternalLink, Info, Scale, Car, BookOpen, CheckCircle2, XCircle, ChevronRight } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import type { Flashcard as FlashcardType } from '@/hooks/useFlashcards';
@@ -11,6 +11,8 @@ interface FlashcardProps {
   onAnswer?: (isCorrect: boolean) => void;
   showAnswer?: boolean;
   isAnswered?: boolean;
+  wrongAnswer?: string; // Wrong answer choice for reveal 2
+  onRevealComplete?: () => void; // Called after reveal 3 to advance to next card
 }
 
 // Category display names and colors
@@ -24,226 +26,356 @@ const CATEGORY_CONFIG: Record<string, { label: string; color: string }> = {
   'traffic-signals': { label: 'Traffic Signal', color: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300' },
 };
 
-export function Flashcard({ flashcard, onAnswer, showAnswer = false, isAnswered = false }: FlashcardProps) {
+// Reveal states: 0 = image only, 1 = two choices, 2 = full metadata
+type RevealState = 0 | 1 | 2;
+
+export function Flashcard({ 
+  flashcard, 
+  onAnswer, 
+  showAnswer = false, 
+  isAnswered = false,
+  wrongAnswer,
+  onRevealComplete
+}: FlashcardProps) {
+  const [revealState, setRevealState] = useState<RevealState>(0);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [userAnswer, setUserAnswer] = useState<boolean | null>(null);
-  const [showResult, setShowResult] = useState(false);
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const [isValidated, setIsValidated] = useState(false);
 
-  // The correct answer for this flashcard (default to true if not specified)
-  const correctAnswer = flashcard.answer?.toLowerCase() === 'false' ? false : true;
-
+  // Reset state when flashcard changes
   useEffect(() => {
+    setRevealState(0);
     setImageLoaded(false);
-    setUserAnswer(null);
-    setShowResult(false);
-  }, [flashcard.imageUrl, flashcard.question]);
+    setSelectedChoice(null);
+    setIsValidated(false);
+  }, [flashcard.id]);
 
-  // If already answered externally, show the result
-  useEffect(() => {
-    if (showAnswer || isAnswered) {
-      setShowResult(true);
+  // Handle click progression through reveals
+  const handleClick = () => {
+    if (revealState === 0) {
+      // Move to reveal 2: show two answer choices
+      setRevealState(1);
+    } else if (revealState === 1 && selectedChoice && isValidated) {
+      // Move to reveal 3: show full metadata
+      setRevealState(2);
+      // Auto-advance to next card after a brief delay
+      if (onRevealComplete) {
+        setTimeout(() => {
+          onRevealComplete();
+        }, 2000); // 2 second delay to read metadata
+      }
     }
-  }, [showAnswer, isAnswered]);
+  };
 
-  const handleUserAnswer = (answer: boolean) => {
-    if (isAnswered || showResult) return;
+  // Handle answer choice selection (reveal 2)
+  const handleChoiceSelect = (choice: string) => {
+    if (isValidated) return; // Prevent re-selection after validation
     
-    setUserAnswer(answer);
-    setShowResult(true);
+    setSelectedChoice(choice);
+    const isCorrect = choice === flashcard.signName;
+    setIsValidated(true);
     
-    const isCorrect = answer === correctAnswer;
+    // Record answer
     if (onAnswer) {
       onAnswer(isCorrect);
     }
   };
 
+  // Generate wrong answer if not provided
+  const getWrongAnswer = (): string => {
+    if (wrongAnswer) return wrongAnswer;
+    
+    // Fallback wrong answers based on category
+    const wrongAnswers: Record<string, string[]> = {
+      'regulatory': ['No Entry', 'No Parking', 'Stop', 'Yield', 'One-Way'],
+      'warning': ['Curve Ahead', 'Intersection', 'School Zone', 'Railway Crossing', 'Slippery Road'],
+      'indication': ['Pedestrian Crossing', 'Safety Zone', 'Bicycle Crossing', 'Parking Area'],
+      'guidance': ['Direction Sign', 'Route Marker', 'Distance Marker', 'Destination Sign'],
+      'auxiliary': ['Time Restriction', 'Distance Plate', 'Direction Plate', 'Vehicle Type'],
+    };
+    
+    const categoryWrongs = wrongAnswers[flashcard.category || 'regulatory'] || ['Road Sign', 'Traffic Sign'];
+    // Return a random wrong answer that's not the correct one
+    const filtered = categoryWrongs.filter(a => a !== flashcard.signName);
+    return filtered[Math.floor(Math.random() * filtered.length)] || 'Road Sign';
+  };
+
+  const wrongAnswerChoice = getWrongAnswer();
+  const correctAnswer = flashcard.signName;
+  
+  // Shuffle the two choices
+  const choices = [correctAnswer, wrongAnswerChoice].sort(() => Math.random() - 0.5);
+
   const categoryConfig = flashcard.category 
     ? CATEGORY_CONFIG[flashcard.category] || { label: flashcard.category, color: 'bg-muted text-muted-foreground' }
     : null;
 
-  const displayName = flashcard.signName || 'Road Sign';
+  // Get display name
+  const displayName = flashcard.signName || flashcard.answer || 'Road Sign';
+  
+  // Get explanation text
   const explanationText = flashcard.explanation || 
     `This is a ${categoryConfig?.label?.toLowerCase() || 'road'} sign used in Japan.`;
 
-  const userWasCorrect = userAnswer !== null && userAnswer === correctAnswer;
+  // REVEAL 1: Image only with prompt
+  if (revealState === 0) {
+    return (
+      <div className="w-full max-w-md mx-auto">
+        <Card 
+          className="w-full min-h-[520px] p-6 flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/30 border-2 border-primary/20 cursor-pointer transition-all hover:shadow-lg"
+          onClick={handleClick}
+        >
+          {/* Image container - centered */}
+          <div className="flex-1 flex items-center justify-center w-full mb-6">
+            {!imageLoaded && flashcard.imageUrl && (
+              <Skeleton className="w-48 h-48 rounded-lg" />
+            )}
+            
+            {flashcard.imageUrl ? (
+              <img
+                src={flashcard.imageUrl}
+                alt="Road sign"
+                className={`max-w-[200px] max-h-[200px] w-auto h-auto object-contain transition-opacity ${
+                  imageLoaded ? 'opacity-100' : 'opacity-0 absolute'
+                }`}
+                onLoad={() => setImageLoaded(true)}
+                onError={() => setImageLoaded(true)}
+                key={flashcard.imageUrl}
+              />
+            ) : (
+              <div className="w-48 h-48 bg-muted rounded-lg flex items-center justify-center">
+                <p className="text-muted-foreground text-sm">No image</p>
+              </div>
+            )}
+          </div>
 
+          {/* Prompt */}
+          <div className="text-center">
+            <h3 className="text-lg font-bold text-foreground mb-4">
+              What does this image mean?
+            </h3>
+            
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <RotateCw className="w-4 h-4" />
+              <span className="text-sm">Tap to continue</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // REVEAL 2: Two answer choices
+  if (revealState === 1) {
+    const isCorrect = selectedChoice === correctAnswer;
+    
+    return (
+      <div className="w-full max-w-md mx-auto">
+        <Card className="w-full min-h-[520px] p-6 flex flex-col bg-gradient-to-br from-background to-muted/30 border-2 border-primary/20">
+          {/* Image (still visible) */}
+          <div className="flex items-center justify-center w-full mb-6">
+            {flashcard.imageUrl ? (
+              <img
+                src={flashcard.imageUrl}
+                alt="Road sign"
+                className="max-w-[150px] max-h-[150px] w-auto h-auto object-contain"
+              />
+            ) : (
+              <div className="w-32 h-32 bg-muted rounded-lg flex items-center justify-center">
+                <p className="text-muted-foreground text-xs">No image</p>
+              </div>
+            )}
+          </div>
+
+          {/* Question */}
+          <h3 className="text-lg font-bold text-foreground mb-6 text-center">
+            What does this sign mean?
+          </h3>
+
+          {/* Two answer choices */}
+          <div className="space-y-3 mb-6">
+            {choices.map((choice, index) => {
+              const isSelected = selectedChoice === choice;
+              const isThisCorrect = choice === correctAnswer;
+              const showFeedback = isValidated && isSelected;
+              
+              return (
+                <Button
+                  key={index}
+                  variant={isSelected ? "default" : "outline"}
+                  className={`w-full py-6 text-base font-semibold transition-all ${
+                    showFeedback
+                      ? isThisCorrect
+                        ? "bg-green-600 hover:bg-green-700 text-white border-green-700"
+                        : "bg-red-600 hover:bg-red-700 text-white border-red-700"
+                      : isSelected
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "hover:bg-muted"
+                  }`}
+                  onClick={() => handleChoiceSelect(choice)}
+                  disabled={isValidated}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    {showFeedback && (
+                      isThisCorrect ? (
+                        <CheckCircle2 className="w-5 h-5" />
+                      ) : (
+                        <XCircle className="w-5 h-5" />
+                      )
+                    )}
+                    <span>{choice}</span>
+                  </div>
+                </Button>
+              );
+            })}
+          </div>
+
+          {/* Validation feedback */}
+          {isValidated && (
+            <div className={`p-4 rounded-lg mb-4 ${
+              isCorrect 
+                ? "bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-700"
+                : "bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700"
+            }`}>
+              <div className="flex items-center gap-2">
+                {isCorrect ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-600" />
+                )}
+                <p className={`font-semibold ${
+                  isCorrect ? "text-green-800 dark:text-green-200" : "text-red-800 dark:text-red-200"
+                }`}>
+                  {isCorrect ? "✅ Correct!" : "❌ Incorrect"}
+                </p>
+              </div>
+              {!isCorrect && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  The correct answer is: <strong>{correctAnswer}</strong>
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Continue button (only after validation) */}
+          {isValidated && (
+            <Button
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-base font-semibold"
+              onClick={handleClick}
+            >
+              Continue to Learn More
+              <ChevronRight className="w-5 h-5 ml-2" />
+            </Button>
+          )}
+        </Card>
+      </div>
+    );
+  }
+
+  // REVEAL 3: Full metadata (mandatory)
   return (
     <div className="w-full max-w-md mx-auto">
-      <Card className="w-full p-6 flex flex-col bg-gradient-to-br from-background to-muted/30 border-2 border-primary/20">
-        {/* Category badge */}
-        {categoryConfig && (
-          <div className="self-start mb-4">
-            <Badge variant="outline" className={`text-xs ${categoryConfig.color}`}>
-              {categoryConfig.label}
-            </Badge>
-          </div>
-        )}
-        
-        {/* Image container */}
-        <div className="flex items-center justify-center w-full min-h-[180px]">
-          {!imageLoaded && flashcard.imageUrl && (
-            <Skeleton className="w-40 h-40 rounded-lg" />
-          )}
-          
-          {flashcard.imageUrl ? (
-            <img
-              src={flashcard.imageUrl}
-              alt="Road sign"
-              className={`max-w-[180px] max-h-[180px] w-auto h-auto object-contain transition-opacity ${
-                imageLoaded ? 'opacity-100' : 'opacity-0 absolute'
-              }`}
-              onLoad={() => setImageLoaded(true)}
-              onError={() => setImageLoaded(true)}
-              key={flashcard.imageUrl}
-            />
-          ) : (
-            <div className="w-40 h-40 bg-muted rounded-lg flex items-center justify-center">
-              <p className="text-muted-foreground text-sm">No image</p>
-            </div>
-          )}
-        </div>
-
-        {/* Question */}
-        <div className="mt-6 text-center">
-          <h3 className="text-lg font-bold text-foreground mb-4">
-            {flashcard.question || "What does this sign mean?"}
-          </h3>
-        </div>
-
-        {/* TRUE/FALSE Answer Buttons - Show when not answered yet */}
-        {!showResult && (
-          <div className="flex gap-4 mt-4">
-            <Button
-              size="lg"
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-6"
-              onClick={() => handleUserAnswer(true)}
-            >
-              <Check className="w-5 h-5 mr-2" />
-              TRUE
-            </Button>
-            <Button
-              size="lg"
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-6"
-              onClick={() => handleUserAnswer(false)}
-            >
-              <X className="w-5 h-5 mr-2" />
-              FALSE
-            </Button>
-          </div>
-        )}
-
-        {/* Result - Show after answering */}
-        {showResult && (
-          <div className="mt-4 space-y-4">
-            {/* Result Banner */}
-            <div className={`p-4 rounded-lg text-center ${
-              userWasCorrect 
-                ? 'bg-green-100 dark:bg-green-900/30 border-2 border-green-500' 
-                : 'bg-red-100 dark:bg-red-900/30 border-2 border-red-500'
-            }`}>
-              <div className="flex items-center justify-center gap-2 mb-2">
-                {userWasCorrect ? (
-                  <>
-                    <Check className="w-6 h-6 text-green-600" />
-                    <span className="text-lg font-bold text-green-700 dark:text-green-300">CORRECT!</span>
-                  </>
-                ) : (
-                  <>
-                    <X className="w-6 h-6 text-red-600" />
-                    <span className="text-lg font-bold text-red-700 dark:text-red-300">INCORRECT</span>
-                  </>
+      <Card className="w-full min-h-[520px] p-5 flex flex-col bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-300 dark:border-green-700 overflow-hidden">
+        <div className="flex-1 overflow-y-auto space-y-3">
+          {/* Answer header */}
+          <div className="bg-white/90 dark:bg-background/90 rounded-lg p-4 border border-green-200 dark:border-green-700">
+            <div className="flex items-start gap-2">
+              <Info className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-green-800 dark:text-green-200 text-lg leading-tight">
+                  {displayName}
+                </h3>
+                {flashcard.signNameJp && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    🇯🇵 {flashcard.signNameJp}
+                  </p>
                 )}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                The correct answer is: <strong>{correctAnswer ? 'TRUE' : 'FALSE'}</strong>
-              </p>
-            </div>
-
-            {/* Answer Details */}
-            <div className="bg-white/90 dark:bg-background/90 rounded-lg p-4 border border-border">
-              <div className="flex items-start gap-2">
-                <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-foreground text-lg leading-tight">
-                    {displayName}
-                  </h3>
-                  {flashcard.signNameJp && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      🇯🇵 {flashcard.signNameJp}
-                    </p>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  {categoryConfig && (
+                    <Badge variant="outline" className={`text-xs ${categoryConfig.color}`}>
+                      {categoryConfig.label}
+                    </Badge>
                   )}
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    {flashcard.signNumber && (
-                      <Badge variant="outline" className="text-xs bg-muted">
-                        #{flashcard.signNumber}
-                      </Badge>
-                    )}
-                  </div>
+                  {flashcard.signNumber && (
+                    <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                      #{flashcard.signNumber}
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Explanation */}
-            <div className="bg-muted/50 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <BookOpen className="w-4 h-4 text-primary" />
-                <p className="font-semibold text-foreground text-sm">Explanation</p>
+          {/* Meaning/Explanation */}
+          <div className="bg-white/80 dark:bg-background/80 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen className="w-4 h-4 text-green-600" />
+              <p className="font-semibold text-green-700 dark:text-green-300 text-sm">Meaning</p>
+            </div>
+            <p className="text-sm text-foreground leading-relaxed">
+              {explanationText}
+            </p>
+          </div>
+
+          {/* Driver Behavior - Only show if available */}
+          {flashcard.driverBehavior && (
+            <div className="bg-blue-50/80 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+              <div className="flex items-center gap-2 mb-1">
+                <Car className="w-4 h-4 text-blue-600" />
+                <p className="font-semibold text-blue-700 dark:text-blue-300 text-sm">What to Do</p>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {explanationText}
+              <p className="text-sm text-foreground leading-relaxed">
+                {flashcard.driverBehavior}
               </p>
             </div>
+          )}
 
-            {/* Driver Behavior */}
-            {flashcard.driverBehavior && (
-              <div className="bg-blue-50/80 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
-                <div className="flex items-center gap-2 mb-1">
-                  <Car className="w-4 h-4 text-blue-600" />
-                  <p className="font-semibold text-blue-700 dark:text-blue-300 text-sm">What to Do</p>
-                </div>
-                <p className="text-sm text-foreground leading-relaxed">
-                  {flashcard.driverBehavior}
-                </p>
+          {/* Legal Context - Only show if available */}
+          {flashcard.legalContext && (
+            <div className="bg-amber-50/80 dark:bg-amber-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-700">
+              <div className="flex items-center gap-2 mb-1">
+                <Scale className="w-4 h-4 text-amber-600" />
+                <p className="font-semibold text-amber-700 dark:text-amber-300 text-sm">Legal Note</p>
               </div>
-            )}
+              <p className="text-xs text-foreground leading-relaxed">
+                {flashcard.legalContext}
+              </p>
+            </div>
+          )}
 
-            {/* Legal Context */}
-            {flashcard.legalContext && (
-              <div className="bg-amber-50/80 dark:bg-amber-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-700">
-                <div className="flex items-center gap-2 mb-1">
-                  <Scale className="w-4 h-4 text-amber-600" />
-                  <p className="font-semibold text-amber-700 dark:text-amber-300 text-sm">Legal Note</p>
-                </div>
-                <p className="text-xs text-foreground leading-relaxed">
-                  {flashcard.legalContext}
-                </p>
-              </div>
-            )}
+          {/* Attribution footer */}
+          {flashcard.attribution && (
+            <div className="bg-gray-50/80 dark:bg-gray-900/50 rounded-lg p-2 border border-gray-200 dark:border-gray-700">
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                {flashcard.attribution}
+              </p>
+              {flashcard.wikimediaUrl && (
+                <a
+                  href={flashcard.wikimediaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline mt-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Wikimedia Commons
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </a>
+              )}
+            </div>
+          )}
+        </div>
 
-            {/* Attribution */}
-            {flashcard.attribution && (
-              <div className="bg-muted/30 rounded-lg p-2 border border-border">
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  {flashcard.attribution}
-                </p>
-                {flashcard.wikimediaUrl && (
-                  <a
-                    href={flashcard.wikimediaUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline mt-1"
-                  >
-                    Wikimedia Commons
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        {/* Auto-advance indicator */}
+        <div className="mt-4 pt-3 border-t border-green-200 dark:border-green-700">
+          <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2">
+            <RotateCw className="w-4 h-4 animate-spin" />
+            Moving to next card...
+          </p>
+        </div>
       </Card>
     </div>
   );
 }
 
+// Re-export type for compatibility
 export type { FlashcardType as FlashcardData };

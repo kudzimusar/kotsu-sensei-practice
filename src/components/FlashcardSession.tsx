@@ -25,6 +25,31 @@ export function FlashcardSession({ session, onAnswer, onComplete, onExit, onNext
     ? ((session.currentIndex + 1) / session.flashcards.length) * 100 
     : 0;
 
+  // Generate wrong answer from other flashcards in the session
+  const getWrongAnswer = (): string => {
+    const otherFlashcards = session.flashcards.filter((_, idx) => idx !== session.currentIndex);
+    if (otherFlashcards.length === 0) {
+      // Fallback if no other flashcards
+      return 'Road Sign';
+    }
+    const randomOther = otherFlashcards[Math.floor(Math.random() * otherFlashcards.length)];
+    return randomOther.signName || 'Road Sign';
+  };
+
+  // Handle reveal 3 completion - auto-advance to next card
+  const handleRevealComplete = () => {
+    if (session.currentIndex < session.flashcards.length - 1) {
+      // Clear answered state for current card before advancing
+      const newAnswered = new Set(answeredCards);
+      newAnswered.delete(session.currentIndex);
+      setAnsweredCards(newAnswered);
+      onNext();
+    } else {
+      // Last card - complete session
+      onComplete();
+    }
+  };
+
   useEffect(() => {
     if (session.currentIndex >= session.flashcards.length) {
       onComplete();
@@ -169,6 +194,8 @@ export function FlashcardSession({ session, onAnswer, onComplete, onExit, onNext
           onAnswer={handleAnswer}
           showAnswer={isAnswered || hasResponse}
           isAnswered={isAnswered || hasResponse}
+          wrongAnswer={getWrongAnswer()}
+          onRevealComplete={handleRevealComplete}
         />
       </div>
 
