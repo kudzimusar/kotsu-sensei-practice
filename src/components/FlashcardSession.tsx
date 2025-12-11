@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Flashcard } from './Flashcard';
-import { Button } from './ui/button';
-import { Card } from './ui/card';
-import { Progress } from './ui/progress';
-import { ChevronLeft, ChevronRight, X, Trophy, AlertCircle } from 'lucide-react';
-import { FlashcardSession as SessionType } from '@/hooks/useFlashcards';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { ChevronLeft, ChevronRight, RotateCcw, X, Trophy, Target } from 'lucide-react';
+import type { FlashcardSession as FlashcardSessionType } from '@/hooks/useFlashcards';
 
 interface FlashcardSessionProps {
-  session: SessionType;
+  session: FlashcardSessionType;
   onAnswer: (isCorrect: boolean) => void;
   onComplete: () => void;
   onExit: () => void;
@@ -15,216 +15,183 @@ interface FlashcardSessionProps {
   onPrevious: () => void;
 }
 
-export function FlashcardSession({ session, onAnswer, onComplete, onExit, onNext, onPrevious }: FlashcardSessionProps) {
+export const FlashcardSession: React.FC<FlashcardSessionProps> = ({
+  session,
+  onAnswer,
+  onComplete,
+  onExit,
+  onNext,
+  onPrevious,
+}) => {
   const [answeredCards, setAnsweredCards] = useState<Set<number>>(new Set());
   
   const currentFlashcard = session.flashcards[session.currentIndex];
-  const isAnswered = answeredCards.has(session.currentIndex);
-  const hasResponse = session.responses.some(r => r.flashcardIndex === session.currentIndex);
-  const progress = session.flashcards.length > 0 
-    ? ((session.currentIndex + 1) / session.flashcards.length) * 100 
-    : 0;
+  const totalCards = session.flashcards.length;
+  const answeredCount = answeredCards.size;
+  const correctCount = session.correctCount;
+  const incorrectCount = session.incorrectCount;
+  const progress = (answeredCount / totalCards) * 100;
+  const isComplete = session.currentIndex >= totalCards;
 
-  // Generate wrong answer from other flashcards in the session
-  const getWrongAnswer = (): string => {
-    const otherFlashcards = session.flashcards.filter((_, idx) => idx !== session.currentIndex);
-    if (otherFlashcards.length === 0) {
-      // Fallback if no other flashcards
-      return 'Road Sign';
-    }
-    const randomOther = otherFlashcards[Math.floor(Math.random() * otherFlashcards.length)];
-    return randomOther.signName || 'Road Sign';
-  };
-
-  // Handle reveal 3 completion - auto-advance to next card
-  const handleRevealComplete = () => {
-    if (session.currentIndex < session.flashcards.length - 1) {
-      // Clear answered state for current card before advancing
-      const newAnswered = new Set(answeredCards);
-      newAnswered.delete(session.currentIndex);
-      setAnsweredCards(newAnswered);
-      onNext();
-    } else {
-      // Last card - complete session
-      onComplete();
-    }
-  };
-
+  // Call onComplete when session ends
   useEffect(() => {
-    if (session.currentIndex >= session.flashcards.length) {
+    if (isComplete && answeredCount > 0) {
       onComplete();
     }
-  }, [session.currentIndex, session.flashcards.length, onComplete]);
+  }, [isComplete, answeredCount, onComplete]);
 
   const handleAnswer = (isCorrect: boolean) => {
-    if (!isAnswered && !hasResponse) {
-      setAnsweredCards(new Set([...answeredCards, session.currentIndex]));
+    if (currentFlashcard) {
+      setAnsweredCards(prev => {
+        const newSet = new Set(prev);
+        newSet.add(session.currentIndex);
+        return newSet;
+      });
       onAnswer(isCorrect);
     }
   };
 
-  const handleNext = () => {
-    if (session.currentIndex < session.flashcards.length - 1) {
-      onNext();
-    } else if (isAnswered) {
-      // Last card answered, trigger completion
-      onComplete();
-    }
+  const handleRevealComplete = () => {
+    onNext();
   };
 
-  const handlePrevious = () => {
-    if (session.currentIndex > 0) {
-      onPrevious();
-    }
+  const handleRestart = () => {
+    setAnsweredCards(new Set());
+    // Navigate back to first card - handled by parent
+    onExit();
   };
 
-  if (session.currentIndex >= session.flashcards.length) {
-    // Calculate accuracy based on answered cards only
-    const totalAnswered = session.correctCount + session.incorrectCount;
-    const correctPercentage = totalAnswered > 0
-      ? Math.round((session.correctCount / totalAnswered) * 100)
-      : 0;
+  // Session complete screen
+  if (isComplete || !currentFlashcard) {
+    const accuracy = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+    const isPassing = accuracy >= 70;
 
     return (
-      <div className="min-h-screen bg-background p-5 pb-24">
-        <div className="max-w-2xl mx-auto">
-          <Card className="p-6 md:p-8 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-200 dark:border-green-700">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trophy className="w-8 h-8 text-white" />
+      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+        <Card className="w-full max-w-md mx-auto">
+          <CardContent className="p-6 space-y-6">
+            <div className="text-center">
+              <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 ${isPassing ? 'bg-green-500/20' : 'bg-orange-500/20'}`}>
+                <Trophy className={`h-10 w-10 ${isPassing ? 'text-green-500' : 'text-orange-500'}`} />
               </div>
-              <h2 className="text-2xl font-bold text-green-900 dark:text-green-100 mb-2">Session Complete!</h2>
-              <p className="text-muted-foreground">
-                You answered {totalAnswered} of {session.flashcards.length} cards
+              <h2 className="text-2xl font-bold text-foreground">
+                {isPassing ? 'Great Job!' : 'Keep Practicing!'}
+              </h2>
+              <p className="text-muted-foreground mt-2">
+                You've completed this session
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <Card className="p-4 bg-white/80 dark:bg-background/80">
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-green-600">{session.correctCount}</p>
-                  <p className="text-sm text-muted-foreground">Correct</p>
-                </div>
-              </Card>
-              <Card className="p-4 bg-white/80 dark:bg-background/80">
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-red-600">{session.incorrectCount}</p>
-                  <p className="text-sm text-muted-foreground">Incorrect</p>
-                </div>
-              </Card>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-2xl font-bold text-foreground">{answeredCount}</p>
+                <p className="text-xs text-muted-foreground">Answered</p>
+              </div>
+              <div className="p-3 bg-green-500/10 rounded-lg">
+                <p className="text-2xl font-bold text-green-600">{correctCount}</p>
+                <p className="text-xs text-muted-foreground">Correct</p>
+              </div>
+              <div className="p-3 bg-red-500/10 rounded-lg">
+                <p className="text-2xl font-bold text-red-600">{incorrectCount}</p>
+                <p className="text-xs text-muted-foreground">Incorrect</p>
+              </div>
             </div>
 
-            <Card className="p-4 bg-white/80 dark:bg-background/80 mb-6">
-              <div className="text-center">
-                <p className="text-4xl font-bold text-blue-600 mb-1">{correctPercentage}%</p>
-                <p className="text-sm text-muted-foreground">Accuracy</p>
-                <Progress value={correctPercentage} className="mt-3 h-2" />
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Target className="h-5 w-5 text-primary" />
+                <span className="text-3xl font-bold text-foreground">{accuracy}%</span>
               </div>
-            </Card>
+              <p className="text-sm text-muted-foreground">Accuracy</p>
+            </div>
 
-            <div className="space-y-3">
-              {session.incorrectCount > 0 && (
-                <Button
-                  variant="outline"
-                  className="w-full border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400"
-                  onClick={onExit}
-                >
-                  <AlertCircle className="w-4 h-4 mr-2" />
-                  Review Incorrect Cards ({session.incorrectCount})
-                </Button>
-              )}
-              
+            <div className="flex gap-3">
               <Button
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={onExit}
+                variant="outline"
+                className="flex-1"
+                onClick={handleRestart}
               >
+                <RotateCcw className="mr-2 h-4 w-4" />
                 New Session
               </Button>
-              
               <Button
-                variant="ghost"
-                className="w-full"
+                className="flex-1"
                 onClick={onExit}
               >
-                Back to Flashcards
+                Done
               </Button>
             </div>
-          </Card>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  if (!currentFlashcard) {
-    return null;
-  }
+  const isCurrentCardAnswered = answeredCards.has(session.currentIndex);
 
   return (
-    <div className="min-h-screen bg-background p-5 pb-24">
-      {/* Header */}
-      <div className="max-w-2xl mx-auto mb-6">
-        <div className="flex items-center justify-between mb-4">
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-md mx-auto space-y-4">
+        {/* Header with progress */}
+        <div className="flex items-center justify-between">
           <Button
             variant="ghost"
             size="sm"
             onClick={onExit}
             className="text-muted-foreground"
           >
-            <X className="w-4 h-4 mr-1" />
+            <X className="h-4 w-4 mr-1" />
             Exit
           </Button>
-          <div className="text-sm font-medium text-muted-foreground">
-            Card {session.currentIndex + 1} of {session.flashcards.length}
+          
+          <div className="text-center">
+            <span className="text-sm font-medium text-foreground">
+              {session.currentIndex + 1} / {totalCards}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-green-600 font-medium">{correctCount} ✓</span>
+            <span className="text-red-600 font-medium">{incorrectCount} ✗</span>
           </div>
         </div>
-        
-        <Progress value={progress} className="h-2" />
-        
-        {/* Score indicator */}
-        <div className="flex justify-center gap-4 mt-2 text-sm">
-          <span className="text-green-600 font-medium">✓ {session.correctCount}</span>
-          <span className="text-red-600 font-medium">✗ {session.incorrectCount}</span>
-        </div>
-      </div>
 
-      {/* Flashcard */}
-      <div className="max-w-2xl mx-auto mb-6">
+        {/* Progress bar */}
+        <Progress value={progress} className="h-2" />
+
+        {/* Flashcard */}
         <Flashcard
           flashcard={currentFlashcard}
           onAnswer={handleAnswer}
-          showAnswer={isAnswered || hasResponse}
-          isAnswered={isAnswered || hasResponse}
-          wrongAnswer={getWrongAnswer()}
           onRevealComplete={handleRevealComplete}
         />
-      </div>
 
-      {/* Navigation - Only show after answering */}
-      {(isAnswered || hasResponse) && (
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-between">
+        {/* Navigation - only show if card has been answered */}
+        {isCurrentCardAnswered && (
+          <div className="flex justify-between items-center pt-2">
             <Button
-              variant="outline"
-              size="lg"
-              onClick={handlePrevious}
+              variant="ghost"
+              size="sm"
+              onClick={onPrevious}
               disabled={session.currentIndex === 0}
-              className="flex items-center gap-2"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="h-4 w-4 mr-1" />
               Previous
             </Button>
-
             <Button
-              size="lg"
-              onClick={handleNext}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              variant="ghost"
+              size="sm"
+              onClick={onNext}
+              disabled={session.currentIndex === totalCards - 1}
             >
-              {session.currentIndex >= session.flashcards.length - 1 ? 'Finish' : 'Next'}
-              <ChevronRight className="w-5 h-5" />
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default FlashcardSession;

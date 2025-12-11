@@ -1,381 +1,252 @@
-import { useState, useEffect } from 'react';
-import { Card } from './ui/card';
-import { Button } from './ui/button';
-import { RotateCw, ExternalLink, Info, Scale, Car, BookOpen, CheckCircle2, XCircle, ChevronRight } from 'lucide-react';
-import { Skeleton } from './ui/skeleton';
-import { Badge } from './ui/badge';
-import type { Flashcard as FlashcardType } from '@/hooks/useFlashcards';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Check, X, ChevronRight, AlertCircle } from 'lucide-react';
+import type { Flashcard as FlashcardData } from '@/hooks/useFlashcards';
 
 interface FlashcardProps {
-  flashcard: FlashcardType;
-  onAnswer?: (isCorrect: boolean) => void;
-  showAnswer?: boolean;
-  isAnswered?: boolean;
-  wrongAnswer?: string; // Wrong answer choice for reveal 2
-  onRevealComplete?: () => void; // Called after reveal 3 to advance to next card
+  flashcard: FlashcardData;
+  onAnswer: (isCorrect: boolean) => void;
+  onRevealComplete: () => void;
 }
 
-// Category display names and colors
-const CATEGORY_CONFIG: Record<string, { label: string; color: string }> = {
-  'regulatory': { label: 'Regulatory', color: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300' },
-  'warning': { label: 'Warning', color: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300' },
-  'indication': { label: 'Indication', color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300' },
-  'guidance': { label: 'Guidance', color: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300' },
-  'auxiliary': { label: 'Auxiliary', color: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300' },
-  'road-markings': { label: 'Road Marking', color: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300' },
-  'traffic-signals': { label: 'Traffic Signal', color: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300' },
+const CATEGORY_CONFIG: Record<string, { label: string; className: string }> = {
+  'regulatory-signs': { label: 'Regulatory', className: 'bg-red-500/20 text-red-700 dark:text-red-300' },
+  'warning-signs': { label: 'Warning', className: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300' },
+  'indication-signs': { label: 'Indication', className: 'bg-blue-500/20 text-blue-700 dark:text-blue-300' },
+  'guidance-signs': { label: 'Guidance', className: 'bg-green-500/20 text-green-700 dark:text-green-300' },
+  'auxiliary-signs': { label: 'Auxiliary', className: 'bg-purple-500/20 text-purple-700 dark:text-purple-300' },
+  'road-markings': { label: 'Road Marking', className: 'bg-orange-500/20 text-orange-700 dark:text-orange-300' },
+  'traffic-signals': { label: 'Traffic Signal', className: 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300' },
 };
 
-// Reveal states: 0 = image only, 1 = two choices, 2 = full metadata
 type RevealState = 0 | 1 | 2;
 
-export function Flashcard({ 
-  flashcard, 
-  onAnswer, 
-  showAnswer = false, 
-  isAnswered = false,
-  wrongAnswer,
-  onRevealComplete
-}: FlashcardProps) {
+export const Flashcard: React.FC<FlashcardProps> = ({
+  flashcard,
+  onAnswer,
+  onRevealComplete,
+}) => {
   const [revealState, setRevealState] = useState<RevealState>(0);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
-  const [isValidated, setIsValidated] = useState(false);
+  const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
+  const [hasAnswered, setHasAnswered] = useState(false);
 
   // Reset state when flashcard changes
   useEffect(() => {
     setRevealState(0);
     setImageLoaded(false);
-    setSelectedChoice(null);
-    setIsValidated(false);
-  }, [flashcard.id]);
+    setSelectedAnswer(null);
+    setHasAnswered(false);
+  }, [flashcard.id, flashcard.signName]);
 
-  // Handle click progression through reveals
-  const handleClick = () => {
+  // Generate a TRUE/FALSE statement - memoized to prevent re-generation
+  const { statement, isStatementTrue } = useMemo(() => {
+    const signName = flashcard.signName || flashcard.answer || 'this sign';
+    const showTrue = Math.random() > 0.5;
+    
+    if (showTrue) {
+      return {
+        statement: `This sign means: "${signName}"`,
+        isStatementTrue: true
+      };
+    } else {
+      const wrongStatements = [
+        'No Parking', 'Speed Limit 50', 'One Way', 'No Entry', 'Stop',
+        'Yield', 'Pedestrian Crossing', 'No U-Turn', 'Keep Left', 'No Overtaking'
+      ].filter(s => s.toLowerCase() !== signName.toLowerCase());
+      
+      const wrongAnswer = wrongStatements[Math.floor(Math.random() * wrongStatements.length)] || 'Something else';
+      return {
+        statement: `This sign means: "${wrongAnswer}"`,
+        isStatementTrue: false
+      };
+    }
+  }, [flashcard.id, flashcard.signName, flashcard.answer]);
+
+  const handleImageClick = () => {
     if (revealState === 0) {
-      // Move to reveal 2: show two answer choices
       setRevealState(1);
-    } else if (revealState === 1 && selectedChoice && isValidated) {
-      // Move to reveal 3: show full metadata
-      setRevealState(2);
-      // Auto-advance to next card after a brief delay
-      if (onRevealComplete) {
-        setTimeout(() => {
-          onRevealComplete();
-        }, 2000); // 2 second delay to read metadata
-      }
     }
   };
 
-  // Handle answer choice selection (reveal 2)
-  const handleChoiceSelect = (choice: string) => {
-    if (isValidated) return; // Prevent re-selection after validation
+  const handleAnswerSelect = (userAnswer: boolean) => {
+    if (hasAnswered) return;
     
-    setSelectedChoice(choice);
-    const isCorrect = choice === flashcard.signName;
-    setIsValidated(true);
+    setSelectedAnswer(userAnswer);
+    setHasAnswered(true);
     
-    // Record answer
-    if (onAnswer) {
-      onAnswer(isCorrect);
-    }
+    const isCorrect = userAnswer === isStatementTrue;
+    onAnswer(isCorrect);
   };
 
-  // Generate wrong answer if not provided
-  const getWrongAnswer = (): string => {
-    if (wrongAnswer) return wrongAnswer;
-    
-    // Fallback wrong answers based on category
-    const wrongAnswers: Record<string, string[]> = {
-      'regulatory': ['No Entry', 'No Parking', 'Stop', 'Yield', 'One-Way'],
-      'warning': ['Curve Ahead', 'Intersection', 'School Zone', 'Railway Crossing', 'Slippery Road'],
-      'indication': ['Pedestrian Crossing', 'Safety Zone', 'Bicycle Crossing', 'Parking Area'],
-      'guidance': ['Direction Sign', 'Route Marker', 'Distance Marker', 'Destination Sign'],
-      'auxiliary': ['Time Restriction', 'Distance Plate', 'Direction Plate', 'Vehicle Type'],
-    };
-    
-    const categoryWrongs = wrongAnswers[flashcard.category || 'regulatory'] || ['Road Sign', 'Traffic Sign'];
-    // Return a random wrong answer that's not the correct one
-    const filtered = categoryWrongs.filter(a => a !== flashcard.signName);
-    return filtered[Math.floor(Math.random() * filtered.length)] || 'Road Sign';
+  const handleShowExplanation = () => {
+    setRevealState(2);
   };
 
-  const wrongAnswerChoice = getWrongAnswer();
-  const correctAnswer = flashcard.signName;
-  
-  // Shuffle the two choices
-  const choices = [correctAnswer, wrongAnswerChoice].sort(() => Math.random() - 0.5);
+  const handleNextCard = () => {
+    onRevealComplete();
+  };
 
-  const categoryConfig = flashcard.category 
-    ? CATEGORY_CONFIG[flashcard.category] || { label: flashcard.category, color: 'bg-muted text-muted-foreground' }
-    : null;
+  const isCorrectAnswer = selectedAnswer === isStatementTrue;
+  const categoryConfig = flashcard.category ? CATEGORY_CONFIG[flashcard.category] : null;
 
-  // Get display name
-  const displayName = flashcard.signName || flashcard.answer || 'Road Sign';
-  
-  // Get explanation text
-  const explanationText = flashcard.explanation || 
-    `This is a ${categoryConfig?.label?.toLowerCase() || 'road'} sign used in Japan.`;
-
-  // REVEAL 1: Image only with prompt
-  if (revealState === 0) {
-    return (
-      <div className="w-full max-w-md mx-auto">
-        <Card 
-          className="w-full min-h-[520px] p-6 flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/30 border-2 border-primary/20 cursor-pointer transition-all hover:shadow-lg"
-          onClick={handleClick}
+  return (
+    <Card className="w-full max-w-md mx-auto overflow-hidden bg-card border-border shadow-lg">
+      <CardContent className="p-0">
+        <div 
+          className={`relative aspect-square bg-muted flex items-center justify-center ${revealState === 0 ? 'cursor-pointer' : ''}`}
+          onClick={handleImageClick}
         >
-          {/* Image container - centered */}
-          <div className="flex-1 flex items-center justify-center w-full mb-6">
-            {!imageLoaded && flashcard.imageUrl && (
-              <Skeleton className="w-48 h-48 rounded-lg" />
-            )}
-            
-            {flashcard.imageUrl ? (
+          {flashcard.imageUrl ? (
+            <>
               <img
                 src={flashcard.imageUrl}
                 alt="Road sign"
-                className={`max-w-[200px] max-h-[200px] w-auto h-auto object-contain transition-opacity ${
-                  imageLoaded ? 'opacity-100' : 'opacity-0 absolute'
-                }`}
+                className={`max-h-full max-w-full object-contain p-4 transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                 onLoad={() => setImageLoaded(true)}
                 onError={() => setImageLoaded(true)}
-                key={flashcard.imageUrl}
               />
-            ) : (
-              <div className="w-48 h-48 bg-muted rounded-lg flex items-center justify-center">
-                <p className="text-muted-foreground text-sm">No image</p>
-              </div>
-            )}
-          </div>
-
-          {/* Prompt */}
-          <div className="text-center">
-            <h3 className="text-lg font-bold text-foreground mb-4">
-              What does this image mean?
-            </h3>
-            
-            <div className="flex items-center justify-center gap-2 text-muted-foreground">
-              <RotateCw className="w-4 h-4" />
-              <span className="text-sm">Tap to continue</span>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  // REVEAL 2: Two answer choices
-  if (revealState === 1) {
-    const isCorrect = selectedChoice === correctAnswer;
-    
-    return (
-      <div className="w-full max-w-md mx-auto">
-        <Card className="w-full min-h-[520px] p-6 flex flex-col bg-gradient-to-br from-background to-muted/30 border-2 border-primary/20">
-          {/* Image (still visible) */}
-          <div className="flex items-center justify-center w-full mb-6">
-            {flashcard.imageUrl ? (
-              <img
-                src={flashcard.imageUrl}
-                alt="Road sign"
-                className="max-w-[150px] max-h-[150px] w-auto h-auto object-contain"
-              />
-            ) : (
-              <div className="w-32 h-32 bg-muted rounded-lg flex items-center justify-center">
-                <p className="text-muted-foreground text-xs">No image</p>
-              </div>
-            )}
-          </div>
-
-          {/* Question */}
-          <h3 className="text-lg font-bold text-foreground mb-6 text-center">
-            What does this sign mean?
-          </h3>
-
-          {/* Two answer choices */}
-          <div className="space-y-3 mb-6">
-            {choices.map((choice, index) => {
-              const isSelected = selectedChoice === choice;
-              const isThisCorrect = choice === correctAnswer;
-              const showFeedback = isValidated && isSelected;
-              
-              return (
-                <Button
-                  key={index}
-                  variant={isSelected ? "default" : "outline"}
-                  className={`w-full py-6 text-base font-semibold transition-all ${
-                    showFeedback
-                      ? isThisCorrect
-                        ? "bg-green-600 hover:bg-green-700 text-white border-green-700"
-                        : "bg-red-600 hover:bg-red-700 text-white border-red-700"
-                      : isSelected
-                      ? "bg-blue-600 hover:bg-blue-700 text-white"
-                      : "hover:bg-muted"
-                  }`}
-                  onClick={() => handleChoiceSelect(choice)}
-                  disabled={isValidated}
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    {showFeedback && (
-                      isThisCorrect ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                      ) : (
-                        <XCircle className="w-5 h-5" />
-                      )
-                    )}
-                    <span>{choice}</span>
-                  </div>
-                </Button>
-              );
-            })}
-          </div>
-
-          {/* Validation feedback */}
-          {isValidated && (
-            <div className={`p-4 rounded-lg mb-4 ${
-              isCorrect 
-                ? "bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-700"
-                : "bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700"
-            }`}>
-              <div className="flex items-center gap-2">
-                {isCorrect ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-red-600" />
-                )}
-                <p className={`font-semibold ${
-                  isCorrect ? "text-green-800 dark:text-green-200" : "text-red-800 dark:text-red-200"
-                }`}>
-                  {isCorrect ? "✅ Correct!" : "❌ Incorrect"}
-                </p>
-              </div>
-              {!isCorrect && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  The correct answer is: <strong>{correctAnswer}</strong>
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Continue button (only after validation) */}
-          {isValidated && (
-            <Button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-base font-semibold"
-              onClick={handleClick}
-            >
-              Continue to Learn More
-              <ChevronRight className="w-5 h-5 ml-2" />
-            </Button>
-          )}
-        </Card>
-      </div>
-    );
-  }
-
-  // REVEAL 3: Full metadata (mandatory)
-  return (
-    <div className="w-full max-w-md mx-auto">
-      <Card className="w-full min-h-[520px] p-5 flex flex-col bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-300 dark:border-green-700 overflow-hidden">
-        <div className="flex-1 overflow-y-auto space-y-3">
-          {/* Answer header */}
-          <div className="bg-white/90 dark:bg-background/90 rounded-lg p-4 border border-green-200 dark:border-green-700">
-            <div className="flex items-start gap-2">
-              <Info className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-green-800 dark:text-green-200 text-lg leading-tight">
-                  {displayName}
-                </h3>
-                {flashcard.signNameJp && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    🇯🇵 {flashcard.signNameJp}
-                  </p>
-                )}
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  {categoryConfig && (
-                    <Badge variant="outline" className={`text-xs ${categoryConfig.color}`}>
-                      {categoryConfig.label}
-                    </Badge>
-                  )}
-                  {flashcard.signNumber && (
-                    <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                      #{flashcard.signNumber}
-                    </Badge>
-                  )}
+              {!imageLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
                 </div>
-              </div>
+              )}
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-muted-foreground p-8">
+              <AlertCircle className="h-12 w-12 mb-2" />
+              <span>No image available</span>
             </div>
-          </div>
-
-          {/* Meaning/Explanation */}
-          <div className="bg-white/80 dark:bg-background/80 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <BookOpen className="w-4 h-4 text-green-600" />
-              <p className="font-semibold text-green-700 dark:text-green-300 text-sm">Meaning</p>
-            </div>
-            <p className="text-sm text-foreground leading-relaxed">
-              {explanationText}
-            </p>
-          </div>
-
-          {/* Driver Behavior - Only show if available */}
-          {flashcard.driverBehavior && (
-            <div className="bg-blue-50/80 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
-              <div className="flex items-center gap-2 mb-1">
-                <Car className="w-4 h-4 text-blue-600" />
-                <p className="font-semibold text-blue-700 dark:text-blue-300 text-sm">What to Do</p>
-              </div>
-              <p className="text-sm text-foreground leading-relaxed">
-                {flashcard.driverBehavior}
+          )}
+          
+          {categoryConfig && (
+            <Badge className={`absolute top-3 left-3 ${categoryConfig.className}`}>
+              {categoryConfig.label}
+            </Badge>
+          )}
+          
+          {revealState === 0 && imageLoaded && (
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+              <p className="text-white text-center text-sm font-medium">
+                Tap to reveal question
               </p>
             </div>
           )}
+        </div>
 
-          {/* Legal Context - Only show if available */}
-          {flashcard.legalContext && (
-            <div className="bg-amber-50/80 dark:bg-amber-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-700">
-              <div className="flex items-center gap-2 mb-1">
-                <Scale className="w-4 h-4 text-amber-600" />
-                <p className="font-semibold text-amber-700 dark:text-amber-300 text-sm">Legal Note</p>
-              </div>
-              <p className="text-xs text-foreground leading-relaxed">
-                {flashcard.legalContext}
+        {revealState === 1 && (
+          <div className="p-6 space-y-4">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Is this statement TRUE or FALSE?
+              </h3>
+              <p className="text-xl text-foreground font-medium bg-muted p-4 rounded-lg">
+                {statement}
               </p>
             </div>
-          )}
 
-          {/* Attribution footer */}
-          {flashcard.attribution && (
-            <div className="bg-gray-50/80 dark:bg-gray-900/50 rounded-lg p-2 border border-gray-200 dark:border-gray-700">
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
-                {flashcard.attribution}
-              </p>
-              {flashcard.wikimediaUrl && (
-                <a
-                  href={flashcard.wikimediaUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline mt-1"
-                  onClick={(e) => e.stopPropagation()}
+            {!hasAnswered ? (
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 h-14 text-lg font-semibold border-2 border-green-500 text-green-600 hover:bg-green-500 hover:text-white transition-colors"
+                  onClick={() => handleAnswerSelect(true)}
                 >
-                  Wikimedia Commons
-                  <ExternalLink className="w-2.5 h-2.5" />
-                </a>
+                  <Check className="mr-2 h-5 w-5" />
+                  TRUE
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 h-14 text-lg font-semibold border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition-colors"
+                  onClick={() => handleAnswerSelect(false)}
+                >
+                  <X className="mr-2 h-5 w-5" />
+                  FALSE
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className={`p-4 rounded-lg text-center ${isCorrectAnswer ? 'bg-green-500/20 border border-green-500' : 'bg-red-500/20 border border-red-500'}`}>
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    {isCorrectAnswer ? (
+                      <Check className="h-6 w-6 text-green-600" />
+                    ) : (
+                      <X className="h-6 w-6 text-red-600" />
+                    )}
+                    <span className={`text-xl font-bold ${isCorrectAnswer ? 'text-green-600' : 'text-red-600'}`}>
+                      {isCorrectAnswer ? 'CORRECT!' : 'INCORRECT'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    The statement was <strong>{isStatementTrue ? 'TRUE' : 'FALSE'}</strong>.
+                    {!isStatementTrue && (
+                      <span className="block mt-1">
+                        This sign actually means: <strong>{flashcard.signName || flashcard.answer}</strong>
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                <Button
+                  className="w-full h-12"
+                  onClick={handleShowExplanation}
+                >
+                  Learn More
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {revealState === 2 && (
+          <div className="p-6 space-y-4">
+            <div className="text-center border-b border-border pb-4">
+              <h2 className="text-2xl font-bold text-foreground">
+                {flashcard.signName || flashcard.answer}
+              </h2>
+              {flashcard.signNameJp && (
+                <p className="text-lg text-muted-foreground mt-1">
+                  {flashcard.signNameJp}
+                </p>
               )}
             </div>
-          )}
-        </div>
 
-        {/* Auto-advance indicator */}
-        <div className="mt-4 pt-3 border-t border-green-200 dark:border-green-700">
-          <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2">
-            <RotateCw className="w-4 h-4 animate-spin" />
-            Moving to next card...
-          </p>
-        </div>
-      </Card>
-    </div>
+            {flashcard.explanation && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-foreground">Meaning</h4>
+                <p className="text-muted-foreground">{flashcard.explanation}</p>
+              </div>
+            )}
+
+            {flashcard.driverBehavior && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-foreground">What to Do</h4>
+                <p className="text-muted-foreground">{flashcard.driverBehavior}</p>
+              </div>
+            )}
+
+            {flashcard.legalContext && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-foreground">Legal Context</h4>
+                <p className="text-muted-foreground text-sm">{flashcard.legalContext}</p>
+              </div>
+            )}
+
+            <Button
+              className="w-full h-12 mt-4"
+              onClick={handleNextCard}
+            >
+              Next Card
+              <ChevronRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
-}
+};
 
-// Re-export type for compatibility
-export type { FlashcardType as FlashcardData };
+export type { FlashcardData };
