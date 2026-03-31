@@ -203,10 +203,10 @@ Make sure to return valid JSON only, no additional text.`
         // Use road sign image if provided
         if (roadSignImage && q.needs_image) {
           figureUrl = roadSignImage.storage_url;
-        } else if (q.needs_image && q.image_url) {
-          // Use image_url from AI response if available
-          figureUrl = q.image_url;
-        } else if (q.needs_image && q.image_description) {
+        } else if (q.needs_image) {
+          // DO NOT blindly trust q.image_url from AI (hallucination risk)
+          // Always try to find a real image from our database FIRST
+          
           // Strategy 1: Try Wikimedia Commons database first
           try {
             // Extract category from image description or question
@@ -221,19 +221,27 @@ Make sure to return valid JSON only, no additional text.`
               return null;
             };
             
-            const category = extractCategory(q.image_description);
-      const wikimediaImage = await findWikimediaImage(supabase as any, category, q.image_description);
-      
-      if (wikimediaImage) {
-        await incrementImageUsage(supabase as any, wikimediaImage.id);
+            const categoryToSearch = extractCategory(q.image_description) || category;
+            const searchTerms = q.image_description || q.question;
+            const wikimediaImage = await findWikimediaImage(supabase as any, categoryToSearch, searchTerms);
+            
+            if (wikimediaImage) {
+              await incrementImageUsage(supabase as any, wikimediaImage.id);
               figureUrl = wikimediaImage.storage_url;
-              console.log(`Using Wikimedia Commons image for question: ${q.image_description}`);
+              console.log(`Using Wikimedia Commons image for question: ${searchTerms}`);
+              // Store sign metadata for category mapping later
+              (q as any).wikimediaImage = wikimediaImage;
             }
           } catch (wikiError) {
             console.error('Error looking up Wikimedia image:', wikiError);
           }
           
-          // Strategy 2: Fallback to AI image generation if Wikimedia not found
+          // Strategy 2: If no DB image found, check if AI's provided URL looks legit (must be from Supabase storage)
+          if (!figureUrl && q.image_url && q.image_url.includes('supabase.co')) {
+            figureUrl = q.image_url;
+          }
+          
+          // Strategy 3: Fallback to AI image generation if still missing and authorized
           if (!figureUrl && LOVABLE_API_KEY) {
             try {
               const imagePrompt = `Generate a clear, simple illustration of: ${q.image_description}. Style: Clean vector graphic suitable for a driving test, high contrast, educational.`;
@@ -270,7 +278,9 @@ Make sure to return valid JSON only, no additional text.`
 
         return {
           ...q,
-          figure_url: figureUrl
+          figure_url: figureUrl,
+          // Use the actual sign's category for the question metadata
+          actual_category: (q as any).wikimediaImage?.gemini_category || (q as any).wikimediaImage?.sign_category || category || 'general'
         };
       })
     );
@@ -283,7 +293,7 @@ Make sure to return valid JSON only, no additional text.`
       question: q.question,
       answer: q.answer,
       explanation: q.explanation,
-      test_category: category || 'general',
+      test_category: q.actual_category, // Use the correct category for the badge
       difficulty_level: q.difficulty_level || difficulty || 'medium',
       source_concept: q.source_concept || concept,
       language: language || 'en',

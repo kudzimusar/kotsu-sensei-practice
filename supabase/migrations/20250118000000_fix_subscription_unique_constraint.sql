@@ -13,3 +13,5 @@ WHERE status IN ('active', 'trialing');
 -- Note: Users can still have multiple subscriptions with different statuses
 -- (e.g., one canceled and one active), but only one active/trialing at a time
 
+
+

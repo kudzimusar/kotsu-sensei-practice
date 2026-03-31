@@ -15,7 +15,7 @@ const FLASHCARD_CATEGORIES = [
     nameJp: '規制標識',
     description: 'Stop, speed limits, no parking, one-way',
     icon: '🚦',
-    count: 20,
+    count: 35,
   },
   {
     id: 'warning-signs',
@@ -31,7 +31,7 @@ const FLASHCARD_CATEGORIES = [
     nameJp: '指示標識',
     description: 'Pedestrian crossings, safety zones',
     icon: '📍',
-    count: 16,
+    count: 30,
   },
   {
     id: 'guidance-signs',
@@ -39,7 +39,7 @@ const FLASHCARD_CATEGORIES = [
     nameJp: '案内標識',
     description: 'Direction and route information',
     icon: '🗺️',
-    count: 22,
+    count: 50,
   },
   {
     id: 'road-markings',
@@ -47,7 +47,15 @@ const FLASHCARD_CATEGORIES = [
     nameJp: '道路標示',
     description: 'Lane markings, painted signs',
     icon: '🛤️',
-    count: 30,
+    count: 28,
+  },
+  {
+    id: 'traffic-signals',
+    name: 'Traffic Signals',
+    nameJp: '交通信号',
+    description: 'Red, yellow, green signals, arrow lights',
+    icon: '🚥',
+    count: 25,
   },
 ] as const;
 
@@ -189,7 +197,8 @@ export default function Flashcards() {
                     variant={selectedCount === count ? 'default' : 'outline'}
                     className={selectedCount === count ? 'bg-blue-600 hover:bg-blue-700' : ''}
                     onClick={() => setSelectedCount(availableCount)}
-                    disabled={count > maxCount && maxCount > 0}
+                    // Only disable if category has ZERO signs (highly unlikely but for safety)
+                    disabled={maxCount === 0}
                   >
                     {availableCount} Cards
                     {count > maxCount && maxCount > 0 && ` (max: ${maxCount})`}

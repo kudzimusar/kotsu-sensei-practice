@@ -144,4 +144,3 @@ export const PremiumLockIcon = ({ feature, className = "" }: { feature?: string;
     </TooltipProvider>
   );
 };
-

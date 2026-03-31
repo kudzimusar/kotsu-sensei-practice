@@ -11,3 +11,5 @@ AND indexname = 'idx_subscriptions_one_active_per_user';
 -- Expected result: Should show the index definition
 -- If you see a row, the migration was successful! ✅
 
+
+

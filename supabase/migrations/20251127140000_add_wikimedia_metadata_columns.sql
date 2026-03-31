@@ -44,3 +44,5 @@ ON public.road_sign_images(wikimedia_file_name)
 WHERE wikimedia_file_name IS NOT NULL;
 
 
+
+

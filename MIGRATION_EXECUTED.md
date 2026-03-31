@@ -52,3 +52,5 @@ AND indexname = 'idx_subscriptions_one_active_per_user';
 
 **Status**: Migration file ready - Execute via Supabase Dashboard for immediate effect
 
+
+
