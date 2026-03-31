@@ -150,7 +150,6 @@ export const useFlashcards = () => {
     const updatedResponses = [...session.responses, response];
     const updatedSession: FlashcardSession = {
       ...session,
-      currentIndex: session.currentIndex + 1,
       correctCount: isCorrect ? session.correctCount + 1 : session.correctCount,
       incorrectCount: !isCorrect ? session.incorrectCount + 1 : session.incorrectCount,
       responses: updatedResponses,
